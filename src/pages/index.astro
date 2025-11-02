@@ -1,0 +1,24 @@
+
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Hero from '@components/Hero.astro';
+import EventCard from '@components/EventCard.astro';
+import { getCollection } from 'astro:content';
+const eventsAll = (await getCollection('events')).sort((a,b) => +new Date(a.data.startDate) - +new Date(b.data.startDate));
+const upcoming = eventsAll.slice(0,3);
+---
+<BaseLayout title="Ministerio Maná — Bienvenido" description="Iglesias, devocionales, Campus Maná, Escuela Bíblica y eventos.">
+  <Hero title="Compartimos el Pan de Vida" subtitle="Planifica tu visita, descubre Campus Maná y participa en los próximos eventos."
+    ctas={[{ href: '/iglesias/', label: 'Planifica tu visita' }, { href: '/eventos/', label: 'Ver eventos' }, { href: '/donaciones/', label: 'Donar' }]} />
+  <section class="container-tight mt-12 grid gap-6 md:grid-cols-3">
+    <div class="card p-5"><h3 class="font-semibold text-lg mb-1">Palabra</h3><p class="text-sm text-gray-700 dark:text-gray-200">Cristo en el centro, Escritura como fundamento. Devocional diario y discipulado.</p></div>
+    <div class="card p-5"><h3 class="font-semibold text-lg mb-1">Comunidad</h3><p class="text-sm text-gray-700 dark:text-gray-200">Nos reunimos en sedes y grupos, servimos y caminamos juntos.</p></div>
+    <div class="card p-5"><h3 class="font-semibold text-lg mb-1">Misión</h3><p class="text-sm text-gray-700 dark:text-gray-200">Campus Maná y obra social: jóvenes y familias que transforman su entorno.</p></div>
+  </section>
+  <section class="container-tight mt-12">
+    <h2 class="h2 mb-3">Próximos eventos</h2>
+    <div class="grid gap-6 md:grid-cols-3">
+      {upcoming.map(e => <EventCard event={e} />)}
+    </div>
+  </section>
+</BaseLayout>

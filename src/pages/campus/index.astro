@@ -1,0 +1,43 @@
+
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { MISIONEROS } from '@data/misioneros';
+---
+<BaseLayout title="Campus Maná — Socios de la Gran Comisión" description="Cambiamos el campus, cambiamos el mundo.">
+  <section class="relative">
+    <div class="container-tight py-12">
+      <h1 class="h1">Socios de la Gran Comisión</h1>
+      <p class="lead max-w-3xl">Transforma palabras en acciones. Conviértete en socio de la misión en universidades de Colombia y Latinoamérica.</p>
+      <div class="mt-6 flex gap-3 flex-wrap">
+        <a href="#como" class="btn-primary normal-case">¿Cómo ser parte?</a>
+        <a href="#misioneros" class="btn-outline normal-case">Conocer a los misioneros</a>
+      </div>
+    </div>
+  </section>
+  <section id="misioneros" class="container-tight py-10">
+    <h2 class="h2 mb-2">Jóvenes misioneros</h2>
+    <p class="text-sm text-gray-600 mb-6">Apoya mensualmente a uno de nuestros misioneros universitarios.</p>
+    <div class="grid gap-6 md:grid-cols-2">
+      {MISIONEROS.map(m => (
+        <article class="card p-5">
+          <h3 class="font-semibold text-lg">{m.nombre}</h3>
+          <p class="text-sm text-gray-600">{m.rol}</p>
+          <div class="aspect-video rounded-lg overflow-hidden border my-3">{m.video && <iframe class="w-full h-full" src={m.video} title={m.nombre} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>}</div>
+          <div class="flex flex-wrap gap-3">
+            <a href={m.wompiLink ?? '#'} class="btn-primary normal-case">Donar (Wompi)</a>
+            <a href={'/donaciones/stripe?price=' + (m.stripePriceId ?? '')} class="btn-outline normal-case">Donar (Stripe)</a>
+            <a href={'/campus/' + m.slug + '/'} class="btn-outline normal-case">Historia</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+  <section id="como" class="container-tight py-10">
+    <h2 class="h2 mb-4">Elige tu compromiso</h2>
+    <div class="grid gap-6 md:grid-cols-3">
+      <div class="card p-6"><h3 class="font-semibold text-lg">1 Misión</h3><p>Conviértete en padrino de un misionero.</p><a href="#misioneros" class="mt-4 btn-primary normal-case">Apoyar</a></div>
+      <div class="card p-6"><h3 class="font-semibold text-lg">2 Misiones</h3><p>Aumenta el impacto en dos campus.</p><a href="#misioneros" class="mt-4 btn-primary normal-case">Apoyar</a></div>
+      <div class="card p-6"><h3 class="font-semibold text-lg">La Gran Comisión</h3><p>Defensor y compañero de nuestras 4 misiones.</p><a href="#misioneros" class="mt-4 btn-primary normal-case">Apoyar</a></div>
+    </div>
+  </section>
+</BaseLayout>

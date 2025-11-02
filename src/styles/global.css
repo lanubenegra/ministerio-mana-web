@@ -1,0 +1,196 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Intro font family – place font files under /public/fonts/intro/ */
+@font-face {
+  font-family: "Intro";
+  src: url("/fonts/intro/Intro-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Intro";
+  src: url("/fonts/intro/Intro-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Intro Bold";
+  src: url("/fonts/intro/Intro-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Intro Black";
+  src: url("/fonts/intro/Intro-Black.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+
+:root {
+  --mana-bg: #f1f3f8;
+  --mana-surface: #ffffff;
+  --mana-surface-alt: #f8f9fb;
+  --mana-border: rgba(41, 60, 116, 0.08);
+  --mana-border-strong: rgba(41, 60, 116, 0.18);
+  --mana-text: #1c2130;
+  --mana-text-muted: #6c748c;
+  --mana-brand: #293c74;
+  --mana-brand-medium: #3f58a1;
+  --mana-teal: #28a6bd;
+  --mana-accent: #f6519b;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--mana-bg);
+}
+
+body {
+  @apply font-body text-[var(--mana-text)] antialiased;
+  background: var(--mana-bg);
+  color: var(--mana-text);
+  position: relative;
+  min-height: 100vh;
+}
+
+main {
+  position: relative;
+  z-index: 10;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display font-semibold;
+    letter-spacing: -0.01em;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    @apply font-display font-black text-brand-dark;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.018em;
+    @apply text-brand-medium;
+  }
+
+  h3 {
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    line-height: 1.2;
+    @apply text-brand-dark;
+  }
+
+  p {
+    @apply text-base leading-relaxed;
+    color: var(--mana-text-muted);
+  }
+
+  strong {
+    @apply text-brand-dark;
+  }
+
+  a {
+    color: var(--mana-brand);
+    transition: color 200ms ease;
+  }
+
+  a:hover,
+  a:focus-visible {
+    color: var(--mana-teal);
+  }
+}
+
+@layer components {
+  .container-tight {
+    @apply mx-auto max-w-6xl px-5 md:px-8;
+  }
+
+  .h1 {
+    font-size: clamp(2.1rem, 6vw, 3.25rem);
+    @apply font-display font-black text-brand-dark;
+  }
+
+  .h2 {
+    font-size: clamp(1.65rem, 5vw, 2.4rem);
+    @apply font-display font-semibold text-brand-medium;
+  }
+
+  .lead {
+    @apply text-lg font-body text-neutral-700;
+  }
+
+  .card {
+    @apply relative overflow-hidden rounded-3xl border border-[var(--mana-border)] bg-[var(--mana-surface)] shadow-sm;
+  }
+
+  .card--accent {
+    @apply border-[var(--mana-border-strong)] bg-neutral-50;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-2 rounded-full bg-brand-medium/10 px-3 py-1 text-xs font-semibold text-brand-dark;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-transparent bg-mana-gradient px-8 py-3.5 font-display text-sm font-semibold tracking-[0.14em] uppercase text-white shadow-brand transition-all duration-200 hover:shadow-brandHover;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-[var(--mana-border-strong)] bg-[var(--mana-surface)] px-8 py-3.5 font-display text-sm font-semibold tracking-[0.08em] uppercase text-brand-dark transition-all duration-200 hover:border-brand-medium hover:bg-brand-light/60 hover:text-brand-dark;
+  }
+
+  .btn-sm {
+    @apply px-6 py-2.5 text-xs uppercase tracking-[0.12em];
+  }
+
+  .pill {
+    @apply rounded-full border border-[var(--mana-border-strong)] bg-[var(--mana-surface)] px-4 py-1 text-xs font-semibold text-neutral-700;
+  }
+
+  .section-title {
+    @apply flex items-center gap-3 font-display text-sm font-semibold uppercase tracking-[0.14em] text-neutral-500;
+  }
+
+  .section-title::before {
+    content: "";
+    @apply h-1 w-10 rounded-full bg-brand-medium/60;
+  }
+
+  .nav-link {
+    @apply relative font-display text-sm font-medium text-neutral-500 transition-colors duration-200;
+  }
+
+  .nav-link::after {
+    content: "";
+    @apply absolute left-0 bottom-[-0.35rem] h-[3px] w-0 rounded-full bg-brand-medium/80 transition-all duration-200;
+  }
+
+  .nav-link:hover,
+  .nav-link:focus-visible {
+    @apply text-brand-dark;
+  }
+
+  .nav-link:hover::after,
+  .nav-link:focus-visible::after {
+    width: 100%;
+  }
+
+  .stat-block {
+    @apply rounded-3xl border border-[var(--mana-border)] bg-[var(--mana-surface)] px-6 py-5 shadow-sm;
+  }
+}

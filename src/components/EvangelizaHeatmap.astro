@@ -1,0 +1,31 @@
+---
+const id = 'map-evangeliza';
+---
+<div id={id} class="w-full h-[420px] rounded overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"></div>
+
+<script>
+  import 'leaflet/dist/leaflet.css';
+  import L from 'leaflet';
+  const map = L.map('%ID%'.replace('%ID%', 'map-evangeliza')).setView([4.7, -74.1], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  async function loadData() {
+    const res = await fetch('/api/evangeliza/aggregate');
+    const { rows } = await res.json();
+    let total = 0;
+    rows.forEach((r) => {
+      if (r.lat && r.lng) {
+        const c = Number(r.count) || 1;
+        total += c;
+        const radius = 4 + Math.sqrt(c) * 4;
+        const circle = L.circleMarker([r.lat, r.lng], {
+          radius, color: '#0ea5e9', weight: 1, fillColor: '#0ea5e9', fillOpacity: 0.35
+        }).addTo(map);
+        circle.bindTooltip(`${r.city || r.country || 'Ubicación'}: ${c}`);
+      }
+    });
+  }
+  loadData();
+</script>

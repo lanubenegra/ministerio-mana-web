@@ -1,0 +1,11 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import ChurchesMap from '@components/ChurchesMap.astro';
+---
+<BaseLayout title="Iglesias — Planea tu visita" description="Encuentra la sede de Maná más cercana y planea tu visita.">
+  <section class="section">
+    <h1 class="h1 mb-6">Iglesias · Planea tu visita</h1>
+    <p class="mb-4">Mapa interactivo con nuestras sedes. Cada pin abre opciones de <em>Cómo llegar</em> y contacto directo por WhatsApp.</p>
+    <ChurchesMap client:load />
+  </section>
+</BaseLayout>

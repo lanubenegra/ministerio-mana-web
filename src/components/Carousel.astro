@@ -1,0 +1,25 @@
+
+---
+const { id = 'c1' } = Astro.props;
+---
+<div class="relative" id={id}>
+  <button type="button" class="prev absolute left-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-manaBlue text-white px-3 py-2 shadow">‹</button>
+  <div class="overflow-x-auto scroll-smooth snap-x snap-mandatory">
+    <div class="flex gap-6 min-w-full px-10 py-4">
+      <slot />
+    </div>
+  </div>
+  <button type="button" class="next absolute right-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-manaBlue text-white px-3 py-2 shadow">›</button>
+</div>
+<script is:inline>
+  (function(){
+    const root = document.getElementById('{id}');
+    if(!root) return;
+    const scroller = root.querySelector('.overflow-x-auto');
+    const prev = root.querySelector('.prev');
+    const next = root.querySelector('.next');
+    const step = () => scroller.clientWidth * 0.9;
+    prev?.addEventListener('click', () => scroller.scrollBy({left: -step(), behavior: 'smooth'}));
+    next?.addEventListener('click', () => scroller.scrollBy({left: step(), behavior: 'smooth'}));
+  })();
+</script>

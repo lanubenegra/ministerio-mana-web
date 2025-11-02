@@ -1,0 +1,39 @@
+
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import CurrencySwitch from '@components/CurrencySwitch.astro';
+---
+<BaseLayout title="Donaciones — Ministerio Maná" description="Dona para expandir la misión.">
+  <section class="container-tight py-10">
+    <div class="flex items-center justify-between">
+      <h1 class="h1">Donaciones</h1>
+      <CurrencySwitch />
+    </div>
+    <p class="lead mt-2 max-w-3xl">Todo nuestro lenguaje es donaciones: das con generosidad y recibes los recursos (libros, agenda, inscripciones) como agradecimiento.</p>
+    <div class="grid gap-6 md:grid-cols-2 mt-6">
+      <div class="card p-5">
+        <h3 class="font-semibold text-lg mb-2">Colombia</h3>
+        <p class="text-sm">Pagos con <strong>Wompi</strong>.</p>
+        <form method="POST" action="/api/wompi/checkout">
+          <label class="text-sm block mb-1">Valor (COP)</label>
+          <input type="number" name="amount" class="w-full rounded border-gray-300" placeholder="50000" required />
+          <label class="text-sm block mt-3 mb-1">Descripción</label>
+          <input type="text" name="desc" class="w-full rounded border-gray-300" placeholder="Donación general" />
+          <button class="mt-5 btn-primary w-full justify-center normal-case">Donar con Wompi</button>
+        </form>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-lg mb-2">Internacional</h3>
+        <p class="text-sm">Pagos con <strong>Stripe</strong>.</p>
+        <form method="POST" action="/api/stripe/checkout">
+          <label class="text-sm block mb-1">Monto (USD)</label>
+          <input type="number" name="amountUsd" step="1" class="w-full rounded border-gray-300" placeholder="20" required />
+          <label class="text-sm block mt-3 mb-1">Descripción</label>
+          <input type="text" name="desc" class="w-full rounded border-gray-300" placeholder="Donation" />
+          <button class="mt-5 btn-primary w-full justify-center normal-case">Donate with Stripe</button>
+        </form>
+      </div>
+    </div>
+    <p class="text-xs text-gray-500 mt-4">Emitimos reportes y exportaciones (CSV/Excel) para contabilidad y DIAN; pedimos número de identificación según país.</p>
+  </section>
+</BaseLayout>

@@ -1,0 +1,21 @@
+
+---
+import SEO from '@components/SEO.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+
+const { title, description, image, type = 'website', structuredData, noindex = false } = Astro.props;
+---
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <SEO {title} {description} {image} {type} {structuredData} {noindex} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+  <body>
+    <Header />
+    <main class="min-h-[60vh]"><slot /></main>
+    <Footer />
+  </body>
+</html>

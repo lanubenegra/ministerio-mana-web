@@ -1,0 +1,18 @@
+
+---
+const { title, subtitle, ctas = [] } = Astro.props as {
+  title: string;
+  subtitle?: string;
+  ctas?: { href: string; label: string }[];
+};
+---
+<section class="relative">
+  <img src="/hero.jpg" alt="" class="absolute inset-0 h-full w-full object-cover opacity-20 dark:opacity-30" loading="eager" />
+  <div class="container-tight pt-16 pb-20 relative">
+    <h1 class="h1">{title}</h1>
+    {subtitle && <p class="lead max-w-2xl mt-3">{subtitle}</p>}
+    <div class="mt-6 flex flex-wrap gap-3">
+      {ctas.map((c) => (<a href={c.href} class="btn-primary normal-case">{c.label}</a>))}
+    </div>
+  </div>
+</section>

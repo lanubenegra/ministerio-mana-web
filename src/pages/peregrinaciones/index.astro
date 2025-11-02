@@ -1,0 +1,15 @@
+
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import EventCard from '@components/EventCard.astro';
+import { getCollection } from 'astro:content';
+const peregrinaciones = (await getCollection('events')).filter(e => e.data.category === 'peregrinacion').sort((a,b)=> +new Date(a.data.startDate) - +new Date(b.data.startDate));
+---
+<BaseLayout title="Peregrinaciones — Ministerio Maná" description="Israel, Turquía & Islas Griegas.">
+  <section class="container-tight py-10">
+    <h1 class="h1 mb-6">Peregrinaciones</h1>
+    <div class="grid gap-6 md:grid-cols-2">
+      {peregrinaciones.map(p => <EventCard event={p} />)}
+    </div>
+  </section>
+</BaseLayout>

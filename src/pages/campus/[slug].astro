@@ -1,0 +1,21 @@
+
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { MISIONEROS } from '@data/misioneros';
+const { slug } = Astro.params;
+const m = MISIONEROS.find(x => x.slug === slug);
+if(!m) throw new Error('Misionero no encontrado');
+---
+<BaseLayout title={`${m.nombre} — Campus Maná`} description="Misionero Campus Maná">
+  <section class="container-tight py-10 grid gap-6 md:grid-cols-3">
+    <article class="md:col-span-2 prose dark:prose-invert">
+      <h1>{m.nombre}</h1>
+      <p>Conoce su testimonio y apóyalo en oración y con tu donación.</p>
+      <div class="aspect-video rounded-lg overflow-hidden border my-3">{m.video && <iframe class="w-full h-full" src={m.video} title={m.nombre} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>}</div>
+    </article>
+    <aside class="space-y-3">
+      <a href={m.wompiLink ?? '#'} class="btn-primary w-full justify-center normal-case">Donar (Wompi)</a>
+      <a href={'/donaciones/stripe?price=' + (m.stripePriceId ?? '')} class="btn-outline w-full justify-center normal-case">Donar (Stripe)</a>
+    </aside>
+  </section>
+</BaseLayout>

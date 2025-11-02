@@ -1,0 +1,19 @@
+
+---
+import type { CollectionEntry } from 'astro:content';
+const { event } = Astro.props as { event: CollectionEntry<'events'> };
+const d = event.data;
+---
+<article class="rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+  {d.image && <img src={d.image} alt="" class="h-44 w-full object-cover" />}
+  <div class="p-4 space-y-2">
+    <h3 class="font-semibold text-lg"><a href={'/eventos/' + event.slug + '/'} class="hover:underline">{d.title}</a></h3>
+    <p class="text-sm text-gray-600 dark:text-gray-300">
+      {new Date(d.startDate).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' })}
+      {d.endDate && ' – ' + new Date(d.endDate).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' })}
+      • {d.location}
+    </p>
+    {d.excerpt && <p class="text-sm text-gray-700 dark:text-gray-200">{d.excerpt}</p>}
+    <div class="pt-2"><a href={'/eventos/' + event.slug + '/'} class="text-sm font-semibold text-brand hover:underline">Ver detalle</a></div>
+  </div>
+</article>

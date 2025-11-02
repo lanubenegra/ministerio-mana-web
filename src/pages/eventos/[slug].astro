@@ -1,0 +1,34 @@
+
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getEntry } from 'astro:content';
+const { slug } = Astro.params;
+const entry = await getEntry('events', slug);
+if (!entry) throw new Error('Evento no encontrado');
+const d = entry.data;
+const structured = {
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": d.title,
+  "startDate": new Date(d.startDate).toISOString(),
+  "endDate": d.endDate ? new Date(d.endDate).toISOString() : undefined,
+  "location": { "@type": "Place", "name": d.location }
+};
+---
+<BaseLayout title={d.title + ' — Evento'} description={d.excerpt ?? d.location} image={d.image} type="event" structuredData={structured}>
+  <section class="container-tight py-10 grid gap-6 md:grid-cols-3">
+    <article class="md:col-span-2 prose dark:prose-invert">
+      <h1>{d.title}</h1>
+      <p class="text-sm text-gray-600">
+        {new Date(d.startDate).toLocaleDateString('es-ES', { weekday:'long', day:'2-digit', month:'long', year:'numeric' })}
+        {d.endDate && ' — ' + new Date(d.endDate).toLocaleDateString('es-ES', { day:'2-digit', month:'long', year:'numeric' })}
+        • {d.location}
+      </p>
+      {entry.body && <Fragment set:html={entry.body} />}
+    </article>
+    <aside class="space-y-4">
+      {d.image && <img src={d.image} alt="" class="rounded-lg border border-gray-200 dark:border-gray-800" />}
+      {d.ctaUrl && <a href={d.ctaUrl} class="btn-primary w-full justify-center normal-case">{d.ctaLabel}</a>}
+    </aside>
+  </section>
+</BaseLayout>

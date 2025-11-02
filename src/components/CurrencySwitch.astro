@@ -1,0 +1,18 @@
+
+---
+const rates = { COP: 1, USD: 0.00025, EUR: 0.00023 }; // ejemplo: 1 COP = 0.00025 USD (ajusta con tu fuente)
+const symbols = { COP: '$', USD: 'US$', EUR: '€' };
+const current = Astro.cookies.get('currency')?.value ?? 'COP';
+function setCurrency(c) {
+  document.cookie = `currency=${c};path=/;max-age=${60*60*24*365}`;
+  location.reload();
+}
+---
+<div class="inline-flex items-center gap-2 text-xs">
+  <span>Moneda:</span>
+  <select class="border rounded px-1 py-0.5" onchange={`(${setCurrency.toString()})(this.value)`}>
+    <option value="COP" selected={current==='COP'}>COP</option>
+    <option value="USD" selected={current==='USD'}>USD</option>
+    <option value="EUR" selected={current==='EUR'}>EUR</option>
+  </select>
+</div>

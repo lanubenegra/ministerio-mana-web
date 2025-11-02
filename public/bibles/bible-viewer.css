@@ -1,0 +1,15 @@
+/* Visor estilo Maná, inspirado en Premier League */
+.bv-overlay{position:fixed;inset:0;background:rgba(28,33,48,.55);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999}
+.bv-overlay.open{display:flex}
+.bv-modal{width:min(880px,92vw);max-height:88vh;background:#fff;color:#1c2130;border-radius:24px;overflow:hidden;box-shadow:0 32px 60px -24px rgba(28,33,48,.45);font-family:"Intro","Intro Bold","Intro Black",system-ui,-apple-system,"Segoe UI",sans-serif;border:1px solid rgba(41,60,116,.1);position:relative}
+.bv-header{display:flex;align-items:center;gap:16px;padding:18px 26px;background:linear-gradient(135deg,#293c74 0%,#28a6bd 60%,#f6519b 100%);color:#fff;border-bottom:1px solid rgba(255,255,255,.2)}
+.bv-title{font-weight:700;margin-right:auto;letter-spacing:.04em;text-transform:uppercase;font-size:.78rem}
+.bv-content{padding:24px 26px;overflow:auto;max-height:calc(88vh - 120px);line-height:1.65;font-size:.95rem}
+.bv-verse{display:flex;gap:14px;margin:8px 0;padding:12px 16px;border-radius:18px;background:#f8f9fb;border:1px solid rgba(41,60,116,.08)}
+.bv-verse:hover{background:#ecf0ff}
+.bv-verse-num{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#28a6bd,#f6519b);color:#fff;font-weight:700;font-size:.78rem}
+.bv-verse.highlight{background:rgba(246,81,155,.12);border-color:rgba(246,81,155,.28)}
+.bv-actions{display:flex;gap:12px;padding:0 26px 24px;justify-content:flex-end}
+.bv-btn{padding:10px 22px;border-radius:999px;border:1px solid rgba(41,60,116,.18);background:linear-gradient(135deg,#293c74,#f6519b);color:#fff;font-family:"Intro","Intro Bold",system-ui,sans-serif;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;box-shadow:0 14px 40px -20px rgba(41,60,116,.45);transition:transform .2s ease,box-shadow .2s ease}
+.bv-btn:hover{transform:translateY(-1px);box-shadow:0 22px 46px -22px rgba(246,81,155,.45)}
+.bv-btn:active{transform:translateY(1px);box-shadow:0 14px 32px -22px rgba(41,60,116,.4)}

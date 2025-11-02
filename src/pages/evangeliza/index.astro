@@ -1,0 +1,41 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import EvangelizaHeatmap from '@components/EvangelizaHeatmap.astro';
+---
+<BaseLayout title="Evangeliza — Ministerio Maná" description="Reporta a quién evangelizaste (solo el nombre) y ora por esa persona.">
+  <section class="section grid-2">
+    <article class="card p-6">
+      <h1 class="h1 mb-2">Suma tu evangelización</h1>
+      <p class="text-sm text-gray-600 dark:text-gray-300">Solo pedimos el <strong>nombre</strong> para orar. Opcionalmente, indica la ciudad y el país. <em>No guardamos apellidos ni números.</em></p>
+      <form class="mt-4 grid gap-3" method="post" action="/api/evangeliza/submit">
+        <label class="text-sm">Nombre de la persona
+          <input class="w-full rounded border-gray-300 dark:border-gray-700" type="text" name="firstName" required placeholder="Ej: Daniela" />
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="city" placeholder="Municipio / Ciudad" />
+          <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="country" placeholder="País" />
+        </div>
+        <select class="rounded border-gray-300 dark:border-gray-700" name="campus">
+          <option value="">¿Campus? (opcional)</option>
+          <option value="Medellín">Campus Medellín</option>
+          <option value="Bogotá">Campus Bogotá</option>
+          <option value="Cali">Campus Cali</option>
+          <option value="Otros">Otros</option>
+        </select>
+        <!-- Turnstile placeholder -->
+        <input type="hidden" name="cf-turnstile-response" value="">
+        <button class="btn-primary">Agregar</button>
+      </form>
+      <p class="text-xs text-gray-500 mt-2">Protegido con CAPTCHA (si está configurado). Al enviar aceptas nuestro aviso de privacidad.</p>
+    </article>
+    <aside class="card p-0">
+      <div class="p-6 pb-0">
+        <h2 class="font-semibold text-lg">Mapa de evangelización (en vivo)</h2>
+        <p class="text-sm">Cada marcador crece según la cantidad de personas por las que se está orando en esa zona.</p>
+      </div>
+      <div class="p-3">
+        <EvangelizaHeatmap client:load />
+      </div>
+    </aside>
+  </section>
+</BaseLayout>

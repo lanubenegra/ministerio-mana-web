@@ -1,0 +1,11 @@
+---
+import semillas from '@data/semillas.json';
+const todayIndex = (new Date().getDay()) % semillas.length;
+const s = semillas[todayIndex];
+---
+<div class="card p-4 flex items-center justify-between gap-3">
+  <div class="text-sm">{s.text}</div>
+  <button class="btn-outline btn-sm" on:click={() => (window.openBible ? window.openBible(s.ref) : alert('Agrega el visor de Biblia en /public/bibles'))}>
+    Leer
+  </button>
+</div>

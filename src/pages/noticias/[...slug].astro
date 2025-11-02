@@ -1,0 +1,28 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection, getEntry } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+export async function getStaticPaths() {
+  const posts = await getCollection('news');
+  return posts.map((p)=>({ params: { slug: p.slug.split('/') }, props: { entry: p } }));
+}
+const { entry } = Astro.props as { entry: CollectionEntry<'news'> };
+const { Content, data } = await entry.render();
+const url = new URL(Astro.url);
+const canonical = `${url.origin}/noticias/${entry.slug}/`;
+---
+<BaseLayout title={`${data.title} — Noticias`} description={data.excerpt}>
+  <article class="prose dark:prose-invert mx-auto">
+    <h1 class="mb-2">{data.title}</h1>
+    <p class="text-sm text-gray-500">{new Date(data.date).toLocaleDateString('es')}</p>
+    <Content />
+  </article>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context":"https://schema.org",
+    "@type":"NewsArticle",
+    headline: data.title,
+    datePublished: data.date,
+    dateModified: data.date,
+    description: data.excerpt,
+  })}></script>
+</BaseLayout>

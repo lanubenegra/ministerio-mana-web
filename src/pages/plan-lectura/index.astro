@@ -1,0 +1,63 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+<BaseLayout title="Plan de lectura bíblica" description="Plan semanal (Salmos y Evangelios). Marca tu progreso y abre el pasaje en el visor.">
+  <section class="section">
+    <h1 class="h1 mb-4">Plan de lectura</h1>
+    <p class="text-sm text-gray-600">MVP sin cuenta: se guarda en tu dispositivo. Para abrir el pasaje usa el botón "Leer".</p>
+    <div id="plan" class="mt-4 grid md:grid-cols-2 gap-6"></div>
+    <div class="mt-6 card p-4">
+      <h2 class="font-semibold">Medallas</h2>
+      <p id="medals" class="text-sm"></p>
+    </div>
+  </section>
+
+  <script>
+    // Semana tipo (puedes ajustar)
+    const PLAN = [
+      { ref: 'Salmo 1', label: 'Salmo 1' },
+      { ref: 'Juan 1', label: 'Juan 1' },
+      { ref: 'Salmo 23', label: 'Salmo 23' },
+      { ref: 'Juan 3', label: 'Juan 3' },
+      { ref: 'Salmo 27', label: 'Salmo 27' },
+      { ref: 'Lucas 15', label: 'Lucas 15' },
+      { ref: 'Mateo 5', label: 'Mateo 5' },
+    ];
+    const KEY = 'plan-lectura-v1';
+    const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+
+    function render() {
+      const root = document.getElementById('plan');
+      root.innerHTML = '';
+      PLAN.forEach((d, idx) => {
+        const done = !!state[idx];
+        const card = document.createElement('div');
+        card.className = 'card p-4 flex items-center justify-between gap-3';
+        card.innerHTML = `<div><strong>Día ${idx+1}</strong><div class="text-sm text-gray-600">${d.label}</div></div>
+          <div class="flex gap-2">
+            <button class="btn-outline btn-sm" data-open="${d.ref}">Leer</button>
+            <button class="btn-primary btn-sm" data-done="${idx}">${done?'✓ Hecho':'Marcar'}</button>
+          </div>`;
+        root.appendChild(card);
+      });
+
+      root.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', e => {
+        const ref = e.target.getAttribute('data-open');
+        if (window.openBible) window.openBible(ref);
+        else alert('Agrega /public/bibles/rvr1960.json y los archivos del visor para abrir la Biblia aquí.');
+      }));
+
+      root.querySelectorAll('[data-done]').forEach(b => b.addEventListener('click', e => {
+        const idx = e.target.getAttribute('data-done');
+        state[idx] = !state[idx];
+        localStorage.setItem(KEY, JSON.stringify(state));
+        render();
+      }));
+
+      const completed = Object.values(state).filter(Boolean).length;
+      const medals = document.getElementById('medals');
+      medals.textContent = completed >= PLAN.length ? '🏅 ¡Medalla de la semana lograda!' : `Progreso: ${completed}/${PLAN.length}`;
+    }
+    render();
+  </script>
+</BaseLayout>
