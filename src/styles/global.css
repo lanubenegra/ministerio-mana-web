@@ -6,8 +6,9 @@
 /* Intro font family – place font files under /public/fonts/intro/ */
 @font-face {
   font-family: "Intro";
-  src: url("/fonts/intro/Intro-Regular.woff2") format("woff2");
-  font-weight: 400;
+  src: url("/fonts/intro/Intro-Thin.woff2") format("woff2");
+  font-weight: 200;
+  font-style: normal;
   font-display: swap;
 }
 
@@ -15,20 +16,39 @@
   font-family: "Intro";
   src: url("/fonts/intro/Intro-Light.woff2") format("woff2");
   font-weight: 300;
+  font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Intro Bold";
-  src: url("/fonts/intro/Intro-Bold.woff2") format("woff2");
+  font-family: "Intro";
+  src: url("/fonts/intro/Intro-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Intro";
+  src: url("/fonts/intro/Intro-Book.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Intro";
+  src: url("/fonts/intro/Intro-Bold.woff") format("woff");
   font-weight: 700;
+  font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Intro Black";
+  font-family: "Intro";
   src: url("/fonts/intro/Intro-Black.woff2") format("woff2");
   font-weight: 800;
+  font-style: normal;
   font-display: swap;
 }
 
