@@ -33,3 +33,32 @@ create table if not exists newsletter_subscribers (
 );
 alter table newsletter_subscribers enable row level security;
 create policy "read_public" on newsletter_subscribers for select using (false);
+
+-- 4) Security throttle records (rate limiting)
+create table if not exists security_throttle (
+  id uuid primary key default gen_random_uuid(),
+  identifier text not null,
+  created_at timestamptz default now()
+);
+
+-- 5) Security events audit trail
+create table if not exists security_events (
+  id uuid primary key default gen_random_uuid(),
+  type text not null,
+  identifier text,
+  ip text,
+  user_agent text,
+  detail text,
+  meta jsonb,
+  created_at timestamptz default now()
+);
+
+-- 6) Donation events (Stripe / Wompi webhooks)
+create table if not exists donation_events (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null,
+  kind text not null,
+  reference text,
+  payload jsonb not null,
+  created_at timestamptz default now()
+);

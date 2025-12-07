@@ -13,7 +13,8 @@ export default defineConfig({
         '@components': '/src/components',
         '@layouts': '/src/layouts',
         '@data': '/src/data',
-        '@i18n': '/src/i18n'
+        '@i18n': '/src/i18n',
+        '@lib': '/src/lib'
       }
     }
   }

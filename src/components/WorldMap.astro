@@ -1,11 +1,12 @@
 
 ---
 const { markers = [] } = Astro.props as { markers: {name:string, lat:number, lng:number, html:string}[] };
+const cspNonce = Astro.locals?.cspNonce;
 ---
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <div id="map" class="h-[560px] w-full rounded-xl border border-gray-200 dark:border-gray-800"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script is:inline>
+<script is:inline nonce={cspNonce}>
   const map = L.map('map').setView([4.6, -74.1], 5);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'

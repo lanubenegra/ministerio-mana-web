@@ -1,4 +1,8 @@
 
+---
+import TurnstileWidget from './TurnstileWidget.astro';
+const cspNonce = Astro.locals?.cspNonce;
+---
 <footer class="mt-24 bg-[var(--mana-surface)]">
   <div class="border-t border-[var(--mana-border)] bg-accent/20">
     <div class="container-tight flex flex-col gap-4 py-8 text-center md:flex-row md:items-center md:justify-between md:text-left">
@@ -6,8 +10,9 @@
         <p class="text-xs font-display uppercase tracking-[0.16em] text-neutral-500">Suscríbete al devocional</p>
         <h2 class="mt-1 text-lg font-display font-bold text-brand-dark">Recibe historias y noticias cada semana</h2>
       </div>
-      <form class="flex flex-col gap-3 md:flex-row md:items-center" method="post" data-netlify="true" name="newsletter">
+      <form id="newsletter-form" class="flex flex-col gap-3 md:flex-row md:items-center" method="post" action="/api/newsletter/subscribe">
         <input type="email" name="email" placeholder="Tu email" class="w-full rounded-full border border-[var(--mana-border-strong)] bg-white px-5 py-3 text-sm text-neutral-700 placeholder:text-neutral-400 focus:border-brand-medium focus:outline-none focus:ring-2 focus:ring-brand-medium/30 md:w-72" required />
+        <TurnstileWidget appearance="interaction-only" />
         <button class="btn-primary justify-center md:px-8">Recibir devocional</button>
       </form>
     </div>
@@ -60,3 +65,31 @@
     © {new Date().getFullYear()} Ministerio Maná · Todos los derechos reservados.
   </div>
 </footer>
+
+<script is:inline nonce={cspNonce}>
+  const form = document.getElementById('newsletter-form');
+  if (form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fd = new FormData(form);
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: fd,
+        });
+        const json = await res.json();
+        if (json?.ok) {
+          form.reset();
+          if (window.turnstile && typeof window.turnstile.reset === 'function') {
+            window.turnstile.reset();
+          }
+          alert('¡Gracias! Revisa tu correo para confirmar la suscripción.');
+        } else {
+          alert(json?.error || 'No pudimos procesar tu suscripción. Intenta de nuevo.');
+        }
+      } catch (err) {
+        alert('Error de red. Intenta nuevamente.');
+      }
+    });
+  }
+</script>
