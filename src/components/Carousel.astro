@@ -1,6 +1,7 @@
 
 ---
 const { id = 'c1' } = Astro.props;
+const cspNonce = Astro.locals?.cspNonce;
 ---
 <div class="relative" id={id}>
   <button type="button" class="prev absolute left-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-manaBlue text-white px-3 py-2 shadow">‹</button>
@@ -11,7 +12,7 @@ const { id = 'c1' } = Astro.props;
   </div>
   <button type="button" class="next absolute right-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-manaBlue text-white px-3 py-2 shadow">›</button>
 </div>
-<script is:inline>
+<script is:inline nonce={cspNonce}>
   (function(){
     const root = document.getElementById('{id}');
     if(!root) return;

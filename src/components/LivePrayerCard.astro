@@ -1,5 +1,6 @@
 ---
 import cfg from '@data/live_prayer.json';
+const cspNonce = Astro.locals?.cspNonce;
 ---
 <div class="card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
   <div>
@@ -10,7 +11,7 @@ import cfg from '@data/live_prayer.json';
   <a class="btn-primary" href={cfg.ctaUrl} target="_blank" rel="noreferrer">{cfg.ctaText}</a>
 </div>
 
-<script>
+<script nonce={cspNonce}>
   const start = new Date('${cfg.start}');
   document.getElementById('lp-when').textContent = start.toLocaleString('es-CO');
   function tick() {

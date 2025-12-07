@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import EvangelizaHeatmap from '@components/EvangelizaHeatmap.astro';
+import TurnstileWidget from '@components/TurnstileWidget.astro';
 ---
 <BaseLayout title="Evangeliza — Ministerio Maná" description="Reporta a quién evangelizaste (solo el nombre) y ora por esa persona.">
   <section class="section grid-2">
@@ -22,8 +23,7 @@ import EvangelizaHeatmap from '@components/EvangelizaHeatmap.astro';
           <option value="Cali">Campus Cali</option>
           <option value="Otros">Otros</option>
         </select>
-        <!-- Turnstile placeholder -->
-        <input type="hidden" name="cf-turnstile-response" value="">
+        <TurnstileWidget />
         <button class="btn-primary">Agregar</button>
       </form>
       <p class="text-xs text-gray-500 mt-2">Protegido con CAPTCHA (si está configurado). Al enviar aceptas nuestro aviso de privacidad.</p>

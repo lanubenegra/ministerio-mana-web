@@ -12,6 +12,7 @@ const {
 const site = Astro.site?.toString() ?? '';
 const pathname = Astro.url.pathname;
 const url = canonicalUrl ?? (site ? new URL(pathname, site).toString() : pathname);
+const cspNonce = Astro.locals?.cspNonce;
 ---
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -29,4 +30,4 @@ const url = canonicalUrl ?? (site ? new URL(pathname, site).toString() : pathnam
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={image} />
-{structuredData && (<script type="application/ld+json">{JSON.stringify(structuredData)}</script>)}
+{structuredData && (<script type="application/ld+json" nonce={cspNonce}>{JSON.stringify(structuredData)}</script>)}

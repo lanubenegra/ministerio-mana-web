@@ -2,6 +2,9 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { MISIONEROS } from '@data/misioneros';
+
+const geo = Astro.locals?.geo ?? { country: 'CO' };
+const isColombia = geo.country === 'CO';
 ---
 <BaseLayout title="Campus Maná — Socios de la Gran Comisión" description="Cambiamos el campus, cambiamos el mundo.">
   <section class="relative">
@@ -23,9 +26,17 @@ import { MISIONEROS } from '@data/misioneros';
           <h3 class="font-semibold text-lg">{m.nombre}</h3>
           <p class="text-sm text-gray-600">{m.rol}</p>
           <div class="aspect-video rounded-lg overflow-hidden border my-3">{m.video && <iframe class="w-full h-full" src={m.video} title={m.nombre} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>}</div>
-          <div class="flex flex-wrap gap-3">
-            <a href={m.wompiLink ?? '#'} class="btn-primary normal-case">Donar (Wompi)</a>
-            <a href={'/donaciones/stripe?price=' + (m.stripePriceId ?? '')} class="btn-outline normal-case">Donar (Stripe)</a>
+          <div class="flex flex-wrap gap-3 items-start">
+            <a href={isColombia ? (m.wompiLink ?? '#') : (m.stripePriceId ? '/donaciones/stripe?price=' + m.stripePriceId : '/donaciones/')} class="btn-primary normal-case">
+              {isColombia ? 'Donar en Colombia' : 'Donar internacional'}
+            </a>
+            <details class="text-sm">
+              <summary class="btn-outline normal-case cursor-pointer">Otras opciones</summary>
+              <div class="mt-2 space-y-2">
+                <a href={m.wompiLink ?? '#'} class="block text-brand hover:underline">Donar vía Wompi (COP)</a>
+                <a href={m.stripePriceId ? '/donaciones/stripe?price=' + m.stripePriceId : '/donaciones/'} class="block text-brand hover:underline">Donar vía Stripe (USD)</a>
+              </div>
+            </details>
             <a href={'/campus/' + m.slug + '/'} class="btn-outline normal-case">Historia</a>
           </div>
         </article>

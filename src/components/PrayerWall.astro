@@ -1,5 +1,7 @@
 ---
+import TurnstileWidget from './TurnstileWidget.astro';
 const id = 'prayer-wall';
+const cspNonce = Astro.locals?.cspNonce;
 ---
 <section class="grid md:grid-cols-2 gap-6">
   <form id="prayerForm" class="card p-4 grid gap-3" method="post" action="/api/prayer/submit" on:submit={(e)=>{e.preventDefault();submitPrayer(e.target)}}>
@@ -9,6 +11,7 @@ const id = 'prayer-wall';
       <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="city" placeholder="Ciudad" />
       <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="country" placeholder="País" />
     </div>
+    <TurnstileWidget />
     <button class="btn-primary">Agregar al muro</button>
     <p class="text-xs text-gray-500">Mostramos solo el primer nombre y la ciudad. Nada más.</p>
   </form>
@@ -19,7 +22,7 @@ const id = 'prayer-wall';
   </div>
 </section>
 
-<script>
+<script nonce={cspNonce}>
   async function fetchList() {
     const res = await fetch('/api/prayer/list');
     const { rows } = await res.json();

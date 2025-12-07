@@ -1,0 +1,14 @@
+---
+const cspNonce = Astro.locals?.cspNonce;
+const siteKey =
+  Astro.locals?.turnstile?.siteKey ??
+  import.meta.env?.TURNSTILE_SITE_KEY ??
+  process.env?.TURNSTILE_SITE_KEY ?? '';
+---
+{siteKey && (
+  <script
+    src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+    async
+    defer
+    nonce={cspNonce}></script>
+)}

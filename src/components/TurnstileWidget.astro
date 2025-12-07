@@ -1,0 +1,27 @@
+---
+/** @typedef {'always'|'interaction-only'|'execute'} Appearance */
+/** @typedef {'light'|'dark'|'auto'} Theme */
+/** @type {{ appearance?: Appearance, theme?: Theme, id?: string }} */
+const props = Astro.props ?? {};
+const appearance = props.appearance ?? 'always';
+const theme = props.theme ?? 'auto';
+const id = props.id ?? `turnstile-${Math.random().toString(36).slice(2)}`;
+const siteKey =
+  Astro.locals?.turnstile?.siteKey ??
+  import.meta.env?.TURNSTILE_SITE_KEY ??
+  process.env?.TURNSTILE_SITE_KEY ?? '';
+---
+{siteKey ? (
+  <div
+    id={id}
+    class="cf-turnstile"
+    data-sitekey={siteKey}
+    data-appearance={appearance}
+    data-theme={theme}></div>
+) : (
+  <p class="text-xs text-red-500">Configura TURNSTILE_SITE_KEY.</p>
+)}
+
+<style is:inline>
+  .cf-turnstile { margin-top: 0.5rem; }
+</style>

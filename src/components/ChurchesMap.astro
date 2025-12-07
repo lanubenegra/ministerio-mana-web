@@ -1,6 +1,6 @@
----
 import churches from '@data/churches.json';
 const id = 'churches-map';
+const cspNonce = Astro.locals?.cspNonce;
 ---
 <div id={id} class="w-full h-[520px] rounded overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"></div>
 <div class="mt-4 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -20,7 +20,7 @@ const id = 'churches-map';
   ))}
 </div>
 
-<script>
+<script nonce={cspNonce}>
   import 'leaflet/dist/leaflet.css';
   import L from 'leaflet';
   const map = L.map('%ID%'.replace('%ID%', 'churches-map')).setView([4.65, -74.06], 5);
