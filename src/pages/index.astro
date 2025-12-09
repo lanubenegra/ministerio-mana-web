@@ -5,8 +5,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Hero from '@components/Hero.astro';
 import EventCard from '@components/EventCard.astro';
 import { getCollection } from 'astro:content';
-const eventsAll = (await getCollection('events')).sort((a,b) => +new Date(a.data.startDate) - +new Date(b.data.startDate));
-const upcoming = eventsAll.slice(0,3);
+const eventsAll = (await getCollection('events')).sort((a, b) => a.data.date.localeCompare(b.data.date));
+const upcoming = eventsAll.slice(0, 3);
 ---
 <BaseLayout title="Ministerio Maná — Bienvenido" description="Iglesias, devocionales, Campus Maná, Escuela Bíblica y eventos.">
   <Hero title="Compartimos el Pan de Vida" subtitle="Planifica tu visita, descubre Campus Maná y participa en los próximos eventos."

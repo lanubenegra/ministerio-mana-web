@@ -1,41 +1,93 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import EvangelizaHeatmap from '@components/EvangelizaHeatmap.astro';
+import PrayerWall from '@components/PrayerWall.astro';
 import TurnstileWidget from '@components/TurnstileWidget.astro';
 ---
-<BaseLayout title="Evangeliza — Ministerio Maná" description="Reporta a quién evangelizaste (solo el nombre) y ora por esa persona.">
-  <section class="section grid-2">
-    <article class="card p-6">
-      <h1 class="h1 mb-2">Suma tu evangelización</h1>
-      <p class="text-sm text-gray-600 dark:text-gray-300">Solo pedimos el <strong>nombre</strong> para orar. Opcionalmente, indica la ciudad y el país. <em>No guardamos apellidos ni números.</em></p>
-      <form class="mt-4 grid gap-3" method="post" action="/api/evangeliza/submit">
-        <label class="text-sm">Nombre de la persona
-          <input class="w-full rounded border-gray-300 dark:border-gray-700" type="text" name="firstName" required placeholder="Ej: Daniela" />
-        </label>
-        <div class="grid grid-cols-2 gap-3">
-          <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="city" placeholder="Municipio / Ciudad" />
-          <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="country" placeholder="País" />
-        </div>
-        <select class="rounded border-gray-300 dark:border-gray-700" name="campus">
-          <option value="">¿Campus? (opcional)</option>
-          <option value="Medellín">Campus Medellín</option>
-          <option value="Bogotá">Campus Bogotá</option>
-          <option value="Cali">Campus Cali</option>
-          <option value="Otros">Otros</option>
-        </select>
-        <TurnstileWidget />
-        <button class="btn-primary">Agregar</button>
-      </form>
-      <p class="text-xs text-gray-500 mt-2">Protegido con CAPTCHA (si está configurado). Al enviar aceptas nuestro aviso de privacidad.</p>
-    </article>
-    <aside class="card p-0">
-      <div class="p-6 pb-0">
-        <h2 class="font-semibold text-lg">Mapa de evangelización (en vivo)</h2>
-        <p class="text-sm">Cada marcador crece según la cantidad de personas por las que se está orando en esa zona.</p>
+
+<BaseLayout
+  title="Evangeliza · Ministerio Maná"
+  description="Reto permanente de evangelización: registra a quién compartiste de Cristo y ora por su vida."
+>
+  <section class="container-tight py-10 space-y-8">
+    <header class="space-y-3 max-w-3xl">
+      <p class="eyebrow">Evangeliza</p>
+      <h1 class="h1">Compartimos a Jesús, contamos las historias</h1>
+      <p class="lead">
+        Registra el nombre de la persona a quien compartiste de Cristo y únete al reto global de evangelización del Ministerio Maná.
+      </p>
+    </header>
+
+    <form id="evangeliza-form" class="space-y-4 max-w-xl">
+      <div>
+        <label class="label" for="name">Nombre de la persona</label>
+        <input
+          id="name"
+          name="firstName"
+          type="text"
+          required
+          class="input"
+          placeholder="Solo el primer nombre (ej. Carlos)"
+        />
       </div>
-      <div class="p-3">
-        <EvangelizaHeatmap client:load />
+      <div>
+        <label class="label" for="city">Ciudad / país (opcional)</label>
+        <input
+          id="city"
+          name="city"
+          type="text"
+          class="input"
+          placeholder="Medellín, Colombia"
+        />
       </div>
-    </aside>
+      <TurnstileWidget />
+      <button
+        type="submit"
+        class="btn-primary w-full sm:w-auto"
+      >
+        Sumar evangelización
+      </button>
+      <p class="text-xs text-slate-500">Solo usamos el primer nombre para orar y sumar en el mapa.</p>
+    </form>
+
+    <section class="space-y-4">
+      <h2 class="h2">Mapa de evangelización</h2>
+      <p class="text-slate-600 text-sm">
+        Cada punto representa personas por las que estamos orando. Es una vista de fe, no un mapa exacto de datos personales.
+      </p>
+      <EvangelizaHeatmap client:load />
+    </section>
+
+    <section class="mt-10 space-y-6">
+      <h2 class="h2">Ora con nosotros</h2>
+      <PrayerWall />
+    </section>
   </section>
+
+  <script>
+    if (typeof window !== 'undefined') {
+      const form = document.getElementById('evangeliza-form') as HTMLFormElement | null;
+      if (form) {
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const data = new FormData(form);
+
+          try {
+            const res = await fetch('/api/evangeliza/submit', {
+              method: 'POST',
+              body: data,
+            });
+
+            if (!res.ok) throw new Error('Error al registrar');
+
+            form.reset();
+            alert('Gracias, añadimos esta persona para orar 🙏');
+          } catch (err) {
+            console.error(err);
+            alert('No pudimos registrar ahora. Intenta de nuevo más tarde.');
+          }
+        });
+      }
+    }
+  </script>
 </BaseLayout>

@@ -1,32 +1,55 @@
 ---
-const id = 'map-evangeliza';
-const cspNonce = Astro.locals?.cspNonce;
+const id = 'evangeliza-map';
+const points = [
+  { lat: 6.2442, lng: -75.5812, count: 18, label: 'Medellín, CO' },
+  { lat: 4.7110, lng: -74.0721, count: 12, label: 'Bogotá, CO' },
+  { lat: 3.4372, lng: -76.5225, count: 9, label: 'Cali, CO' },
+  { lat: 7.1254, lng: -73.1198, count: 4, label: 'Bucaramanga, CO' },
+  { lat: -0.1807, lng: -78.4678, count: 5, label: 'Quito, EC' },
+  { lat: 25.7617, lng: -80.1918, count: 3, label: 'Miami, US' },
+];
+const pointsJson = JSON.stringify(points);
 ---
-<div id={id} class="w-full h-[420px] rounded overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"></div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-<script nonce={cspNonce}>
-  import 'leaflet/dist/leaflet.css';
-  import L from 'leaflet';
-  const map = L.map('%ID%'.replace('%ID%', 'map-evangeliza')).setView([4.7, -74.1], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+<div id={id} class="h-[420px] rounded-3xl overflow-hidden border border-slate-200"></div>
 
-  async function loadData() {
-    const res = await fetch('/api/evangeliza/aggregate');
-    const { rows } = await res.json();
-    let total = 0;
-    rows.forEach((r) => {
-      if (r.lat && r.lng) {
-        const c = Number(r.count) || 1;
-        total += c;
-        const radius = 4 + Math.sqrt(c) * 4;
-        const circle = L.circleMarker([r.lat, r.lng], {
-          radius, color: '#0ea5e9', weight: 1, fillColor: '#0ea5e9', fillOpacity: 0.35
-        }).addTo(map);
-        circle.bindTooltip(`${r.city || r.country || 'Ubicación'}: ${c}`);
-      }
+<script is:inline>
+  (() => {
+    if (typeof window === 'undefined') return;
+    import('leaflet').then(({ default: L }) => {
+      const container = document.getElementById('evangeliza-map');
+      if (!container) return;
+
+      const map = L.map('evangeliza-map', {
+        center: [6.2442, -75.5812],
+        zoom: 5,
+        scrollWheelZoom: false,
+      });
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
+
+      const points = JSON.parse(
+        document.getElementById('evangeliza-map-data')?.textContent || '[]'
+      );
+
+      points.forEach((p) => {
+        L.circleMarker([p.lat, p.lng], {
+          radius: 6 + p.count / 2,
+          color: '#1d4ed8',
+          fillColor: '#1d4ed8',
+          fillOpacity: 0.7,
+        })
+          .addTo(map)
+          .bindPopup(`${p.label} · ${p.count} personas`);
+      });
     });
-  }
-  loadData();
+  })();
+</script>
+
+<script type="application/json" id="evangeliza-map-data" is:inline>
+  {pointsJson}
 </script>

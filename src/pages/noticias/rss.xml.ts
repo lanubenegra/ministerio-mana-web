@@ -12,7 +12,7 @@ export const GET: APIRoute = async (ctx) => {
       link: `/noticias/${p.slug}/`,
       title: p.data.title,
       pubDate: new Date(p.data.date),
-      description: p.data.excerpt,
+      description: p.data.summary,
     }))
   });
 };

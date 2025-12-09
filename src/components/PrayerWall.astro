@@ -1,54 +1,31 @@
 ---
-import TurnstileWidget from './TurnstileWidget.astro';
-const id = 'prayer-wall';
-const cspNonce = Astro.locals?.cspNonce;
+const prayers = [
+  { name: 'Ana', city: 'Medellín', request: 'Por salvación de mi familia' },
+  { name: 'Luis', city: 'Bogotá', request: 'Por dirección en el trabajo' },
+  { name: 'María', city: 'Miami', request: 'Por sanidad y fortaleza' },
+];
 ---
-<section class="grid md:grid-cols-2 gap-6">
-  <form id="prayerForm" class="card p-4 grid gap-3" method="post" action="/api/prayer/submit" on:submit={(e)=>{e.preventDefault();submitPrayer(e.target)}}>
-    <h2 class="font-semibold text-lg">Añade un nombre para orar</h2>
-    <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="firstName" placeholder="Primer nombre" required />
-    <div class="grid grid-cols-2 gap-3">
-      <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="city" placeholder="Ciudad" />
-      <input class="rounded border-gray-300 dark:border-gray-700" type="text" name="country" placeholder="País" />
-    </div>
-    <TurnstileWidget />
-    <button class="btn-primary">Agregar al muro</button>
-    <p class="text-xs text-gray-500">Mostramos solo el primer nombre y la ciudad. Nada más.</p>
-  </form>
 
-  <div class="card p-4">
-    <h2 class="font-semibold text-lg mb-2">Muro de Oración</h2>
-    <ul id="prayerList" class="divide-y divide-gray-200 dark:divide-gray-700"></ul>
+<section class="space-y-4">
+  <h2 class="h2">Muro de oración</h2>
+  <p class="text-sm text-slate-600">
+    Ora por estas personas y marca cuando hayas orado. No mostramos apellidos ni datos sensibles.
+  </p>
+  <div class="grid gap-4 md:grid-cols-2">
+    {prayers.map((p) => (
+      <article class="rounded-2xl border border-slate-100 bg-white p-4 space-y-2 shadow-sm">
+        <p class="font-semibold text-slate-900">
+          {p.name} <span class="text-xs text-slate-500">({p.city})</span>
+        </p>
+        <p class="text-sm text-slate-700">{p.request}</p>
+        <button
+          type="button"
+          class="mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50"
+          onclick="alert('Gracias por orar 🙏')"
+        >
+          Oré por esta persona
+        </button>
+      </article>
+    ))}
   </div>
 </section>
-
-<script nonce={cspNonce}>
-  async function fetchList() {
-    const res = await fetch('/api/prayer/list');
-    const { rows } = await res.json();
-    const list = document.getElementById('prayerList');
-    list.innerHTML = '';
-    rows.forEach(r => {
-      const li = document.createElement('li');
-      li.className = 'py-3 flex items-center justify-between gap-3';
-      li.innerHTML = `<div><strong>${r.first_name}</strong> ${r.city ? `· <span class="text-sm text-gray-600">${r.city}</span>`:''}</div>
-      <button class="btn-outline btn-sm">Oré por ${r.first_name} (${r.prayers_count||0})</button>`;
-      li.querySelector('button').onclick = async () => {
-        await fetch('/api/prayer/prayed', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ id: r.id }) });
-        fetchList();
-      };
-      list.appendChild(li);
-    });
-  }
-
-  async function submitPrayer(form) {
-    const data = new FormData(form);
-    const res = await fetch('/api/prayer/submit', { method:'POST', body:data });
-    if (res.ok) {
-      form.reset();
-      fetchList();
-    }
-  }
-
-  fetchList();
-</script>

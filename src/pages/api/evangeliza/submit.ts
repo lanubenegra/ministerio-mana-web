@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { geocodeCityCountry } from '@/lib/geocode';
+import { supabaseAdmin } from '@lib/supabaseAdmin';
+import { geocodeCityCountry } from '@lib/geocode';
 import { verifyTurnstile } from '@lib/turnstile';
 import { enforceRateLimit } from '@lib/rateLimit';
 import { logSecurityEvent } from '@lib/securityEvents';
