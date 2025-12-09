@@ -1,42 +1,18 @@
-import churches from '@data/churches.json';
-const id = 'churches-map';
-const cspNonce = Astro.locals?.cspNonce;
 ---
-<div id={id} class="w-full h-[520px] rounded overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"></div>
-<div class="mt-4 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-  {churches.map((c) => (
-    <article class="card p-4">
-      <h3 class="font-semibold">{c.name}</h3>
-      <p class="text-sm">{c.city}</p>
-      <p class="text-sm text-gray-600 dark:text-gray-300">{c.address}</p>
-      <div class="mt-2 flex gap-2 flex-wrap">
-        {c.lat && c.lng && <a class="btn-outline btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`} target="_blank" rel="noreferrer">Cómo llegar</a>}
-        {c.whatsapp && <a class="btn-outline btn-sm" href={`https://wa.me/${c.whatsapp.replace('+','')}`} target="_blank" rel="noreferrer">WhatsApp</a>}
-        {c.contact?.email && <a class="btn-outline btn-sm" href={`mailto:${c.contact.email}`}>Escribir</a>}
-      </div>
-      {c.contact?.name && <p class="text-xs mt-2">👤 {c.contact.name}</p>}
-      {c.contact?.phone && <p class="text-xs">📞 {c.contact.phone}</p>}
-    </article>
-  ))}
+const id = 'churches-map';
+---
+
+<div
+  id={id}
+  class="w-full h-[420px] md:h-[480px] rounded-3xl bg-slate-50 border border-slate-200 overflow-hidden"
+>
 </div>
 
-<script nonce={cspNonce}>
-  import 'leaflet/dist/leaflet.css';
-  import L from 'leaflet';
-  const map = L.map('%ID%'.replace('%ID%', 'churches-map')).setView([4.65, -74.06], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-  const churches = [{"city": "Medell\u00edn / Itag\u00fc\u00ed", "name": "Iglesia Man\u00e1 Ditaires", "address": "Cra 64 #35-39, Ditaires, Itag\u00fc\u00ed", "lat": 6.165, "lng": -75.616, "contact": {"name": "Ernesto Lozano", "email": "medellin@ministeriomana.org", "phone": "+57 312 4226129"}, "whatsapp": "+573124226129", "notes": ""}, {"city": "Medell\u00edn", "name": "Iglesia Man\u00e1 Bel\u00e9n", "address": "Calle 30A #80-107", "lat": 6.225, "lng": -75.601, "contact": {"name": "M\u00f3nica Palacios", "email": "medellin@ministeriomana.org", "phone": "+57 300 5877370"}, "whatsapp": "+573005877370", "notes": ""}, {"city": "Bogot\u00e1", "name": "Iglesia Man\u00e1 Modelia", "address": "Calle 25 F # 74 B \u2013 04, Barrio Modelia", "lat": 4.67, "lng": -74.124, "contact": {"name": "Jes\u00fas Antonio Reyes", "email": "jesusantonio@ministeriomana.org", "phone": "+57 318 4937659"}, "whatsapp": "+573184937659", "notes": ""}, {"city": "Cali", "name": "Iglesia Man\u00e1 Cali", "address": "Avenida Roosevelt #27-44, Segundo piso", "lat": 3.431, "lng": -76.535, "contact": {"name": "Juli\u00e1n Tabima", "email": "cali@ministeriomana.org", "phone": "+57 305 2232890"}, "whatsapp": "+573052232890", "notes": ""}, {"city": "Armenia", "name": "Iglesia Man\u00e1 Armenia", "address": "Carrera 17 # 1 N \u2013 27, Barrio Nueva Cecilia", "lat": 4.548, "lng": -75.66, "contact": {"name": "Dagoberto Mart\u00ednez", "email": "escuelabiblica@ministeriomana.org", "phone": "+57 315 2865175"}, "whatsapp": "+573152865175", "notes": ""}, {"city": "La Uni\u00f3n (Valle)", "name": "Iglesia Man\u00e1 La Uni\u00f3n", "address": "Calle 14 #16-44, Barrio La Cruz", "lat": 4.537, "lng": -76.103, "contact": {"name": "Victor Franco", "email": "info@ministeriomana.org", "phone": "+57 317 5918318"}, "whatsapp": "+573175918318", "notes": ""}, {"city": "Tulu\u00e1", "name": "Iglesia Man\u00e1 Tulu\u00e1", "address": "Calle 14 #3-82, Portal de San Felipe, V\u00eda Tres Esquinas", "lat": 4.09, "lng": -76.201, "contact": {"name": "Alexander Valencia", "email": "info@ministeriomana.org", "phone": "+57 317 4655226"}, "whatsapp": "+573174655226", "notes": ""}, {"city": "Buenaventura", "name": "Iglesia Man\u00e1 Buenaventura", "address": "\u2014", "lat": 3.877, "lng": -77.026, "contact": {"name": "Humberto Guti\u00e9rrez", "email": "info@ministeriomana.org", "phone": "+57 315 4833033"}, "whatsapp": "+573154833033", "notes": ""}, {"city": "Bucaramanga", "name": "Iglesia Man\u00e1 Bucaramanga", "address": "Cabecera Country Hotel. Calle 48 #34 \u2013 29, Cabecera", "lat": 7.115, "lng": -73.116, "contact": {"name": "Adri\u00e1n Guti\u00e9rrez", "email": "iglesiabucaramanga@ministeriomana.org", "phone": "+57 311 4733983"}, "whatsapp": "+573114733983", "notes": ""}, {"city": "Marinilla", "name": "Iglesia Man\u00e1 Marinilla", "address": "\u2014", "lat": 6.176, "lng": -75.336, "contact": {"name": "Elizabeth Cano", "email": "info@ministeriomana.org", "phone": "+57 312 8472997"}, "whatsapp": "+573128472997", "notes": ""}, {"city": "Ibagu\u00e9", "name": "Iglesia Man\u00e1 Ibagu\u00e9", "address": "Carrera 7 A # 51-71, Barrio Rinc\u00f3n de Piedra Pintada", "lat": 4.438, "lng": -75.198, "contact": {"name": "Delf\u00edn Quiroz", "email": "iglesiaibague@ministeriomana.org", "phone": "+57 317 2852399"}, "whatsapp": "+573172852399", "notes": ""}, {"city": "Cartago", "name": "Iglesia Man\u00e1 Cartago", "address": "Calle 12 # 1N \u2013 28, Sal\u00f3n de Eventos Emprender", "lat": 4.746, "lng": -75.911, "contact": {"name": "Edwin Grijalba", "email": "cartago@ministeriomana.org", "phone": "+57 316 4280558"}, "whatsapp": "+573164280558", "notes": ""}, {"city": "Manizales", "name": "Iglesia Man\u00e1 Manizales", "address": "Carrera 23 #67A-55 Apto 502B, Edificio Atalaya", "lat": 5.07, "lng": -75.515, "contact": {"name": "Jos\u00e9 Aristizabal", "email": "info@ministeriomana.org", "phone": "+57 311 7770660"}, "whatsapp": "+573117770660", "notes": ""}, {"city": "Pasto", "name": "Iglesia Man\u00e1 Pasto", "address": "\u2014", "lat": 1.214, "lng": -77.28, "contact": {"name": "Hugo Gomez", "email": "info@ministeriomana.org", "phone": "+57 301 5582036"}, "whatsapp": "+573015582036", "notes": ""}];
-  churches.forEach(c => {
-    if (c.lat && c.lng) {
-      const m = L.marker([c.lat, c.lng]).addTo(map);
-      const html = `<div style="min-width:220px">
-        <strong>${c.name}</strong><br/>
-        ${c.city}<br/>
-        <small>${c.address || ''}</small><br/>
-        ${c.whatsapp ? `<a href="https://wa.me/${c.whatsapp.replace('+','')}" target="_blank">WhatsApp</a> · ` : ''}
-        ${c.lat && c.lng ? `<a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank">Cómo llegar</a>` : ''}
-      </div>`;
-      m.bindPopup(html);
-    }
-  });
-</script>
+<noscript>
+  <p class="mt-2 text-xs text-slate-500">
+    El mapa requiere JavaScript. Actívalo para ver las ubicaciones de las iglesias.
+  </p>
+</noscript>
+
+<!-- Script bundlado por Vite: inicializa Leaflet -->
+<script type="module" src="/src/scripts/churches-map.ts"></script>

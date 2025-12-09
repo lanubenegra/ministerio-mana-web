@@ -1,183 +1,244 @@
 ---
-import type { FxSnapshot } from '@lib/fx';
-import { convertAmount, formatCurrency } from '@lib/fx';
-import { displayCurrencyOrder } from '@lib/geo';
-import TurnstileWidget from './TurnstileWidget.astro';
-import donationScript from '../scripts/donation-gateway.ts?url';
+import TurnstileWidget from '@components/TurnstileWidget.astro';
+
+type Gateway = 'wompi' | 'stripe';
 
 interface Props {
-  preferred: 'wompi' | 'stripe';
-  rates: FxSnapshot;
+  preferred?: Gateway;
   country?: string;
+  rates?: any;
 }
 
-const { preferred, rates, country } = Astro.props as Props;
-const secondary = preferred === 'wompi' ? 'stripe' : 'wompi';
-const order = displayCurrencyOrder(country).filter((code) => rates.rates[code as keyof typeof rates.rates]);
-const conversionOrder = order.slice(0, 8);
-const usdDefault = 20;
-const defaultWompiAmount = 50000;
-const conversions = conversionOrder.map((currency) => {
-  if (currency === 'USD') return { currency, formatted: formatCurrency(usdDefault, 'USD') };
-  const value = convertAmount(usdDefault, 'USD', currency as any, rates.rates);
-  return { currency, formatted: formatCurrency(value, currency as any) };
-});
-const providerName = rates.provider === 'openexchangerates' ? 'Open Exchange Rates' : 'ExchangeRate.host';
-const localeMap: Record<string, string> = {
-  USD: 'en-US',
-  COP: 'es-CO',
-  MXN: 'es-MX',
-  PEN: 'es-PE',
-  ARS: 'es-AR',
-  CLP: 'es-CL',
-  BRL: 'pt-BR',
-  UYU: 'es-UY',
-  PYG: 'es-PY',
-  BOB: 'es-BO',
-  CRC: 'es-CR',
-  GTQ: 'es-GT',
-  HNL: 'es-HN',
-  NIO: 'es-NI',
-  DOP: 'es-DO',
-  BZD: 'en-BZ',
-  CAD: 'en-CA',
-  AUD: 'en-AU',
-  EUR: 'es-ES',
-  GBP: 'en-GB'
-};
+const { preferred = 'wompi', country = 'CO', rates } = Astro.props as Props;
+const isWompi = preferred === 'wompi';
 
-const cspNonce = Astro.locals?.cspNonce;
-const configPayload = JSON.stringify({ rates: rates.rates, locales: localeMap });
-const wompiPlaceholder = `Ej. ${formatCurrency(defaultWompiAmount, 'COP')}`;
-const primaryCurrency = order[0] ?? 'USD';
-const stripeLocalExample = primaryCurrency === 'USD'
-  ? formatCurrency(usdDefault, 'USD')
-  : formatCurrency(convertAmount(usdDefault, 'USD', primaryCurrency as any, rates.rates), primaryCurrency as any);
-const stripePlaceholder = `Ej. ${stripeLocalExample} (se procesa en USD)`;
+// Si tienes snapshot de tasas, puedes sacar algo de ahí
+const copPerUsd: number | null =
+  (rates && (rates.COP ?? rates?.rates?.COP)) || null;
 ---
-<section class="space-y-6" data-donation-gateway data-donation-config={configPayload}>
-  <p class="text-sm text-neutral-500">
-    Detectamos que te encuentras en <strong>{country || 'tu país'}</strong>. Te sugerimos esta opción:
-  </p>
-  <div class="grid gap-5 lg:grid-cols-2">
-    <div class={`rounded-3xl border bg-[var(--mana-surface)] p-5 ${preferred === 'wompi' ? 'border-brand-medium shadow-brand/40' : 'border-brand-medium shadow-brand/40'}`}>
-      {preferred === 'wompi' ? (
-        <>
-          <header class="space-y-1 mb-3">
-            <span class="pill bg-brand-medium/20 text-brand-dark">Recomendado</span>
-            <h3 class="text-lg font-display text-brand-dark">Pagos en Colombia (COP)</h3>
-            <p class="text-sm text-neutral-600">Procesado con Wompi para cuentas bancarias colombianas.</p>
-          </header>
-          <form method="POST" action="/api/wompi/checkout" class="space-y-4" novalidate>
-            <input type="hidden" name="country" value={country ?? ''} />
-            <label class="text-sm block">
-              Valor (COP) — ingresa tu donación en pesos colombianos
-              <input type="number" name="amount" class="mt-1 w-full rounded border-gray-300" placeholder={wompiPlaceholder} min="5000" step="1000" required />
-            </label>
-            <label class="text-sm block">
-              Descripción
-              <input type="text" name="desc" class="mt-1 w-full rounded border-gray-300" placeholder="Donación general" />
-            </label>
-            <TurnstileWidget />
-            <button class="btn-primary w-full justify-center normal-case" type="submit">Donar con Wompi</button>
-          </form>
-        </>
-      ) : (
-        <>
-          <header class="space-y-1 mb-3">
-            <span class="pill bg-brand-medium/20 text-brand-dark">Recomendado</span>
-            <h3 class="text-lg font-display text-brand-dark">Pagos internacionales (USD)</h3>
-            <p class="text-sm text-neutral-600">Procesado con Stripe. El cargo final se realiza en USD.</p>
-          </header>
-          <form method="POST" action="/api/stripe/checkout" class="space-y-4" novalidate>
-            <input type="hidden" name="currency" value="USD" />
-            <input type="hidden" name="country" value={country ?? ''} />
-            <label class="text-sm block">
-              Monto (USD) — Stripe convierte desde tu moneda al cerrar el pago
-              <input type="number" name="amountUsd" class="mt-1 w-full rounded border-gray-300" placeholder={stripePlaceholder} min="5" step="1" value="20" required data-usd-input />
-            </label>
-            <label class="text-sm block">
-              Descripción
-              <input type="text" name="desc" class="mt-1 w-full rounded border-gray-300" placeholder="Donation" />
-            </label>
-            <TurnstileWidget />
-            <button class="btn-primary w-full justify-center normal-case" type="submit">Donate with Stripe</button>
-          </form>
-          <div class="mt-4 space-y-1">
-            <p class="text-xs font-semibold text-neutral-500">Equivalencia aproximada:</p>
-            <ul class="text-xs space-y-1 text-neutral-500">
-              {conversions.map((item) => (
-                <li data-conversion data-currency={item.currency}>{item.formatted}</li>
-              ))}
-            </ul>
-          </div>
-        </>
-      )}
+
+<section class="container-tight py-10 space-y-6">
+  <header class="space-y-2">
+    <p class="text-sm uppercase tracking-[0.2em] text-sky-600">
+      Donaciones seguras
+    </p>
+    <h1 class="h1">Pagos y donaciones</h1>
+    <p class="text-base text-slate-600 max-w-3xl">
+      Todo nuestro lenguaje es donaciones: das con generosidad y recibes los
+      recursos (libros, agenda, inscripciones) como agradecimiento.
+    </p>
+    {country && (
+      <p class="text-xs text-slate-500 mt-2">
+        Detectamos que te encuentras en <span class="font-semibold">{country}</span>. Te
+        sugerimos esta opción:
+      </p>
+    )}
+    {copPerUsd && (
+      <p class="text-xs text-slate-400 mt-1">
+        Referencia de cambio: <span class="font-mono">1 USD ≈ {copPerUsd.toLocaleString('es-CO')} COP</span>
+        (solo informativo, la tasa final la define la pasarela).
+      </p>
+    )}
+  </header>
+
+  <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-6">
+    <!-- Radios invisibles para cambiar de pasarela sin JS -->
+    <input
+      type="radio"
+      id="gw-wompi"
+      name="gateway"
+      class="peer/gw-wompi hidden"
+      checked={isWompi}
+    />
+    <input
+      type="radio"
+      id="gw-stripe"
+      name="gateway"
+      class="peer/gw-stripe hidden"
+      checked={!isWompi}
+    />
+
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2">
+      <label
+        for="gw-wompi"
+        class="cursor-pointer px-4 py-1.5 text-sm rounded-full border
+               peer-checked/gw-wompi:bg-sky-600 peer-checked/gw-wompi:text-white
+               peer-checked/gw-wompi:border-sky-600 border-slate-200 text-slate-700"
+      >
+        Pagos en Colombia (COP)
+      </label>
+      <label
+        for="gw-stripe"
+        class="cursor-pointer px-4 py-1.5 text-sm rounded-full border
+               peer-checked/gw-stripe:bg-indigo-600 peer-checked/gw-stripe:text-white
+               peer-checked/gw-stripe:border-indigo-600 border-slate-200 text-slate-700"
+      >
+        Pagos internacionales (USD)
+      </label>
     </div>
 
-    <div class="rounded-3xl border border-[var(--mana-border)] bg-[var(--mana-surface)] p-5 shadow-sm">
-      <details>
-        <summary class="cursor-pointer text-sm font-semibold text-brand-dark">¿Quieres usar otra pasarela?</summary>
-        <div class="mt-4 space-y-4">
-          {secondary === 'wompi' ? (
-            <div class="rounded-3xl border border-[var(--mana-border)] bg-white/70 p-4">
-              <header class="space-y-1 mb-3">
-                <span class="pill">Alternativa</span>
-                <h3 class="text-base font-display text-brand-dark">Pagos en Colombia (COP)</h3>
-                <p class="text-sm text-neutral-600">Disponible para cuentas bancarias colombianas.</p>
-              </header>
-              <form method="POST" action="/api/wompi/checkout" class="space-y-4" novalidate>
-                <input type="hidden" name="country" value={country ?? ''} />
-                <label class="text-sm block">
-                  Valor (COP) — ingresa tu donación en pesos colombianos
-                  <input type="number" name="amount" class="mt-1 w-full rounded border-gray-300" placeholder={wompiPlaceholder} min="5000" step="1000" required />
-                </label>
-                <label class="text-sm block">
-                  Descripción
-                  <input type="text" name="desc" class="mt-1 w-full rounded border-gray-300" placeholder="Donación general" />
-                </label>
-                <TurnstileWidget />
-                <button class="btn-outline w-full justify-center normal-case" type="submit">Donar con Wompi</button>
-              </form>
-            </div>
-          ) : (
-            <div class="rounded-3xl border border-[var(--mana-border)] bg-white/70 p-4">
-              <header class="space-y-1 mb-3">
-                <span class="pill">Alternativa</span>
-                <h3 class="text-base font-display text-brand-dark">Pagos internacionales (USD)</h3>
-                <p class="text-sm text-neutral-600">Stripe permite tarjetas de todo el mundo.</p>
-              </header>
-              <form method="POST" action="/api/stripe/checkout" class="space-y-4" novalidate>
-                <input type="hidden" name="currency" value="USD" />
-                <input type="hidden" name="country" value={country ?? ''} />
-                <label class="text-sm block">
-                  Monto (USD) — Stripe convierte desde tu moneda al cerrar el pago
-                  <input type="number" name="amountUsd" class="mt-1 w-full rounded border-gray-300" placeholder={stripePlaceholder} min="5" step="1" value="20" required data-usd-input />
-                </label>
-                <label class="text-sm block">
-                  Descripción
-                  <input type="text" name="desc" class="mt-1 w-full rounded border-gray-300" placeholder="Donation" />
-                </label>
-                <TurnstileWidget />
-                <button class="btn-outline w-full justify-center normal-case" type="submit">Donate with Stripe</button>
-              </form>
-              <div class="mt-4 space-y-1">
-                <p class="text-xs font-semibold text-neutral-500">Equivalencia aproximada:</p>
-                <ul class="text-xs space-y-1 text-neutral-500">
-                  {conversions.map((item) => (
-                    <li data-conversion data-currency={item.currency}>{item.formatted}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-        </div>
-      </details>
+    <!-- Paneles -->
+    <div class="space-y-6">
+      <!-- Panel Wompi -->
+      <div class="gw-panel gw-panel-wompi">
+        <p class="text-xs font-medium text-sky-600 mb-1">Recomendado</p>
+        <p class="font-semibold text-slate-900">
+          Pagos en Colombia (COP)
+        </p>
+        <p class="text-sm text-slate-600 mb-4">
+          Procesado con Wompi para cuentas bancarias colombianas.
+        </p>
+
+        <form
+          method="POST"
+          action="/api/wompi/checkout"
+          class="space-y-4"
+        >
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              Valor (COP) – ingresa tu donación en pesos colombianos
+            </label>
+            <input
+              type="number"
+              name="amount"
+              min="1000"
+              step="1000"
+              required
+              placeholder="Ej. 50000"
+              class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              Descripción
+            </label>
+            <input
+              type="text"
+              name="description"
+              placeholder="Donación general, Devocional, Campus, etc."
+              class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+            />
+          </div>
+
+          <!-- Campos ocultos básicos -->
+          <input type="hidden" name="currency" value="COP" />
+          <input type="hidden" name="source" value="donaciones-wompi" />
+
+          <!-- Turnstile (aparecerá cuando haya llave configurada) -->
+          <TurnstileWidget appearance="always" theme="auto" />
+
+          <button
+            type="submit"
+            class="mt-4 inline-flex w-full items-center justify-center rounded-full
+                   bg-gradient-to-r from-sky-600 via-indigo-600 to-pink-500
+                   px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20
+                   hover:brightness-105 transition"
+          >
+            Donar con Wompi
+          </button>
+
+          <p class="mt-2 text-[11px] text-slate-400">
+            Tu pago se procesa en la pasarela segura de Wompi. No almacenamos datos de tarjeta.
+          </p>
+        </form>
+      </div>
+
+      <!-- Panel Stripe -->
+      <div class="gw-panel gw-panel-stripe">
+        <p class="font-semibold text-slate-900">
+          Pagos internacionales (USD)
+        </p>
+        <p class="text-sm text-slate-600 mb-4">
+          Procesado con Stripe para donaciones desde el exterior.
+        </p>
+
+        <form
+          method="POST"
+          action="/api/stripe/checkout"
+          class="space-y-4"
+        >
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              Monto (USD)
+            </label>
+            <input
+              type="number"
+              name="amount"
+              min="5"
+              step="1"
+              required
+              placeholder="Ej. 50"
+              class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">
+              Propósito de la donación
+            </label>
+            <input
+              type="text"
+              name="description"
+              placeholder="Devocional Maná, Campus Maná, Mujeres que creen..."
+              class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+            />
+          </div>
+
+          <!-- Campos ocultos básicos -->
+          <input type="hidden" name="currency" value="USD" />
+          <input type="hidden" name="source" value="donaciones-stripe" />
+
+          <!-- Turnstile -->
+          <TurnstileWidget appearance="always" theme="auto" />
+
+          <button
+            type="submit"
+            class="mt-4 inline-flex w-full items-center justify-center rounded-full
+                   bg-gradient-to-r from-indigo-600 via-sky-600 to-teal-500
+                   px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20
+                   hover:brightness-105 transition"
+          >
+            Donar con tarjeta internacional
+          </button>
+
+          <p class="mt-2 text-[11px] text-slate-400">
+            Stripe procesa tu donación de forma segura. Nosotros sólo recibimos la confirmación.
+          </p>
+        </form>
+      </div>
     </div>
   </div>
-  <p class="text-xs text-neutral-500">
-    Tasas de referencia obtenidas de <span class="font-medium">{providerName}</span> ({new Date(rates.timestamp).toLocaleString('es-CO')}). Tu transacción final se procesa en la moneda oficial de la pasarela.
+
+  <p class="text-xs text-slate-500 max-w-3xl">
+    Emitimos reportes y exportaciones (CSV/Excel) para contabilidad y DIAN; pedimos número de
+    identificación según país. Las donaciones desde el exterior se registran con los datos que
+    ingresas en Stripe.
   </p>
 </section>
 
-<script type="module" src={donationScript} defer nonce={cspNonce}></script>
+<style is:inline>
+  /* Mostrar/ocultar paneles según el radio seleccionado sin usar JS */
+  .gw-panel {
+    display: none;
+  }
+
+  #gw-wompi:checked ~ .space-y-6 .gw-panel-wompi {
+    display: block;
+  }
+  #gw-stripe:checked ~ .space-y-6 .gw-panel-stripe {
+    display: block;
+  }
+
+  /* Fallback: si por lo que sea no se aplica el selector, mostramos siempre ambos stacked */
+  @supports not (#gw-wompi:checked ~ .space-y-6 .gw-panel-wompi) {
+    .gw-panel {
+      display: block;
+    }
+  }
+</style>

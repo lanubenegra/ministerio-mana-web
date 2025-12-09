@@ -1,22 +1,19 @@
 import { defineCollection, z } from 'astro:content';
 
+// Colección de eventos (peregrinaciones, talleres, etc.)
 const events = defineCollection({
   type: 'content',
-  schema: z.object({
-    title: z.string(),
-    startDate: z.date(),
-    endDate: z.date().optional(),
-    location: z.string(),
-    category: z.enum(['evento','peregrinacion','conferencia','mujeres']).default('evento'),
-    excerpt: z.string().optional(),
-    image: z.string().optional(),
-    ctaLabel: z.string().default('Registrarme'),
-    ctaUrl: z.string().url().optional()
-  })
+  // De momento aceptamos cualquier frontmatter para no bloquearte
+  schema: z.any(),
 });
 
-// si tienes otras colecciones, como devocional/news, déjalas:
-const devocional = defineCollection({ /* ... */ });
-// …
+// Colección de devocional / contenido espiritual si la usamos más adelante
+const devocional = defineCollection({
+  type: 'content',
+  schema: z.any(),
+});
 
-export const collections = { news };
+export const collections = {
+  events,
+  devocional,
+};

@@ -34,6 +34,32 @@ export type FxSnapshot = {
 };
 
 let cache: FxSnapshot | undefined;
+const STATIC_FX: FxSnapshot = {
+  timestamp: Date.now(),
+  provider: 'exchangerate.host',
+  rates: {
+    USD: 1,
+    EUR: 0.92,
+    GBP: 0.78,
+    COP: 4000,
+    MXN: 17,
+    PEN: 3.7,
+    ARS: 900,
+    CLP: 930,
+    BRL: 5,
+    UYU: 39,
+    PYG: 7400,
+    BOB: 6.9,
+    CRC: 520,
+    GTQ: 7.8,
+    HNL: 24.5,
+    NIO: 36,
+    DOP: 59,
+    BZD: 2,
+    CAD: 1.36,
+    AUD: 1.55,
+  },
+};
 
 function env(key: string): string | undefined {
   return import.meta.env?.[key] ?? process.env?.[key];
@@ -139,7 +165,12 @@ async function refreshRates(): Promise<FxSnapshot> {
     return fallback;
   }
   if (cache) return cache;
-  throw new Error('No se pudo obtener las tasas de cambio');
+  void logSecurityEvent({
+    type: 'fx_fallback',
+    detail: 'Usando tasas estáticas por falta de conexión',
+  });
+  cache = { ...STATIC_FX, timestamp: Date.now() };
+  return cache;
 }
 
 export async function getFxSnapshot(): Promise<FxSnapshot> {
