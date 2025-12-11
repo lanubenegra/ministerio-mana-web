@@ -1,15 +1,156 @@
-/* Visor estilo Maná, inspirado en Premier League */
-.bv-overlay{position:fixed;inset:0;background:rgba(28,33,48,.55);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999}
-.bv-overlay.open{display:flex}
-.bv-modal{width:min(880px,92vw);max-height:88vh;background:#fff;color:#1c2130;border-radius:24px;overflow:hidden;box-shadow:0 32px 60px -24px rgba(28,33,48,.45);font-family:"Intro","Intro Bold","Intro Black",system-ui,-apple-system,"Segoe UI",sans-serif;border:1px solid rgba(41,60,116,.1);position:relative}
-.bv-header{display:flex;align-items:center;gap:16px;padding:18px 26px;background:linear-gradient(135deg,#293c74 0%,#28a6bd 60%,#f6519b 100%);color:#fff;border-bottom:1px solid rgba(255,255,255,.2)}
-.bv-title{font-weight:700;margin-right:auto;letter-spacing:.04em;text-transform:uppercase;font-size:.78rem}
-.bv-content{padding:24px 26px;overflow:auto;max-height:calc(88vh - 120px);line-height:1.65;font-size:.95rem}
-.bv-verse{display:flex;gap:14px;margin:8px 0;padding:12px 16px;border-radius:18px;background:#f8f9fb;border:1px solid rgba(41,60,116,.08)}
-.bv-verse:hover{background:#ecf0ff}
-.bv-verse-num{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#28a6bd,#f6519b);color:#fff;font-weight:700;font-size:.78rem}
-.bv-verse.highlight{background:rgba(246,81,155,.12);border-color:rgba(246,81,155,.28)}
-.bv-actions{display:flex;gap:12px;padding:0 26px 24px;justify-content:flex-end}
-.bv-btn{padding:10px 22px;border-radius:999px;border:1px solid rgba(41,60,116,.18);background:linear-gradient(135deg,#293c74,#f6519b);color:#fff;font-family:"Intro","Intro Bold",system-ui,sans-serif;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;box-shadow:0 14px 40px -20px rgba(41,60,116,.45);transition:transform .2s ease,box-shadow .2s ease}
-.bv-btn:hover{transform:translateY(-1px);box-shadow:0 22px 46px -22px rgba(246,81,155,.45)}
-.bv-btn:active{transform:translateY(1px);box-shadow:0 14px 32px -22px rgba(41,60,116,.4)}
+/* public/bibles/bible-viewer.css */
+
+.mana-bible-no-scroll {
+  overflow: hidden;
+}
+
+.mana-bible-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 60;
+}
+
+.mana-bible-overlay.is-open {
+  display: flex;
+}
+
+.mana-bible-dialog {
+  width: min(960px, 100% - 2rem);
+  max-height: min(640px, calc(100vh - 3rem));
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.mana-bible-header {
+  padding: 16px 24px;
+  background-image: linear-gradient(90deg, #121d3f, #0ea5e9, #22c55e, #ec4899);
+  color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mana-bible-title {
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.mana-bible-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mana-bible-select {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  min-width: 120px;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.mana-bible-nav {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #0f172a;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.mana-bible-nav:hover {
+  background: #e5e7eb;
+}
+
+.mana-bible-close {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 8px 18px;
+  background: rgba(15, 23, 42, 0.18);
+  color: #f9fafb;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mana-bible-close:hover {
+  background: rgba(15, 23, 42, 0.32);
+}
+
+.mana-bible-body {
+  padding: 14px 22px 18px;
+  overflow: auto;
+}
+
+.mana-bible-verse {
+  margin: 0 0 0.4rem;
+  line-height: 1.6;
+  font-size: 0.94rem;
+  color: #111827;
+  scroll-margin: 120px;
+}
+
+.mana-bible-verse-num {
+  font-weight: 600;
+  color: #9ca3af;
+  margin-right: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.mana-bible-verse.is-highlight {
+  background: #fef3c7;
+  border-radius: 0.4rem;
+  box-shadow: 0 0 0 1px #facc15;
+  padding: 0.15rem 0.35rem;
+}
+
+.mana-bible-verse.is-focus {
+  animation: manaHighlight 1.4s ease;
+}
+
+@keyframes manaHighlight {
+  0%   { transform: scale(1);   box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.4); }
+  50%  { transform: scale(1.01); box-shadow: 0 0 0 12px rgba(250, 204, 21, 0); }
+  100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+}
+
+.mana-bible-error {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+@media (max-width: 640px) {
+  .mana-bible-dialog {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .mana-bible-header {
+    padding-inline: 16px;
+  }
+
+  .mana-bible-body {
+    padding-inline: 16px;
+  }
+}

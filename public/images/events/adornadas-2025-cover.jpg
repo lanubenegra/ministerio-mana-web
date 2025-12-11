@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EC4899"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#g)"/>
+  <rect x="60" y="60" width="1080" height="555" rx="36" fill="#FFF7F9" opacity="0.9"/>
+  <text x="600" y="280" text-anchor="middle" font-size="56" font-family="Arial, sans-serif" fill="#DB2777" font-weight="700">Adornadas 2025</text>
+  <text x="600" y="350" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" fill="#1F2937" font-weight="600">Mujeres que creen · Ministerio Maná</text>
+</svg>

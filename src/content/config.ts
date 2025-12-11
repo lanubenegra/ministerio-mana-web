@@ -5,7 +5,6 @@ const events = defineCollection({
   type: 'content',
   schema: z.object({
     title: z.string(),
-    slug: z.string(),
     date: z.string(), // usamos string para hacerlo sencillo
     category: z.enum([
       'peregrinacion',
@@ -27,7 +26,6 @@ const news = defineCollection({
   type: 'content',
   schema: z.object({
     title: z.string(),
-    slug: z.string(),
     date: z.string(),
     summary: z.string(),
     image: z.string().optional(),

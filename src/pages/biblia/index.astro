@@ -1,0 +1,87 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Biblia en línea — Ministerio Maná"
+  description="Lee la Biblia RVR1960 en línea y sigue un plan de lectura diario."
+>
+  <section class="container-tight py-10 space-y-6">
+    <p class="text-sm font-semibold text-slate-500">Biblia RVR1960</p>
+    <h1 class="h1">Biblia en línea y plan de lectura</h1>
+
+    <p class="max-w-2xl text-slate-600">
+      Escribe una cita como <strong>Juan 3:16</strong>, <strong>Salmo 23</strong> o
+      <strong>Filipenses 4:4-7</strong>. Verás el capítulo completo y el versículo resaltado.
+    </p>
+
+    <form
+      class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center"
+      data-bible-form
+    >
+      <input
+        type="text"
+        name="ref"
+        placeholder="Ej. Juan 3:16"
+        autocomplete="off"
+        class="w-full rounded-full border border-slate-300 px-4 py-3 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+      />
+      <button
+        type="submit"
+        class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-md"
+      >
+        Ver pasaje
+      </button>
+    </form>
+
+    <p class="text-xs text-slate-500 mt-1">
+      Acepta nombres completos (<i>Juan</i>), abreviaturas (<i>Jn</i>) y números romanos
+      (<i>I Pedro 2:9</i>).
+    </p>
+
+    <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
+      <span class="font-semibold text-slate-600">Accesos rápidos:</span>
+      <button
+        type="button"
+        class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm"
+        data-bible-ref="Juan 3:16"
+      >
+        Juan 3:16
+      </button>
+      <button
+        type="button"
+        class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm"
+        data-bible-ref="Salmo 23"
+      >
+        Salmo 23
+      </button>
+      <button
+        type="button"
+        class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm"
+        data-bible-ref="Filipenses 4:4-7"
+      >
+        Filipenses 4:4-7
+      </button>
+      <button
+        type="button"
+        class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm"
+        data-bible-ref="Romanos 8"
+      >
+        Romanos 8
+      </button>
+    </div>
+
+    <div class="mt-6 rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-600">
+      <p class="font-medium mb-1">Plan de lectura sugerido</p>
+      <p>
+        • Lee cada día un Salmo y un pasaje de los Evangelios.<br />
+        • Usa este visor para leer el capítulo completo, meditar y orar por
+        aquello que el Señor te muestre.
+      </p>
+    </div>
+  </section>
+
+  <!-- Estilos y lógica del visor -->
+  <link rel="stylesheet" href="/bibles/bible-viewer.css" />
+  <script src="/bibles/bible-viewer.js" defer></script>
+</BaseLayout>

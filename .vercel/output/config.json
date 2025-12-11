@@ -1,0 +1,175 @@
+{
+	"version": 3,
+	"routes": [
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "^/_astro/(.*)$",
+			"headers": {
+				"cache-control": "public, max-age=31536000, immutable"
+			},
+			"continue": true
+		},
+		{
+			"src": "^/_server-islands/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/_image/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/campus/reto/add/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/campus/reto/score/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/evangeliza/add/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/evangeliza/aggregate/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/evangeliza/stats/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/evangeliza/submit/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/newsletter/subscribe/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/prayer/list/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/prayer/prayed/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/prayer/submit/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/stripe/checkout/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/stripe/webhook/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/turnstile/verify/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/wompi/checkout/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/wompi/webhook/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/biblia/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/campus/reto/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/campus/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/campus/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/devocional/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/donaciones/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/en-vivo/oracion/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/evangeliza/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/eventos/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/eventos/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/galeria/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/iglesias/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/ministerio/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/mujeres/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/noticias/rss\\.xml/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/noticias/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/noticias(?:/(.*?))?/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/oracion/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/peregrinaciones/quiz-7-iglesias/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/peregrinaciones/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/plan-lectura/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/rss\\.xml/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/$",
+			"dest": "_render"
+		}
+	]
+}
