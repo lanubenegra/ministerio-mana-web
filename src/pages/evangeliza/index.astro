@@ -3,6 +3,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import EvangelizaHeatmap from '@components/EvangelizaHeatmap.astro';
 import PrayerWall from '@components/PrayerWall.astro';
 import TurnstileWidget from '@components/TurnstileWidget.astro';
+
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout
@@ -64,30 +66,34 @@ import TurnstileWidget from '@components/TurnstileWidget.astro';
     </section>
   </section>
 
-  <script>
-    if (typeof window !== 'undefined') {
-      const form = document.getElementById('evangeliza-form') as HTMLFormElement | null;
-      if (form) {
-        form.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          const data = new FormData(form);
+  <script is:inline nonce={cspNonce}>
+    (() => {
+      if (typeof window === 'undefined') return;
+      const form = document.getElementById('evangeliza-form');
+      if (!form) return;
 
-          try {
-            const res = await fetch('/api/evangeliza/submit', {
-              method: 'POST',
-              body: data,
-            });
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
 
-            if (!res.ok) throw new Error('Error al registrar');
+        try {
+          const res = await fetch('/api/evangeliza/submit', {
+            method: 'POST',
+            body: data,
+          });
 
-            form.reset();
-            alert('Gracias, añadimos esta persona para orar 🙏');
-          } catch (err) {
-            console.error(err);
-            alert('No pudimos registrar ahora. Intenta de nuevo más tarde.');
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || 'Error al registrar');
           }
-        });
-      }
-    }
+
+          form.reset();
+          alert('Gracias, añadimos esta persona para orar 🙏');
+        } catch (err) {
+          console.error(err);
+          alert('No pudimos registrar ahora. Intenta de nuevo más tarde.');
+        }
+      });
+    })();
   </script>
 </BaseLayout>

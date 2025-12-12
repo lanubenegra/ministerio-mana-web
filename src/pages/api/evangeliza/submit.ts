@@ -31,15 +31,23 @@ export const POST: APIRoute = async ({ request, clientAddress, redirect }) => {
       return new Response(JSON.stringify({ ok:false, error:'Nombre requerido' }), { status: 400 });
     }
 
-    const okCaptcha = await verifyTurnstile(cfToken, clientAddress);
-    if (!okCaptcha) {
-      void logSecurityEvent({
-        type: 'captcha_failed',
-        identifier: 'evangeliza.submit',
-        ip: clientAddress,
-        detail: 'Turnstile inválido',
-      });
-      return new Response(JSON.stringify({ ok:false, error:'Captcha inválido' }), { status: 400 });
+    const turnstileConfigured = Boolean(
+      import.meta.env?.TURNSTILE_SECRET_KEY ?? process.env?.TURNSTILE_SECRET_KEY,
+    );
+    if (turnstileConfigured) {
+      const okCaptcha = await verifyTurnstile(cfToken, clientAddress);
+      if (!okCaptcha) {
+        void logSecurityEvent({
+          type: 'captcha_failed',
+          identifier: 'evangeliza.submit',
+          ip: clientAddress,
+          detail: 'Turnstile inválido',
+        });
+        return new Response(JSON.stringify({ ok:false, error:'Captcha inválido' }), { status: 400 });
+      }
+    } else {
+      // Solo bypass en entornos sin llaves (dev). En prod debe estar configurado.
+      console.warn('[EVANGELIZA] Turnstile no configurado: bypass en entorno local/dev');
     }
 
     const allowed = await enforceRateLimit(`evangeliza:${clientAddress ?? 'unknown'}`);

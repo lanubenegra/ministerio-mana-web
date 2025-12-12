@@ -1,0 +1,35 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+export const prerender = false;
+---
+
+<BaseLayout
+  title="¡Gracias por tu donación! · Ministerio Maná"
+  description="Confirmación de donación. Gracias por sembrar en el ministerio."
+>
+  <section class="container-tight py-12 space-y-6 text-center">
+    <p class="eyebrow">Donaciones</p>
+    <h1 class="h1">¡Gracias por tu generosidad!</h1>
+    <p class="max-w-2xl mx-auto text-slate-600">
+      Recibimos tu aporte. En cuanto el pago quede confirmado por la pasarela, lo verás reflejado
+      en nuestros registros. Si tienes alguna duda, escríbenos a
+      <a class="text-sky-700 font-semibold" href="mailto:administracion@ministeriomana.org">
+        administracion@ministeriomana.org
+      </a>.
+    </p>
+    <div class="inline-flex flex-col gap-2 items-center">
+      <a
+        href="/"
+        class="rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 via-sky-600 to-teal-500 shadow"
+      >
+        Volver al inicio
+      </a>
+      <a
+        href="/"
+        class="text-sm text-slate-500 hover:text-slate-700"
+      >
+        Ir al inicio
+      </a>
+    </div>
+  </section>
+</BaseLayout>
