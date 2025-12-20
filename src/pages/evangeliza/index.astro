@@ -49,6 +49,7 @@ const cspNonce = Astro.locals?.cspNonce;
       >
         Sumar evangelización
       </button>
+      <p id="evangeliza-status" class="text-xs text-slate-500"></p>
       <p class="text-xs text-slate-500">Solo usamos el primer nombre para orar y sumar en el mapa.</p>
     </form>
 
@@ -72,9 +73,16 @@ const cspNonce = Astro.locals?.cspNonce;
       const form = document.getElementById('evangeliza-form');
       if (!form) return;
 
+      const statusEl = document.getElementById('evangeliza-status');
+
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const data = new FormData(form);
+
+        if (statusEl) {
+          statusEl.textContent = 'Enviando...';
+          statusEl.className = 'text-sm text-slate-600';
+        }
 
         try {
           const res = await fetch('/api/evangeliza/submit', {
@@ -86,12 +94,27 @@ const cspNonce = Astro.locals?.cspNonce;
             const text = await res.text();
             throw new Error(text || 'Error al registrar');
           }
+          const json = await res.json().catch(() => ({ ok: true }));
 
           form.reset();
-          alert('Gracias, añadimos esta persona para orar 🙏');
+          if (statusEl) {
+            statusEl.textContent = 'Gracias, añadimos esta persona para orar 🙏';
+            statusEl.className = 'text-sm font-semibold text-emerald-700';
+          } else {
+            alert('Gracias, añadimos esta persona para orar 🙏');
+          }
+
+          if (json?.point && window.addEvangelizaPoint) {
+            window.addEvangelizaPoint(json.point);
+          }
         } catch (err) {
           console.error(err);
-          alert('No pudimos registrar ahora. Intenta de nuevo más tarde.');
+          if (statusEl) {
+            statusEl.textContent = 'No pudimos registrar ahora. Intenta de nuevo más tarde.';
+            statusEl.className = 'text-sm font-semibold text-rose-700';
+          } else {
+            alert('No pudimos registrar ahora. Intenta de nuevo más tarde.');
+          }
         }
       });
     })();

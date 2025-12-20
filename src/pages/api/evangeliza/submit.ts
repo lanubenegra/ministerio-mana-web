@@ -88,7 +88,11 @@ export const POST: APIRoute = async ({ request, clientAddress, redirect }) => {
       console.log('[EVANGELIZA] (no-supabase)', { firstName, city, country, lat, lng, campus });
     }
 
-    return new Response(JSON.stringify({ ok:true }), { status: 200, headers: { 'content-type':'application/json' } });
+    const point = lat != null && lng != null
+      ? { lat, lng, label: [cityClean, countryCode].filter(Boolean).join(', ') || 'Nuevo punto', count: 1 }
+      : null;
+
+    return new Response(JSON.stringify({ ok:true, point }), { status: 200, headers: { 'content-type':'application/json' } });
   } catch (e:any) {
     void logSecurityEvent({
       type: 'payment_error',

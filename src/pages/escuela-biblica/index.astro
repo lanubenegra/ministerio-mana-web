@@ -1,0 +1,218 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const title = 'Escuela Bíblica Maná';
+const description =
+  'Formación bíblica y discipular basada en SABER, SER y HACER. Cursos TEO 100–103 para crecer en tu fe y carácter.';
+---
+
+<BaseLayout {title} {description}>
+  <section class="container-tight py-12 space-y-10">
+    <!-- HERO -->
+    <header class="space-y-4">
+      <p class="text-sm font-semibold tracking-[0.18em] uppercase text-emerald-500">
+        Ministerio Maná · Formación
+      </p>
+      <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900">
+        Escuela Bíblica Maná
+      </h1>
+      <p class="text-lg text-slate-600 max-w-3xl">
+        Un espacio de formación bíblica y discipular en modalidad virtual,
+        donde crecerás en el conocimiento de Dios, en tu carácter y en tu
+        servicio, para amar, obedecer y reflejar a Cristo en tu día a día.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3 mt-4">
+        <a
+          href="https://escuelabiblicamana.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-sky-600 shadow-md hover:shadow-lg transition"
+        >
+          Ir a escuelabiblicamana.com
+        </a>
+        <a
+          href="#cursos"
+          class="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100"
+        >
+          Ver cursos TEO 100–103
+        </a>
+      </div>
+    </header>
+
+    <!-- ENFOQUE SABER / SER / HACER -->
+    <section class="grid gap-6 md:grid-cols-3">
+      <article class="p-6 rounded-2xl bg-white shadow-sm border border-slate-100">
+        <h2 class="text-sm font-semibold text-emerald-500 tracking-[0.18em] uppercase">
+          SABER
+        </h2>
+        <h3 class="mt-1 font-semibold text-slate-900">Verdad doctrinal</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Profundizamos en las verdades bíblicas fundamentales para que
+          conozcas quién es Dios, qué dice su Palabra y qué significa nacer de
+          nuevo.
+        </p>
+      </article>
+
+      <article class="p-6 rounded-2xl bg-white shadow-sm border border-slate-100">
+        <h2 class="text-sm font-semibold text-emerald-500 tracking-[0.18em] uppercase">
+          SER
+        </h2>
+        <h3 class="mt-1 font-semibold text-slate-900">Verdad posicional</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Trabajamos tu identidad en Cristo: cómo te ve Dios, qué significa ser
+          hijo suyo y cómo su amor transforma tu historia y tu carácter.
+        </p>
+      </article>
+
+      <article class="p-6 rounded-2xl bg-white shadow-sm border border-slate-100">
+        <h2 class="text-sm font-semibold text-emerald-500 tracking-[0.18em] uppercase">
+          HACER
+        </h2>
+        <h3 class="mt-1 font-semibold text-slate-900">Verdad práctica</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Llevamos la Palabra a la vida diaria: decisiones, relaciones,
+          servicio y misión. No solo aprender, sino vivir y acompañar a otros.
+        </p>
+      </article>
+    </section>
+
+    <!-- QUÉ ES LA ESCUELA -->
+    <section class="space-y-4">
+      <h2 class="text-xl font-semibold text-slate-900">
+        ¿Qué es la Escuela Bíblica Maná?
+      </h2>
+      <p class="text-sm text-slate-600 max-w-3xl">
+        La Escuela Bíblica Maná es un ministerio de formación educativa
+        cristiana en modalidad virtual. Allí podrás acceder a cursos
+        discipulares, cursos doctrinales y espacios de interacción sobre temas
+        de relevancia bíblica y teológica. Contamos con una plataforma
+        educativa, videos, materiales descargables y un equipo de maestros con
+        experiencia en el ministerio y en la formación bíblica.
+      </p>
+      <p class="text-sm text-slate-600 max-w-3xl">
+        Estudiarás a tu ritmo durante la semana y tendrás foros virtuales en
+        vivo para hacer preguntas, profundizar y aplicar los contenidos a tu
+        vida.
+      </p>
+    </section>
+
+    <!-- CURSOS TEO -->
+    <section id="cursos" class="space-y-4">
+      <h2 class="text-xl font-semibold text-slate-900">
+        Ruta discipular: TEO 100 – 103
+      </h2>
+      <p class="text-sm text-slate-600 max-w-3xl">
+        Nuestros cursos TEO están pensados como un proceso: empiezas por
+        fundamentos, avanzas en conocer a Dios, profundizas en carácter y
+        llegas a sanidad interior y madurez.
+      </p>
+
+      <div class="grid gap-6 md:grid-cols-2">
+        <!-- TEO 100 -->
+        <article class="p-6 rounded-2xl bg-white shadow-sm border border-slate-100 flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-semibold text-slate-900">TEO 100 · Nacer de nuevo</h3>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+              Discipulado inicial
+            </span>
+          </div>
+          <p class="text-sm text-slate-600">
+            Aprende las verdades bíblicas fundamentales para comprender qué
+            significa nacer de nuevo, quién eres delante de Dios y qué espera
+            Él de ti como hijo.
+          </p>
+          <ul class="text-xs text-slate-500 space-y-1">
+            <li><strong>Modalidad:</strong> Virtual en vivo</li>
+            <li><strong>Duración:</strong> 90 minutos de foro por sesión durante 11 semanas</li>
+            <li><strong>Material:</strong> Videos, cuestionarios y archivos descargables</li>
+          </ul>
+        </article>
+
+        <!-- TEO 101 -->
+        <article class="p-6 rounded-2xl bg-white shadow-sm border border-slate-100 flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-semibold text-slate-900">TEO 101 · Conociendo a Dios</h3>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+              Fundamentos de fe
+            </span>
+          </div>
+          <p class="text-sm text-slate-600">
+            Explora el carácter de Dios y su voluntad para tu vida. Aprende a
+            amarlo con todo tu corazón, alma y fuerzas, y deja que su amor te
+            transforme.
+          </p>
+          <ul class="text-xs text-slate-500 space-y-1">
+            <li><strong>Modalidad:</strong> Virtual en vivo</li>
+            <li><strong>Duración:</strong> 90 minutos de foro por sesión durante 11 semanas</li>
+            <li><strong>Material:</strong> Videos, cuestionarios y archivos descargables</li>
+          </ul>
+        </article>
+
+        <!-- TEO 102 -->
+        <article class="p-6 rounded-2xl bg-white shadow-sm border border-slate-100 flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-semibold text-slate-900">TEO 102 · Crecimiento y carácter</h3>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+              Madurez espiritual
+            </span>
+          </div>
+          <p class="text-sm text-slate-600">
+            Avanza en tu caminar con Jesús añadiendo a tu fe virtud,
+            conocimiento, dominio propio, paciencia, piedad, afecto fraternal y
+            amor. Camina hacia la imagen que Dios tiene de ti.
+          </p>
+          <ul class="text-xs text-slate-500 space-y-1">
+            <li><strong>Modalidad:</strong> Virtual en vivo</li>
+            <li><strong>Duración:</strong> 90 minutos de foro por sesión durante 12 semanas</li>
+            <li><strong>Material:</strong> Lecturas, videos y tiempos de reflexión guiada</li>
+          </ul>
+        </article>
+
+        <!-- TEO 103 -->
+        <article class="p-6 rounded-2xl bg-white shadow-sm border border-slate-100 flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-semibold text-slate-900">TEO 103 · Sanidad interior</h3>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+              Sanidad y restauración
+            </span>
+          </div>
+          <p class="text-sm text-slate-600">
+            Un recorrido al interior de tu historia, tus heridas y tus
+            pensamientos a la luz de la Palabra, para que el Señor sane,
+            restaure y te lleve a libertad en todas las áreas.
+          </p>
+          <ul class="text-xs text-slate-500 space-y-1">
+            <li><strong>Modalidad:</strong> Virtual en vivo</li>
+            <li><strong>Duración:</strong> 90 minutos de foro por sesión durante 12 semanas</li>
+            <li><strong>Material:</strong> Videos, lecturas y espacios para procesar tu historia</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- CTA INSCRIPCIONES -->
+    <section class="rounded-3xl bg-gradient-to-r from-emerald-600 via-sky-600 to-indigo-600 p-[1px]">
+      <div class="rounded-[22px] bg-white px-6 py-6 md:px-10 md:py-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-2 max-w-xl">
+          <h2 class="text-xl font-semibold text-slate-900">
+            Inscripciones 2025-2
+          </h2>
+          <p class="text-sm text-slate-600">
+            Si quieres ser parte de la próxima cohorte de la Escuela Bíblica
+            Maná, visita la plataforma y realiza tu inscripción. Allí verás
+            fechas, horarios y requisitos actualizados.
+          </p>
+        </div>
+        <a
+          href="https://escuelabiblicamana.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md"
+        >
+          Ver detalles de inscripción
+        </a>
+      </div>
+    </section>
+  </section>
+</BaseLayout>

@@ -176,7 +176,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     "default-src 'self'",
     `script-src ${scriptSrc.join(' ')}`,
     "style-src 'self' 'unsafe-inline' https://unpkg.com",
-    "img-src 'self' data: https://*.tile.openstreetmap.org https://i.ytimg.com",
+    "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://i.ytimg.com",
     "font-src 'self' data:",
     "connect-src 'self' https://challenges.cloudflare.com https://api.resend.com https://checkout.stripe.com https://checkout.wompi.co https://js.stripe.com",
     `frame-src ${FRAME_SRC.join(' ')}`,
