@@ -4,7 +4,6 @@ import { geocodeCityCountry } from '@lib/geocode';
 import { verifyTurnstile } from '@lib/turnstile';
 import { enforceRateLimit } from '@lib/rateLimit';
 import { logSecurityEvent } from '@lib/securityEvents';
-import { safeCountry } from '@lib/donations';
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
 
 export const prerender = false;
@@ -63,16 +62,29 @@ export const POST: APIRoute = async ({ request, clientAddress, redirect }) => {
 
     let lat: number | null = null;
     let lng: number | null = null;
+    let cityCanonical: string | null = null;
+    let countryCode: string | null = null;
     const geo = await geocodeCityCountry(city, country);
-    if (geo) { lat = geo.lat; lng = geo.lng; }
+    if (geo) {
+      lat = geo.lat;
+      lng = geo.lng;
+      cityCanonical = geo.city || (city || null);
+      countryCode = geo.countryCode || null;
+    } else {
+      cityCanonical = city || null;
+    }
 
-    const countryCode = safeCountry(country) ?? null;
-    const cityClean = city || null;
+    const cityClean = cityCanonical;
     const campusClean = campus || null;
 
     if (supabaseAdmin) {
-      const { error } = await supabaseAdmin.from('evangeliza').insert({
-        first_name: firstName, city: cityClean || null, country: countryCode, lat, lng, campus: campusClean || null
+      const { error } = await supabaseAdmin.from('evangeliza_points').insert({
+        first_name: firstName,
+        city: cityClean || null,
+        country: countryCode,
+        lat,
+        lng,
+        campus: campusClean || null,
       });
       if (error) {
         void logSecurityEvent({

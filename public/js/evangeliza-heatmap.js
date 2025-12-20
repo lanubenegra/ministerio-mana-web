@@ -1,4 +1,7 @@
 (function () {
+  const pendingPoints = [];
+  let mapInstance = null;
+
   function init() {
     if (typeof window === 'undefined') return;
     const L = window.L;
@@ -25,9 +28,10 @@
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map);
 
-    pts.forEach((p) => {
-      addMarker(p);
-    });
+    pts.forEach((p) => addMarker(p));
+    if (pendingPoints.length) {
+      pendingPoints.splice(0).forEach((p) => addMarker(p));
+    }
 
     function addMarker(p) {
       if (typeof p.lat !== 'number' || typeof p.lng !== 'number') return;
@@ -45,9 +49,19 @@
 
     // Exponer una función para agregar puntos cuando se envía el formulario.
     window.addEvangelizaPoint = function (p) {
-      addMarker(p);
+      if (mapInstance) {
+        addMarker(p);
+      } else {
+        pendingPoints.push(p);
+      }
     };
+
+    mapInstance = map;
   }
 
-  window.addEventListener('load', init);
+  if (document.readyState === 'complete') {
+    init();
+  } else {
+    window.addEventListener('load', init);
+  }
 })();
