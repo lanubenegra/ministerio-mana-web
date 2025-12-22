@@ -4,7 +4,7 @@ import { t } from '@i18n/locales';
 import LangSwitch from '@components/LangSwitch.astro';
 const locale = Astro.cookies.get('lang')?.value ?? 'es';
 ---
-<header class="sticky top-0 z-40 border-b border-[var(--mana-border)] bg-[var(--mana-surface)]/95 backdrop-blur">
+<header class="sticky top-0 z-40 border-b border-[var(--mana-border)] bg-[var(--mana-surface)]/80 backdrop-blur supports-[backdrop-filter]:backdrop-blur-lg transition-colors duration-300">
   <div class="container-tight flex items-center justify-between gap-6 py-4">
     <a href="/" class="group inline-flex items-center gap-3">
       <span class="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--mana-border)] bg-[var(--mana-surface)] shadow-brandInset transition-all duration-200 group-hover:border-brand-medium group-hover:shadow-brand">

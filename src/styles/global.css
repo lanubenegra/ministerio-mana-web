@@ -2,6 +2,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "./theme.css";
 
 /* Intro font family – place font files under /public/fonts/intro/ */
 @font-face {
@@ -52,29 +53,15 @@
   font-display: swap;
 }
 
-:root {
-  --mana-bg: #f1f3f8;
-  --mana-surface: #ffffff;
-  --mana-surface-alt: #f8f9fb;
-  --mana-border: rgba(41, 60, 116, 0.08);
-  --mana-border-strong: rgba(41, 60, 116, 0.18);
-  --mana-text: #1c2130;
-  --mana-text-muted: #6c748c;
-  --mana-brand: #293c74;
-  --mana-brand-medium: #3f58a1;
-  --mana-teal: #28a6bd;
-  --mana-accent: #f6519b;
-}
-
 html {
   scroll-behavior: smooth;
-  background: var(--mana-bg);
+  background: rgb(var(--mana-beige));
 }
 
 body {
-  @apply font-body text-[var(--mana-text)] antialiased;
-  background: var(--mana-bg);
-  color: var(--mana-text);
+  @apply font-body antialiased;
+  background: rgb(var(--mana-beige));
+  color: rgb(var(--mana-navy));
   position: relative;
   min-height: 100vh;
 }
@@ -99,25 +86,26 @@ main {
     font-size: clamp(2rem, 5vw, 3rem);
     line-height: 1.05;
     letter-spacing: -0.02em;
-    @apply font-display font-black text-brand-dark;
+    @apply font-display font-black;
+    color: rgb(var(--mana-navy));
   }
 
   h2 {
     font-size: clamp(1.75rem, 4vw, 2.5rem);
     line-height: 1.1;
     letter-spacing: -0.018em;
-    @apply text-brand-medium;
+    color: rgb(var(--mana-navy));
   }
 
   h3 {
     font-size: clamp(1.4rem, 3vw, 1.9rem);
     line-height: 1.2;
-    @apply text-brand-dark;
+    color: rgb(var(--mana-navy));
   }
 
   p {
     @apply text-base leading-relaxed;
-    color: var(--mana-text-muted);
+    color: rgba(var(--mana-navy), 0.72);
   }
 
   strong {
@@ -125,7 +113,7 @@ main {
   }
 
   a {
-    color: var(--mana-brand);
+    color: rgb(var(--mana-navy));
     transition: color 200ms ease;
   }
 
@@ -155,11 +143,14 @@ main {
   }
 
   .card {
-    @apply relative overflow-hidden rounded-3xl border border-[var(--mana-border)] bg-[var(--mana-surface)] shadow-sm;
+    @apply relative overflow-hidden rounded-3xl border bg-white shadow-sm;
+    border-color: rgba(var(--mana-navy), 0.08);
+    box-shadow: var(--mana-shadow-1);
   }
 
   .card--accent {
-    @apply border-[var(--mana-border-strong)] bg-neutral-50;
+    @apply bg-white;
+    border-color: rgba(var(--mana-navy), 0.14);
   }
 
   .badge {
@@ -167,11 +158,16 @@ main {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-transparent bg-mana-gradient px-8 py-3.5 font-display text-sm font-semibold tracking-[0.14em] uppercase text-white shadow-brand transition-all duration-200 hover:shadow-brandHover;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-transparent px-8 py-3.5 font-display text-sm font-semibold tracking-[0.14em] uppercase text-white transition-all duration-200;
+    background: var(--mana-gradient);
+    box-shadow: var(--mana-shadow-2);
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-[var(--mana-border-strong)] bg-[var(--mana-surface)] px-8 py-3.5 font-display text-sm font-semibold tracking-[0.08em] uppercase text-brand-dark transition-all duration-200 hover:border-brand-medium hover:bg-brand-light/60 hover:text-brand-dark;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border px-8 py-3.5 font-display text-sm font-semibold tracking-[0.08em] uppercase transition-all duration-200;
+    border-color: rgba(var(--mana-navy), 0.15);
+    background: rgba(var(--mana-white), 0.88);
+    color: rgb(var(--mana-navy));
   }
 
   .btn-sm {
@@ -212,5 +208,65 @@ main {
 
   .stat-block {
     @apply rounded-3xl border border-[var(--mana-border)] bg-[var(--mana-surface)] px-6 py-5 shadow-sm;
+  }
+
+  /* Nuevas utilidades premium */
+  .mana-surface {
+    background: rgba(var(--mana-white), 0.94);
+    border: 1px solid rgba(var(--mana-navy), 0.1);
+    border-radius: var(--mana-radius-lg);
+    box-shadow: var(--mana-shadow-1);
+  }
+
+  .mana-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 14px 22px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: rgb(var(--mana-white));
+    background: var(--mana-gradient);
+    box-shadow: var(--mana-shadow-2);
+    transition: transform 180ms ease, filter 180ms ease;
+  }
+  .mana-btn:hover { transform: translateY(-1px); filter: saturate(1.05); }
+  .mana-btn:active { transform: translateY(0); }
+
+  .mana-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 700;
+    color: rgb(var(--mana-navy));
+    background: rgba(var(--mana-white), 0.75);
+    border: 1px solid rgba(var(--mana-navy), 0.15);
+    transition: background 180ms ease, transform 180ms ease;
+  }
+  .mana-btn-ghost:hover { background: rgba(var(--mana-white), 0.95); transform: translateY(-1px); }
+
+  /* Reveal */
+  .mana-reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 700ms cubic-bezier(.2,.8,.2,1), transform 700ms cubic-bezier(.2,.8,.2,1);
+  }
+  .mana-reveal.mana-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Glass util */
+  .mana-glass {
+    background: rgba(var(--mana-navy), 0.18);
+    border: 1px solid rgba(var(--mana-teal), 0.25);
+    backdrop-filter: blur(12px);
+    border-radius: var(--mana-radius-lg);
+    box-shadow: var(--mana-shadow-1);
+    padding: 1.25rem;
+    color: white;
   }
 }

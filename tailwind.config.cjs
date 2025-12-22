@@ -13,7 +13,7 @@ module.exports = {
           DEFAULT: '#293C74',
           dark: '#1A255C',
           medium: '#3F58A1',
-          light: '#E7ECFF',
+          light: '#CBD9E6',
           teal: '#28A6BD'
         },
         accent: {
@@ -21,9 +21,9 @@ module.exports = {
           soft: '#FF8AB8'
         },
         neutral: {
-          50: '#F8F9FB',
+          50: '#F5EFEB',
           100: '#F1F3F8',
-          200: '#E3E6EF',
+          200: '#CBD9E6',
           500: '#6C748C',
           700: '#3B4258',
           900: '#1C2130'
@@ -38,8 +38,8 @@ module.exports = {
         '4xl': '2rem'
       },
       backgroundImage: {
-        'mana-gradient': 'linear-gradient(135deg, #293C74 0%, #28A6BD 50%, #F6519B 100%)',
-        'mana-accent': 'linear-gradient(135deg, rgba(41,60,116,0.12) 0%, rgba(246,81,155,0.18) 100%)'
+        'mana-gradient': 'linear-gradient(135deg, #293C74 0%, #28A6BD 55%, #567C8D 100%)',
+        'mana-accent': 'linear-gradient(135deg, rgba(41,60,116,0.12) 0%, rgba(86,124,141,0.16) 100%)'
       }
     }
   },
