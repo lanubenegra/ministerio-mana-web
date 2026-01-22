@@ -44,22 +44,45 @@ const chips = [
 
   <!-- Header hero sticky -->
   <section class="relative min-h-[140vh]">
-    <div class="absolute inset-0 bg-gradient-to-br from-[rgba(41,60,116,0.9)] via-[rgba(40,166,189,0.7)] to-[rgba(41,60,116,0.6)]">
+    <div class="absolute inset-0 bg-gradient-to-br from-[rgba(41,60,116,0.92)] via-[rgba(40,166,189,0.75)] to-[rgba(41,60,116,0.68)]">
       <div class="absolute inset-0" aria-hidden="true">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]"></div>
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_30%)]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(200,217,230,0.12),transparent_35%)]"></div>
       </div>
     </div>
-    <div class="container-tight sticky top-0 flex min-h-screen items-center py-16">
-      <div class="space-y-6 text-white max-w-3xl" data-animate="fade-up">
-        <p class="text-sm tracking-[0.28em] uppercase opacity-80">Ministerio Maná</p>
-        <h1 class="text-5xl md:text-6xl font-black leading-tight">Maná: un ministerio para alimentar tu fe</h1>
-        <p class="text-lg md:text-xl text-white/85 max-w-2xl">
-          Compartimos el Pan de Vida, caminamos en comunidad y formamos discípulos para que el Evangelio llegue a cada casa y cada campus.
-        </p>
-        <div class="flex flex-wrap gap-3">
-          <a href="#cap-que-hacemos" class="mana-btn">Ver lo que hacemos</a>
-          <a href="#cap-historia" class="mana-btn-ghost">Conocer Maná</a>
+    <div class="container-tight sticky top-0 flex min-h-screen items-center py-20">
+      <div class="grid gap-10 md:grid-cols-[1.2fr_0.8fr] items-center w-full">
+        <div class="space-y-6 text-white max-w-3xl" data-animate="fade-up">
+          <p class="text-sm tracking-[0.28em] uppercase opacity-80">Ministerio Maná</p>
+          <h1 class="text-5xl md:text-6xl font-black leading-tight">Maná: un ministerio para alimentar tu fe</h1>
+          <p class="text-lg md:text-xl text-white/85 max-w-2xl">
+            Compartimos el Pan de Vida, caminamos en comunidad y formamos discípulos para que el Evangelio llegue a cada casa y cada campus.
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <a href="#cap-que-hacemos" class="mana-btn shadow-[var(--mana-shadow-2)]">Ver lo que hacemos</a>
+            <a href="#cap-historia" class="mana-btn-ghost border-white/30 text-white hover:text-white">Conocer Maná</a>
+          </div>
+        </div>
+
+        <div class="mana-glass p-6 md:p-7 space-y-3" data-animate="fade-up">
+            <p class="text-xs font-semibold tracking-[0.22em] uppercase text-white/70">Próximo encuentro</p>
+            {upcoming.length > 0 ? (
+              <div class="space-y-2">
+                <h3 class="text-xl font-bold text-white">{upcoming[0].data.title}</h3>
+                <p class="text-sm text-white/85">
+                  {new Date(upcoming[0].data.date).toLocaleDateString('es-CO')} · {upcoming[0].data.category}
+                </p>
+                <p class="text-sm text-white/80 line-clamp-3">{upcoming[0].data.summary}</p>
+                <div class="flex flex-wrap gap-3 pt-2">
+                  <a href={`/eventos/${upcoming[0].slug}/`} class="mana-btn text-sm">Ver detalle</a>
+                  <a href="/eventos/" class="mana-btn-ghost text-white border-white/30 text-sm">Ver todos</a>
+                </div>
+              </div>
+            ) : (
+              <p class="text-sm text-white/80">Pronto anunciaremos el próximo encuentro.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
