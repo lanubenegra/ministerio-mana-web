@@ -41,39 +41,45 @@ const chips = [
 const history = [
   {
     year: '2010',
-    title: 'Devocional',
+    title: 'Devocional Maná',
     text: 'Carlos inicia el devocional Maná desde Londres; empieza a llegar a familias y amigos.',
-    coords: { x: 70, y: 25 },
+    rotate: '-8deg',
+    pin: { x: 72, y: 26, angle: -35, len: 70, label: 'Londres' },
   },
   {
     year: '2015',
     title: 'Campus Maná',
     text: 'Nacen los grupos de jóvenes en universidades y ciudades clave.',
-    coords: { x: 55, y: 52 },
+    rotate: '6deg',
+    pin: { x: 55, y: 52, angle: 20, len: 55, label: 'Campus' },
   },
   {
     year: '2016',
     title: 'Medellín',
     text: 'Ministerio Maná se establece en Medellín; base para la expansión.',
-    coords: { x: 40, y: 55 },
+    rotate: '12deg',
+    pin: { x: 42, y: 58, angle: -15, len: 75, label: 'Medellín' },
   },
   {
     year: '2020',
     title: 'Consolidación digital',
     text: 'En pandemia, Maná se fortalece como comunidad digital y discipulado virtual.',
-    coords: { x: 20, y: 35 },
+    rotate: '24deg',
+    pin: { x: 28, y: 38, angle: -45, len: 80, label: 'LatAm' },
   },
   {
     year: '2024',
     title: 'Peregrinaciones',
     text: 'Viajes a Israel y Turquía para caminar la Palabra en comunidad.',
-    coords: { x: 60, y: 70 },
+    rotate: '30deg',
+    pin: { x: 62, y: 72, angle: 10, len: 60, label: 'Israel' },
   },
   {
     year: '2030',
     title: 'Ministerio global',
     text: 'Ser un ministerio bíblico y relevante con presencia internacional y misión activa.',
-    coords: { x: 80, y: 40 },
+    rotate: '40deg',
+    pin: { x: 78, y: 40, angle: 30, len: 70, label: 'Global' },
   },
 ];
 ---
@@ -129,53 +135,56 @@ const history = [
   </section>
 
   <!-- Capítulo 2: Historia -->
-  <section id="cap-historia" class="relative min-h-[200vh] bg-[rgb(var(--mana-navy))] text-white">
-    <div class="container-tight sticky top-0 grid lg:grid-cols-[0.55fr_0.45fr] gap-10 min-h-screen py-16 lg:py-20">
-      <div class="space-y-8" data-animate="fade-up">
-        <div class="space-y-3">
-          <p class="text-sm tracking-[0.28em] uppercase text-white/70">Nuestra historia</p>
-          <h2 class="text-4xl md:text-5xl font-extrabold leading-tight">El llamado de alimentar, discipular y enviar</h2>
-          <p class="text-base md:text-lg text-white/80 max-w-2xl leading-relaxed">
+  <section id="cap-historia" class="history-story">
+    <div class="container-tight history-grid">
+      <div class="history-copy">
+        <div class="history-heading" data-animate="fade-up">
+          <p class="history-eyebrow">Nuestra historia</p>
+          <h2 class="history-title">El llamado de alimentar, discipular y enviar</h2>
+          <p class="history-lead">
             Nacimos para llevar la Palabra a diario, formar discípulos y levantar comunidades donde Cristo sea el centro. Del devocional a Campus Maná y la Escuela Bíblica,
             caminamos juntos para que nadie se quede sin alimento espiritual.
           </p>
         </div>
 
-        <div class="history-timeline dark" data-history-container>
+        <div class="history-scenes" data-history-track>
           {history.map((item) => (
-            <div class="history-item" data-history-item data-id={item.year}>
-              <div class="history-dot"></div>
-              <div class="space-y-1">
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">{item.year} · {item.title}</p>
-                <p class="text-sm text-white/85">{item.text}</p>
-              </div>
-            </div>
+            <article
+              class="history-scene"
+              data-history-scene
+              data-year={item.year}
+              data-rotate={item.rotate}
+            >
+              <div class="history-year">{item.year}</div>
+              <div class="history-meta">{item.title}</div>
+              <p class="history-text">{item.text}</p>
+            </article>
           ))}
         </div>
       </div>
 
-      <div class="space-y-5" data-animate="fade-up">
-        <div class="history-vision p-6 rounded-3xl">
-          <p class="text-sm font-semibold tracking-[0.18em] uppercase text-white/70">Visión Maná</p>
-          <h3 class="text-2xl md:text-3xl font-bold">Palabra · Comunidad · Misión</h3>
-          <p class="text-sm md:text-base text-white/80 mt-2">
+      <aside class="history-visual" data-animate="fade-up">
+        <div class="history-vision">
+          <p class="history-vision-label">Visión Maná</p>
+          <h3>Palabra · Comunidad · Misión</h3>
+          <p>
             Devocional diario, discipulado real, mentoría, campus, Escuela Bíblica, iglesias y peregrinaciones: todo para que Cristo sea conocido.
           </p>
         </div>
-        <div class="history-globe">
+        <div class="history-globe" data-history-globe>
+          <div class="history-globe-map" aria-hidden="true"></div>
           {history.map((item) => (
             <span
-              class="history-globe-dot"
-              data-history-dot
-              data-id={item.year}
-              style={`--x:${item.coords.x}%; --y:${item.coords.y}%;`}
-              aria-hidden="true"
-            ></span>
+              class="history-pin"
+              data-history-pin
+              data-year={item.year}
+              style={`--x:${item.pin.x}%; --y:${item.pin.y}%; --angle:${item.pin.angle}deg; --len:${item.pin.len}px;`}
+            >
+              <span class="history-pin-label">{item.pin.label}</span>
+            </span>
           ))}
-          <div class="history-globe-grid" aria-hidden="true"></div>
-          <p class="history-globe-note text-white/60">Mapa ilustrativo (datos reales en Evangeliza)</p>
         </div>
-      </div>
+      </aside>
     </div>
   </section>
 

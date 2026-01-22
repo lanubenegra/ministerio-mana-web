@@ -1,32 +1,39 @@
 (() => {
   if (typeof window === 'undefined') return;
-  const items = Array.from(document.querySelectorAll('[data-history-item]'));
-  const dots = Array.from(document.querySelectorAll('[data-history-dot]'));
-  if (!items.length) return;
 
-  const setActive = (id) => {
-    items.forEach((el) => {
-      el.classList.toggle('is-active', el.dataset.id === id);
+  const scenes = Array.from(document.querySelectorAll('[data-history-scene]'));
+  const pins = Array.from(document.querySelectorAll('[data-history-pin]'));
+  const globe = document.querySelector('[data-history-globe]');
+  const globeMap = globe?.querySelector('.history-globe-map');
+
+  if (!scenes.length) return;
+
+  const setActive = (year, rotate) => {
+    scenes.forEach((el) => {
+      el.classList.toggle('is-active', el.dataset.year === year);
     });
-    dots.forEach((el) => {
-      el.classList.toggle('is-active', el.dataset.id === id);
+    pins.forEach((el) => {
+      el.classList.toggle('is-active', el.dataset.year === year);
     });
+    if (globeMap && rotate) {
+      globeMap.style.setProperty('--globe-rotate', rotate);
+    }
   };
 
   // Default: first active
-  setActive(items[0].dataset.id);
+  setActive(scenes[0].dataset.year, scenes[0].dataset.rotate);
 
   const io = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          const id = entry.target.dataset.id;
-          setActive(id);
+          const { year, rotate } = entry.target.dataset;
+          if (year) setActive(year, rotate);
         }
       });
     },
-    { threshold: 0.3 }
+    { threshold: 0.35 }
   );
 
-  items.forEach((el) => io.observe(el));
+  scenes.forEach((el) => io.observe(el));
 })();
