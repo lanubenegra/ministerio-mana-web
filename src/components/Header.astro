@@ -16,16 +16,16 @@ const locale = Astro.cookies.get('lang')?.value ?? 'es';
       </div>
     </a>
 
-    <nav class="hidden lg:flex items-center gap-6">
-      <a href="/" class="nav-link">{t(locale,'nav_home')}</a>
-      <a href="/ministerio/" class="nav-link">{t(locale,'nav_ministry')}</a>
-      <a href="/campus/" class="nav-link">{t(locale,'nav_campus')}</a>
-      <a href="/escuela-biblica/" class="nav-link">{t(locale,'nav_school')}</a>
-      <a href="/iglesias/" class="nav-link">{t(locale,'nav_churches')}</a>
-      <a href="/eventos/" class="nav-link">{t(locale,'nav_events')}</a>
-      <a href="/devocional/" class="nav-link">{t(locale,'nav_devotional')}</a>
-      <a href="/mujeres/" class="nav-link">{t(locale,'nav_women')}</a>
-      <a href="/peregrinaciones/" class="nav-link">{t(locale,'nav_pilgrims')}</a>
+    <nav class="hidden lg:flex items-center gap-7">
+      <a href="/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_home')}</a>
+      <a href="/ministerio/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_ministry')}</a>
+      <a href="/campus/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_campus')}</a>
+      <a href="/escuela-biblica/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_school')}</a>
+      <a href="/iglesias/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_churches')}</a>
+      <a href="/eventos/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_events')}</a>
+      <a href="/devocional/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_devotional')}</a>
+      <a href="/mujeres/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_women')}</a>
+      <a href="/peregrinaciones/" class="relative text-sm font-semibold text-brand-dark/90 hover:text-brand-medium transition-colors px-1 py-1">{t(locale,'nav_pilgrims')}</a>
     </nav>
 
     <div class="flex items-center gap-3">
