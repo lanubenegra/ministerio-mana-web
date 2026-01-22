@@ -269,4 +269,77 @@ main {
     padding: 1.25rem;
     color: white;
   }
+
+  /* Historia timeline */
+  .history-timeline {
+    position: relative;
+    margin-top: 1rem;
+    border-left: 1px solid rgba(41, 60, 116, 0.18);
+    padding-left: 1.5rem;
+    display: grid;
+    gap: 1.5rem;
+  }
+  .history-item {
+    position: relative;
+    padding-left: 0.5rem;
+    transition: transform 200ms ease, opacity 200ms ease;
+  }
+  .history-item .history-dot {
+    position: absolute;
+    left: -1.64rem;
+    top: 0.35rem;
+    height: 14px;
+    width: 14px;
+    border-radius: 999px;
+    background: rgba(var(--mana-navy), 0.2);
+    border: 2px solid rgb(var(--mana-navy));
+    box-shadow: 0 0 0 6px rgba(41, 60, 116, 0.08);
+    transition: transform 200ms ease, background 200ms ease, border-color 200ms ease;
+  }
+  .history-item.is-active {
+    transform: translateX(6px);
+  }
+  .history-item.is-active .history-dot {
+    background: rgb(var(--mana-teal));
+    border-color: rgb(var(--mana-teal));
+  }
+
+  .history-globe {
+    position: relative;
+    height: 220px;
+    border-radius: 22px;
+    background: radial-gradient(circle at 30% 20%, rgba(41,60,116,0.15), transparent 50%),
+      radial-gradient(circle at 75% 70%, rgba(40,166,189,0.16), transparent 50%),
+      rgba(203,217,230,0.45);
+    overflow: hidden;
+    border: 1px dashed rgba(41,60,116,0.15);
+  }
+  .history-globe-dot {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    height: 14px;
+    width: 14px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background: rgba(var(--mana-navy), 0.12);
+    border: 2px solid rgba(var(--mana-navy), 0.5);
+    box-shadow: 0 0 0 8px rgba(41,60,116,0.08);
+    opacity: 0.65;
+    transition: transform 200ms ease, opacity 200ms ease, background 200ms ease, border-color 200ms ease;
+  }
+  .history-globe-dot.is-active {
+    background: rgba(var(--mana-teal), 0.85);
+    border-color: rgb(var(--mana-teal));
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+    box-shadow: 0 0 0 10px rgba(40,166,189,0.16);
+  }
+  .history-globe-note {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    font-size: 11px;
+    color: rgba(41,60,116,0.55);
+  }
 }

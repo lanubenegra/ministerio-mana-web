@@ -37,10 +37,50 @@ const chips = [
     cta: { href: '/escuela-biblica/', label: 'Ir a Escuela Bíblica' },
   },
 ];
+
+const history = [
+  {
+    year: '2010',
+    title: 'Devocional',
+    text: 'Carlos inicia el devocional Maná desde Londres; empieza a llegar a familias y amigos.',
+    coords: { x: 70, y: 25 },
+  },
+  {
+    year: '2015',
+    title: 'Campus Maná',
+    text: 'Nacen los grupos de jóvenes en universidades y ciudades clave.',
+    coords: { x: 55, y: 52 },
+  },
+  {
+    year: '2016',
+    title: 'Medellín',
+    text: 'Ministerio Maná se establece en Medellín; base para la expansión.',
+    coords: { x: 40, y: 55 },
+  },
+  {
+    year: '2020',
+    title: 'Consolidación digital',
+    text: 'En pandemia, Maná se fortalece como comunidad digital y discipulado virtual.',
+    coords: { x: 20, y: 35 },
+  },
+  {
+    year: '2024',
+    title: 'Peregrinaciones',
+    text: 'Viajes a Israel y Turquía para caminar la Palabra en comunidad.',
+    coords: { x: 60, y: 70 },
+  },
+  {
+    year: '2030',
+    title: 'Ministerio global',
+    text: 'Ser un ministerio bíblico y relevante con presencia internacional y misión activa.',
+    coords: { x: 80, y: 40 },
+  },
+];
 ---
 <BaseLayout title="Ministerio Maná — Bienvenido" description="Iglesias, devocionales, Campus Maná, Escuela Bíblica y eventos.">
   <link rel="stylesheet" href="/src/styles/global.css" />
   <script src="/js/scroll-story.js" defer></script>
+  <script src="/js/history-scroll.js" defer></script>
 
   <!-- Header hero sticky -->
   <section class="relative min-h-[140vh]">
@@ -89,9 +129,9 @@ const chips = [
   </section>
 
   <!-- Capítulo 2: Historia -->
-  <section id="cap-historia" class="relative min-h-[160vh] bg-gradient-to-b from-[rgba(245,239,235,0.92)] to-white">
-    <div class="container-tight sticky top-0 flex min-h-screen items-center py-14">
-      <div class="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] items-start">
+  <section id="cap-historia" class="relative min-h-[180vh] bg-[rgb(var(--mana-beige))]">
+    <div class="container-tight sticky top-0 flex min-h-screen items-center py-16">
+      <div class="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] items-start">
         <div class="space-y-6" data-animate="fade-up">
           <p class="text-sm tracking-[0.22em] uppercase text-slate-500">Nuestra historia</p>
           <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight">El llamado de alimentar, discipular y enviar</h2>
@@ -103,41 +143,16 @@ const chips = [
             Nuestro propósito: obedecer la Gran Comisión, amar a la Iglesia y servir con misericordia a quienes Dios pone en nuestro camino.
           </p>
 
-          <div class="mt-6 space-y-5">
-            <p class="text-sm tracking-[0.2em] uppercase text-slate-500">Línea de tiempo</p>
-            <div class="relative rounded-2xl border border-[rgba(41,60,116,0.12)] bg-white/80 shadow-sm p-5 overflow-hidden">
-              <div class="absolute inset-y-0 left-[14px] w-px bg-gradient-to-b from-[rgba(41,60,116,0.25)] via-[rgba(40,166,189,0.18)] to-transparent" aria-hidden="true"></div>
-              <div class="space-y-5">
-                <div class="flex gap-4" data-animate="fade-up">
-                  <div class="mt-1 h-3 w-3 rounded-full bg-[rgb(var(--mana-navy))] shadow-[0_0_0_6px_rgba(41,60,116,0.08)]"></div>
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">2010 · Devocional</p>
-                    <p class="text-sm text-slate-700">Nace el devocional Maná y comienza a llegar a cientos de familias.</p>
-                  </div>
-                </div>
-                <div class="flex gap-4" data-animate="fade-up">
-                  <div class="mt-1 h-3 w-3 rounded-full bg-[rgb(var(--mana-teal))] shadow-[0_0_0_6px_rgba(40,166,189,0.10)]"></div>
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">2015 · Campus Maná</p>
-                    <p class="text-sm text-slate-700">Se abren grupos de jóvenes en universidades y ciudades clave.</p>
-                  </div>
-                </div>
-                <div class="flex gap-4" data-animate="fade-up">
-                  <div class="mt-1 h-3 w-3 rounded-full bg-[rgb(var(--mana-navy))] shadow-[0_0_0_6px_rgba(41,60,116,0.08)]"></div>
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">2020 · Escuela Bíblica</p>
-                    <p class="text-sm text-slate-700">Lanzamos los cursos TEO 100–103 para formar discípulos de forma sistemática.</p>
-                  </div>
-                </div>
-                <div class="flex gap-4" data-animate="fade-up">
-                  <div class="mt-1 h-3 w-3 rounded-full bg-[rgb(var(--mana-teal))] shadow-[0_0_0_6px_rgba(40,166,189,0.10)]"></div>
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">2024 · Peregrinaciones</p>
-                    <p class="text-sm text-slate-700">Sumamos viajes a Israel y Turquía para caminar la Palabra en comunidad.</p>
-                  </div>
+          <div class="history-timeline" data-history-container>
+            {history.map((item, idx) => (
+              <div class="history-item" data-history-item data-id={item.year}>
+                <div class="history-dot"></div>
+                <div class="space-y-1">
+                  <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{item.year} · {item.title}</p>
+                  <p class="text-sm text-slate-700">{item.text}</p>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -149,18 +164,23 @@ const chips = [
               Devocional diario, discipulado real, mentoría, campus, Escuela Bíblica, iglesias y peregrinaciones: todo para que Cristo sea conocido.
             </p>
           </div>
-          <div class="rounded-2xl border border-[rgba(41,60,116,0.1)] bg-white/80 shadow-sm p-5 space-y-3">
+          <div class="rounded-2xl border border-[rgba(41,60,116,0.1)] bg-white/85 shadow-sm p-5 space-y-3">
             <p class="text-sm tracking-[0.2em] uppercase text-slate-500">Alcance</p>
             <p class="text-2xl font-bold text-slate-900">Mapa de crecimiento</p>
             <p class="text-sm text-slate-700">
               Ciudades conectadas con Maná en los últimos años. Seguimos orando por nuevos puntos en Latinoamérica y USA.
             </p>
-            <div class="h-48 rounded-xl bg-gradient-to-br from-[rgba(41,60,116,0.08)] via-[rgba(40,166,189,0.12)] to-[rgba(86,124,141,0.08)] relative overflow-hidden">
-              <div class="absolute inset-6 rounded-2xl border border-dashed border-[rgba(41,60,116,0.15)] backdrop-blur-[1px]"></div>
-              <div class="absolute top-6 left-10 h-3 w-3 rounded-full bg-[rgb(var(--mana-navy))] shadow-[0_0_0_8px_rgba(41,60,116,0.08)]"></div>
-              <div class="absolute top-16 right-16 h-3 w-3 rounded-full bg-[rgb(var(--mana-teal))] shadow-[0_0_0_8px_rgba(40,166,189,0.08)]"></div>
-              <div class="absolute bottom-10 left-1/2 h-3 w-3 rounded-full bg-[rgb(var(--mana-navy))] shadow-[0_0_0_8px_rgba(41,60,116,0.08)]"></div>
-              <p class="absolute bottom-4 right-4 text-[11px] text-slate-500">Mapa ilustrativo (datos reales en Evangeliza)</p>
+            <div class="history-globe">
+              {history.map((item, idx) => (
+                <span
+                  class="history-globe-dot"
+                  data-history-dot
+                  data-id={item.year}
+                  style={`--x:${item.coords.x}%; --y:${item.coords.y}%;`}
+                  aria-hidden="true"
+                ></span>
+              ))}
+              <p class="history-globe-note">Mapa ilustrativo (datos reales en Evangeliza)</p>
             </div>
           </div>
         </div>
