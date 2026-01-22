@@ -279,6 +279,9 @@ main {
     display: grid;
     gap: 1.5rem;
   }
+  .history-timeline.dark {
+    border-left-color: rgba(255,255,255,0.16);
+  }
   .history-item {
     position: relative;
     padding-left: 0.5rem;
@@ -306,13 +309,13 @@ main {
 
   .history-globe {
     position: relative;
-    height: 220px;
+    height: 260px;
     border-radius: 22px;
-    background: radial-gradient(circle at 30% 20%, rgba(41,60,116,0.15), transparent 50%),
-      radial-gradient(circle at 75% 70%, rgba(40,166,189,0.16), transparent 50%),
-      rgba(203,217,230,0.45);
+    background: radial-gradient(circle at 35% 25%, rgba(40,166,189,0.16), transparent 52%),
+      radial-gradient(circle at 70% 70%, rgba(41,60,116,0.2), transparent 50%),
+      rgba(41,60,116,0.45);
     overflow: hidden;
-    border: 1px dashed rgba(41,60,116,0.15);
+    border: 1px dashed rgba(255,255,255,0.12);
   }
   .history-globe-dot {
     position: absolute;
@@ -340,6 +343,19 @@ main {
     right: 12px;
     bottom: 10px;
     font-size: 11px;
-    color: rgba(41,60,116,0.55);
+    color: rgba(255,255,255,0.65);
+  }
+
+  .history-vision {
+    background: radial-gradient(circle at 10% 10%, rgba(40,166,189,0.22), transparent 45%),
+      rgba(41,60,116,0.35);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: var(--mana-shadow-1);
+  }
+  .history-globe-grid {
+    position: absolute;
+    inset: 12px;
+    border-radius: 18px;
+    border: 1px dashed rgba(255,255,255,0.12);
   }
 }
