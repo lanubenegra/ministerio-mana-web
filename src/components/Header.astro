@@ -16,16 +16,16 @@ const locale = Astro.cookies.get('lang')?.value ?? 'es';
       </div>
     </a>
 
-    <nav class="hidden lg:flex items-center justify-center gap-6 xl:gap-8">
-      <a href="/" class="nav-link px-2 py-1">{t(locale,'nav_home')}</a>
-      <a href="/ministerio/" class="nav-link px-2 py-1">{t(locale,'nav_ministry')}</a>
-      <a href="/campus/" class="nav-link px-2 py-1">{t(locale,'nav_campus')}</a>
-      <a href="/escuela-biblica/" class="nav-link px-2 py-1">{t(locale,'nav_school')}</a>
-      <a href="/iglesias/" class="nav-link px-2 py-1">{t(locale,'nav_churches')}</a>
-      <a href="/eventos/" class="nav-link px-2 py-1">{t(locale,'nav_events')}</a>
-      <a href="/devocional/" class="nav-link px-2 py-1">{t(locale,'nav_devotional')}</a>
-      <a href="/mujeres/" class="nav-link px-2 py-1">{t(locale,'nav_women')}</a>
-      <a href="/peregrinaciones/" class="nav-link px-2 py-1">{t(locale,'nav_pilgrims')}</a>
+    <nav class="hidden lg:flex items-center justify-center gap-5 xl:gap-6">
+      <a href="/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_home')}</a>
+      <a href="/ministerio/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_ministry')}</a>
+      <a href="/campus/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_campus')}</a>
+      <a href="/escuela-biblica/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_school')}</a>
+      <a href="/iglesias/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_churches')}</a>
+      <a href="/eventos/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_events')}</a>
+      <a href="/devocional/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_devotional')}</a>
+      <a href="/mujeres/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_women')}</a>
+      <a href="/peregrinaciones/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_pilgrims')}</a>
     </nav>
 
     <div class="flex items-center justify-end gap-5">
