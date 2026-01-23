@@ -41,7 +41,11 @@ module.exports = {
         'mana-gradient': 'linear-gradient(135deg, #293C74 0%, #28A6BD 55%, #567C8D 100%)',
         'mana-accent': 'linear-gradient(135deg, rgba(41,60,116,0.12) 0%, rgba(86,124,141,0.16) 100%)'
       }
+    },
+    animation: {
+      'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
     }
-  },
+  }
+},
   plugins: [require('@tailwindcss/typography'), require('@tailwindcss/forms')]
 };
