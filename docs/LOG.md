@@ -9,6 +9,7 @@
 - NOVA: Actualizó WORKBOARD con estado real del proyecto
 - NOVA: Creó LOG.md con historial de últimos días
 - DELTA: Creó estructura inicial de WORKBOARD y LOG
+- DELTA: Backend Cumbre Mundial 2026 (booking/pagos/webhooks base)
 
 **Decisiones**
 - Sistema de tickets MANA-XXX implementado
@@ -22,6 +23,7 @@
 - Usuario debe ejecutar `npm install` para Lenis/GSAP
 - Probar animaciones en dev server
 - Si funciona, mover MANA-001 a Done
+- Ejecutar SQL de Cumbre en Supabase y probar endpoints
 
 ---
 

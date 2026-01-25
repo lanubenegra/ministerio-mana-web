@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import type Stripe from 'stripe';
 import { verifyStripeWebhook, getStripeClient } from '@lib/stripe';
 import { logPaymentEvent, logSecurityEvent } from '@lib/securityEvents';
+import { recordPayment, recomputeBookingTotals, getBookingById } from '@lib/cumbreStore';
+import { sendCumbreEmail } from '@lib/cumbreMailer';
 
 export const prerender = false;
 
@@ -17,6 +19,42 @@ async function processEvent(event: Stripe.Event): Promise<void> {
         customer_email: session.customer_details?.email ?? session.customer_email,
         payment_status: session.payment_status,
       });
+
+      const bookingId = session.metadata?.cumbre_booking_id;
+      if (bookingId) {
+        const amount = session.amount_total ? session.amount_total / 100 : 0;
+        const currency = session.currency?.toUpperCase() || 'USD';
+        const providerTxId = session.payment_intent ? String(session.payment_intent) : session.id;
+        const cumbreReference = session.metadata?.cumbre_reference ?? session.id;
+
+        const serializedSession = JSON.parse(JSON.stringify(session));
+        await recordPayment({
+          bookingId,
+          provider: 'stripe',
+          providerTxId,
+          reference: cumbreReference,
+          amount,
+          currency,
+          status: session.payment_status === 'paid' ? 'APPROVED' : 'PENDING',
+          rawEvent: serializedSession,
+        });
+
+        if (session.payment_status === 'paid') {
+          const booking = await getBookingById(bookingId);
+          if (booking?.contact_email) {
+            await sendCumbreEmail('payment_received', {
+              to: booking.contact_email,
+              fullName: booking.contact_name ?? undefined,
+              bookingId,
+              amount,
+              currency,
+              totalPaid: booking.total_paid,
+              totalAmount: booking.total_amount,
+            });
+          }
+          await recomputeBookingTotals(bookingId);
+        }
+      }
       break;
     }
     case 'payment_intent.succeeded': {
