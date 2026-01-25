@@ -1,44 +1,23 @@
 :root {
-  /* --- COSMIC DESIGN SYSTEM (Deep Space) --- */
+  /* Paleta en RGB para poder usar transparencia */
+  --mana-navy: 41 60 116;      /* #293C74 */
+  --mana-teal: 40 166 189;     /* #28A6BD */
+  --mana-teal-2: 86 124 141;   /* #567C8D */
+  --mana-sky: 203 217 230;     /* #CBD9E6 */
+  --mana-beige: 245 239 235;   /* #F5EFEB */
+  --mana-white: 255 255 255;   /* #FFFFFF */
 
-  /* Backgrounds: Deepest void to lighter nebula */
-  --cosmic-void: 11 13 23;
-  /* #0B0D17 - Main Background (Deepest Navy/Black) */
-  --cosmic-nebula: 23 28 48;
-  /* #171C30 - Secondary/Cards */
-  --cosmic-starlight: 255 255 255;
-  /* #FFFFFF - Pure light */
+  /* Gradiente principal */
+  --mana-gradient: linear-gradient(
+    135deg,
+    rgb(var(--mana-navy)) 0%,
+    rgb(var(--mana-teal)) 50%,
+    rgb(var(--mana-teal-2)) 100%
+  );
 
-  /* Text Levels */
-  --text-main: 247 248 248;
-  /* #F7F8F8 - Primary (Off-white/Silver) */
-  --text-muted: 148 163 184;
-  /* #94A3B8 - Secondary (Blue-grey) */
-  --text-faint: 71 85 105;
-  /* #475569 - Tertiary/Borders */
-
-  /* Accents */
-  --accent-cyan: 56 189 248;
-  /* #38BDF8 - Electric Blue/Cyan Glow */
-  --accent-gold: 250 204 21;
-  /* #FACC15 - Divine/Star Gold */
-  --accent-glow: 0 0 20px rgba(56, 189, 248, 0.6);
-
-  /* Glassmorphism System */
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-surface: rgba(255, 255, 255, 0.03);
-  --glass-blur: 16px;
-
-  /* Legacy Mana Mapping (for backward compatibility) */
-  --mana-navy: var(--cosmic-void);
-  --mana-beige: var(--cosmic-void);
-  --mana-white: var(--cosmic-starlight);
-
-  /* Radii & Spacing */
-  --radius-xl: 32px;
-  --radius-lg: 20px;
-
-  /* Shadows */
-  --mana-shadow-1: 0 16px 40px -8px rgba(0, 0, 0, 0.5);
-  --mana-shadow-2: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
+  /* Radios y sombras suaves */
+  --mana-radius-lg: 28px;
+  --mana-radius-md: 18px;
+  --mana-shadow-1: 0 12px 32px rgba(41, 60, 116, 0.12);
+  --mana-shadow-2: 0 22px 60px rgba(41, 60, 116, 0.14);
 }
