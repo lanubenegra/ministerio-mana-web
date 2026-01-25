@@ -12,6 +12,10 @@
   - Modo "Voy solo" vs "Grupo"
   - Opciones de pago (50%, Cuotas)
   - Detección de edad para tipos de asistente
+- NOVA: Implementó nueva Identidad Visual "Ven y Ayúdanos" (feat/cumbre-ui):
+  - Nuevo componente `NetOverlay` (red animada)
+  - Paleta de colores: Golden, Deep Void, Ocean Teal
+  - Hero Parallax con capas y branding final
 - NOVA: Pusheado a la rama `feat/cumbre-ui`
 - DELTA: Estructura inicial de WORKBOARD y LOG
 - DELTA: Backend Cumbre Mundial 2026 (booking/pagos/webhooks base)
