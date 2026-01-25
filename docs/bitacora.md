@@ -19,3 +19,8 @@
 - Pruebas: N/A
 - Pendientes: Registrar cambios futuros por feature/PR.
 
+### 2026-01-24
+- Responsable: Codex
+- Cambios: Se agregan apodos de equipo, regla de no referencias a herramientas internas y prompts de trabajo.
+- Pruebas: N/A
+- Pendientes: Mantener bitacora por cada PR/merge.

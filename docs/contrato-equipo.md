@@ -7,6 +7,11 @@ Fecha: 2026-01-24
 - Codex: Backend/Security Lead (endpoints, webhooks, validaciones, env vars, performance, seguridad)
 - Cloud/Claude: Copywriting (solo contenido y textos, sin codigo)
 
+## Apodos de trabajo
+- Delta = Codex
+- Nova = Antigravity
+- Atlas = Cloud/Claude
+
 ## Reglas de convivencia
 1) Separacion de roles
    - Antigravity solo UI/UX.
@@ -23,6 +28,9 @@ Fecha: 2026-01-24
    - Prefijos: ui/, feat/, fix/, copy/.
 5) Entrega limpia
    - Cada entrega debe incluir: archivos tocados, que cambio, como probar, que NO toco.
+6) No referencias a herramientas internas
+   - No incluir texto sobre IA, prompts o herramientas internas en UI, copy, README, commits o comentarios.
+   - Documentacion tecnica debe ser neutral y profesional.
 
 ## Mapa de carpetas (Astro)
 ### Antigravity puede editar
@@ -46,4 +54,3 @@ Fecha: 2026-01-24
 ### Codex NO debe tocar
 - CSS fino del home (salvo compatibilidad minima)
 - animaciones visuales (las define Antigravity)
-
