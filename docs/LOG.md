@@ -6,10 +6,14 @@
 
 ## 2026-01-25
 **Hoy**
-- NOVA: Actualizó WORKBOARD con estado real del proyecto (MANA-008)
-- NOVA: Creó LOG.md con historial de últimos días
-- NOVA: Implementó UI Cumbre 2026 (Landing + Forms) (MANA-009)
-- DELTA: Creó estructura inicial de WORKBOARD y LOG
+- NOVA: Implementó mejoras masivas en UI Cumbre (MANA-009):
+  - Fix stepper overlap (pb-10 + relative)
+  - Pricing logic por país (COP/USD)
+  - Modo "Voy solo" vs "Grupo"
+  - Opciones de pago (50%, Cuotas)
+  - Detección de edad para tipos de asistente
+- NOVA: Pusheado a la rama `feat/cumbre-ui`
+- DELTA: Estructura inicial de WORKBOARD y LOG
 - DELTA: Backend Cumbre Mundial 2026 (booking/pagos/webhooks base)
 
 **Decisiones**
