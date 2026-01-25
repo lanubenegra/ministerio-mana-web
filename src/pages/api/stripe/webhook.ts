@@ -14,6 +14,7 @@ import {
   refreshPlanNextDueDate,
 } from '@lib/cumbreStore';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
+import { updateDonationById, updateDonationByReference } from '@lib/donationsStore';
 
 export const prerender = false;
 
@@ -73,6 +74,29 @@ async function processEvent(event: Stripe.Event): Promise<void> {
           provider_subscription_id: String(session.subscription),
           provider_customer_id: session.customer ? String(session.customer) : null,
         });
+      }
+
+      const donationId = session.metadata?.donation_id;
+      const donationReference = session.metadata?.donation_reference;
+      if (donationId || donationReference) {
+        const status = session.payment_status === 'paid' ? 'APPROVED' : 'PENDING';
+        const providerTxId = session.payment_intent ? String(session.payment_intent) : session.id;
+        if (donationId) {
+          await updateDonationById({
+            donationId,
+            status,
+            providerTxId,
+            rawEvent: session,
+          });
+        } else if (donationReference) {
+          await updateDonationByReference({
+            provider: 'stripe',
+            reference: donationReference,
+            status,
+            providerTxId,
+            rawEvent: session,
+          });
+        }
       }
       break;
     }
