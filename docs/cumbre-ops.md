@@ -10,6 +10,7 @@ Guia corta para cron de cuotas, export CSV y acceso de cuenta.
 - `PUBLIC_SUPABASE_ANON_KEY`
 - `CUMBRE_CRON_SECRET`
 - `CUMBRE_EXPORT_SECRET`
+- `CUMBRE_INSTALLMENT_DEADLINE` (por defecto `2026-05-15`)
 
 > Nota: puedes reutilizar `SUPABASE_URL` y `SUPABASE_ANON_KEY` como `PUBLIC_*`.
 

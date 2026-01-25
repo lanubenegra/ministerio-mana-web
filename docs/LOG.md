@@ -19,6 +19,7 @@
 - NOVA: Pusheado a la rama `feat/cumbre-ui`
 - DELTA: Estructura inicial de WORKBOARD y LOG
 - DELTA: Backend Cumbre Mundial 2026 (booking/pagos/webhooks base)
+- DELTA: Cuenta de usuario + cron cuotas/export + guia operativa (MANA-008)
 
 **Decisiones**
 - Sistema de tickets MANA-XXX implementado
