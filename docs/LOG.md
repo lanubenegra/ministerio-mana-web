@@ -20,6 +20,7 @@
 - DELTA: Estructura inicial de WORKBOARD y LOG
 - DELTA: Backend Cumbre Mundial 2026 (booking/pagos/webhooks base)
 - DELTA: Cuenta de usuario + cron cuotas/export + guia operativa (MANA-008)
+- DELTA: Checklist QA end-to-end Cumbre 2026
 
 **Decisiones**
 - Sistema de tickets MANA-XXX implementado
