@@ -48,15 +48,12 @@ _Vacío - nada en desarrollo activo_
 
 ---
 
-## Review
 - MANA-009 UI Cumbre Mundial 2026 (landing + inscripcion + registro)
   - Owner: NOVA
   - Branch: `feat/cumbre-ui`
-  - Scope: `src/pages/eventos/cumbre-mundial-2026/**`, `src/components/cumbre2026/**` (Nuevo)
-  - Status: ✅ Implementado
-  - Notes: Landing, Inscripción (Stepper), Registro (Detalle), Estado
-
-- MANA-001 Home parallax animations (Ayocin-style)
+  - Scope: `src/pages/eventos/cumbre-mundial-2026/**`, `src/components/cumbre2026/**`
+  - Status: ✅ Finalizado (Mejoras UX + Fix Stepper)
+  - Notes: Landing, Inscripción (Stepper con precios), Registro (Detalle), Estado. Pendiente integración final con backend real.
   - Owner: NOVA
   - Branch: `ui/home-storytelling`
   - Scope: 
