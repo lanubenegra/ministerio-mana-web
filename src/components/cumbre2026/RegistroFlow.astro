@@ -133,9 +133,9 @@
                  reference: 'MANA-2026-X99',
                  holder: 'Juan Pérez',
                  participants: [
-                    { id: 1, name: 'Juan Pérez', type: 'ADULT_HOTEL' },
-                    { id: 2, name: 'María Gómez', type: 'ADULT_HOTEL' },
-                    { id: 3, name: 'Tomás Pérez', type: 'CHILD_7_13' }
+                    { id: 1, name: 'Juan Pérez', type: 'lodging' },
+                    { id: 2, name: 'María Gómez', type: 'lodging' },
+                    { id: 3, name: 'Tomás Pérez', type: 'child_7_13' }
                  ]
               };
            } else {
@@ -193,7 +193,13 @@
      },
 
      formatType(type) {
-        return type.replace('_', ' '); // Simple cleanup
+        const labels = {
+           lodging: 'Adulto con alojamiento',
+           no_lodging: 'Adulto sin alojamiento',
+           child_0_7: 'Niño 0-7',
+           child_7_13: 'Niño 7-13'
+        };
+        return labels[type] || type;
      },
 
      showError() {
