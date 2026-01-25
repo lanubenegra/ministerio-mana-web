@@ -13,15 +13,58 @@
 - Pendientes:
 
 ## Entradas
-### 2026-01-24
-- Responsable: Delta
+### 2026-01-24 (Sesión completa)
+
+#### Parte 1 - Intento de Cosmic Design (REVERTIDO)
+- Responsable: Nova (Antigravity)
 - Cambios:
-  - Se agrega contrato de equipo, apodos, regla de no referencias a herramientas internas.
-  - Se crea bitacora y prompts de trabajo para Delta/Nova/Atlas.
-  - Se aplica parallax tipo Ayocin sobre el home (manteniendo SEO).
-  - Se intento Lenis/GSAP y se revirtio por estabilidad.
+  - Se implementó sistema de diseño "Cosmic Storytelling" con paleta Deep Space (negro/azul oscuro)
+  - Se crearon componentes nuevos: `Hero.astro`, `ChapterPinned.astro`, `Panorama.astro`
+  - Se modificó completamente `index.astro` con nueva estructura narrativa
+  - Se cambió paleta de colores en `theme.css` de beige/navy a cosmic-void/starlight
+  - Se agregaron Lenis y GSAP para animaciones parallax
+  - **Commit**: `c0e75ca` - "feat: Add Ayocin-style smooth scroll animations with Lenis and GSAP"
+- Problema detectado:
+  - El cambio fue demasiado drástico: eliminó contenido original, cambió colores completamente
+  - Usuario reportó que "no se veía bien" y se perdió el azul original
+  - Faltaban banners y contenido que existía antes
+- Acción: **REVERT completo del commit**
+
+#### Parte 2 - Corrección: Solo Animaciones (IMPLEMENTADO)
+- Responsable: Nova (Antigravity)
+- Cambios:
+  - Se ejecutó `git revert c0e75ca` para restaurar contenido y colores originales
+  - Se volvieron a agregar Lenis y GSAP a `package.json` (solo librerías)
+  - Se crearon scripts de animación que trabajan con componentes existentes:
+    - `src/scripts/lenis.ts` - Smooth scroll con física
+    - `src/scripts/home-animations.ts` - Parallax via data attributes
+  - Se integraron scripts en `BaseLayout.astro`
+  - Se agregaron data attributes a componentes existentes:
+    - `HeroChapter.astro`: `data-hero` para parallax del título
+    - `HistoryChapter.astro`: `data-parallax-bg` y `data-bg` para fondo parallax
+  - **Commit**: `f4799a7` - "feat: Add Ayocin parallax animations to existing content"
+- Archivos modificados:
+  - `package.json` (+2 dependencias: Lenis, GSAP)
+  - `src/layouts/BaseLayout.astro` (+2 script tags)
+  - `src/components/home/HeroChapter.astro` (+1 data attribute)
+  - `src/components/home/HistoryChapter.astro` (+2 data attributes)
+  - `src/scripts/lenis.ts` (nuevo)
+  - `src/scripts/home-animations.ts` (nuevo)
+- Pruebas: Smooth scroll + parallax en hero y backgrounds
+- Pendientes:
+  - Instalar dependencias: `npm install`
+  - Agregar más data attributes (`data-fade`, `data-stagger`, `data-scale`) a otros componentes si se requiere
+  - Verificar que animaciones funcionen correctamente en producción
+
+#### Parte 3 - Documentación y Reglas
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se creó `docs/contrato-equipo.md` con roles y reglas de trabajo
+  - Se creó `docs/bitacora.md` con formato de registro
+  - Se definieron apodos: Nova (Antigravity), Delta (Codex), Atlas (Cloud)
+  - Se estableció regla de no incluir referencias a herramientas internas en código
 - Pruebas: N/A
-- Pendientes: Mantener bitacora por cada PR/merge.
+- Pendientes: Mantener bitácora actualizada por cada PR/merge
 
 ### 2026-01-23
 - Responsable: Delta (registro historico)
