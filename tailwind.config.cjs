@@ -14,7 +14,10 @@ module.exports = {
           dark: '#1A255C',
           medium: '#3F58A1',
           light: '#CBD9E6',
-          teal: '#28A6BD'
+          teal: '#28A6BD',
+          gold: '#F2C94C',
+          void: '#0B1120',
+          ocean: '#00A9BD'
         },
         accent: {
           DEFAULT: '#F6519B',
