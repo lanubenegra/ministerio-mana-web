@@ -1,38 +1,87 @@
 # Workboard - Ministerio Mana Web
 
-## Reglas (anti-confusion)
+**Source of Truth del estado del proyecto**
+
+## Reglas (anti-confusión)
 1) No empieces nada si no tiene ID (MANA-00X)
 2) Todo trabajo debe tener: Owner + Branch + Scope
-3) Si cambias el scope, lo escribes aqui antes de tocar archivos
+3) Si cambias el scope, lo escribes aquí antes de tocar archivos
+
+---
 
 ## Backlog
-- (vacio)
+- MANA-004 Agregar más data attributes para animaciones
+  - Owner: TBD
+  - Scope: `src/components/home/**`
+  - Description: Agregar `data-fade`, `data-stagger`, `data-scale` a componentes restantes
+
+- MANA-005 Optimizar animaciones para mobile
+  - Owner: TBD
+  - Scope: `src/scripts/home-animations.ts`
+  - Description: Simplificar pinning y parallax en viewports <768px
+
+- MANA-006 Copy final para capítulos del home
+  - Owner: ATLAS
+  - Scope: Contenido de `src/components/home/**`
+  - Description: Refinar textos con tono espiritual/moderno
+
+---
 
 ## Ready
-- (vacio)
+- MANA-007 Verificar build en producción
+  - Owner: DELTA
+  - Scope: CI/CD, Vercel deployment
+  - Description: Confirmar que Lenis/GSAP funcionan en prod
+
+---
 
 ## In Progress
-- MANA-001 Home storytelling layout
-  - Owner: NOVA
-  - Branch: ui/home-storytelling
-  - Scope: src/components/home/**, src/pages/index.astro
-  - Status: building Hero + chapters skeleton
+_Vacío - nada en desarrollo activo_
 
-- MANA-002 Motion/scroll engine
-  - Owner: DELTA
-  - Branch: feat/home-motion
-  - Scope: src/scripts/** (no UI)
-  - Blocked by: MANA-001 data-attributes
-  - Status: waiting on data-attrs
-
-- MANA-003 Copy capitulos
-  - Owner: ATLAS
-  - Branch: copy/home-story
-  - Scope: docs/copy/**, src/content/**
-  - Status: draft v1
+---
 
 ## Review
-- (vacio)
+- MANA-001 Home parallax animations (Ayocin-style)
+  - Owner: NOVA
+  - Branch: `ui/home-storytelling`
+  - Scope: 
+    - `src/scripts/lenis.ts` (nuevo)
+    - `src/scripts/home-animations.ts` (nuevo)
+    - `src/layouts/BaseLayout.astro`
+    - `src/components/home/HeroChapter.astro`
+    - `src/components/home/HistoryChapter.astro`
+    - `package.json`
+  - Status: ✅ Implementado, pusheado, **pendiente `npm install` y pruebas**
+  - Commits: `57ee5ee` (revert), `f4799a7` (final)
+  - Notes: Requiere instalación de Lenis y GSAP
+
+---
 
 ## Done
-- (vacio)
+- MANA-002 Documentación de equipo y reglas
+  - Owner: DELTA
+  - Branch: `ui/home-storytelling`
+  - Scope: `docs/contrato-equipo.md`, `docs/bitacora.md`
+  - Completed: 2026-01-24
+  - Notes: Define roles (Nova/Delta/Atlas) y reglas de trabajo
+
+- MANA-003 Revert de Cosmic Design
+  - Owner: NOVA
+  - Branch: `ui/home-storytelling`
+  - Scope: Múltiples archivos (revert completo de commit `c0e75ca`)
+  - Completed: 2026-01-24
+  - Notes: Se revirtió tema oscuro cósmico por eliminar contenido original
+
+---
+
+## Blocked
+_Ningún ticket bloqueado actualmente_
+
+---
+
+## Decisiones Técnicas Activas
+- ✅ **Smooth scroll**: Lenis (aprobado)
+- ✅ **Animaciones**: GSAP ScrollTrigger (aprobado)
+- ✅ **Paleta de colores**: Beige/Navy original (mantener, NO cosmic)
+- ⏳ **Mobile optimization**: Pendiente (MANA-005)
+- ⏳ **Production testing**: Pendiente (MANA-007)
