@@ -52,8 +52,8 @@ _Vacío - nada en desarrollo activo_
   - Owner: NOVA
   - Branch: `feat/cumbre-ui`
   - Scope: `src/pages/eventos/cumbre-mundial-2026/**`, `src/components/cumbre2026/**`
-  - Status: ✅ Finalizado (Mejoras UX + Fix Stepper)
-  - Notes: Landing, Inscripción (Stepper con precios), Registro (Detalle), Estado. Pendiente integración final con backend real.
+  - Status: ✅ Finalizado (Mejoras Visuales "Ven y Ayúdanos")
+  - Notes: Identidad visual aplicada (Red, Colores Dorados/Navy, Hero Parallax). Landing, inscripción y registro completos.
   - Owner: NOVA
   - Branch: `ui/home-storytelling`
   - Scope: 
