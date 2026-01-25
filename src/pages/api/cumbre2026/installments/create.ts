@@ -1,0 +1,179 @@
+import type { APIRoute } from 'astro';
+import { enforceRateLimit } from '@lib/rateLimit';
+import { logSecurityEvent } from '@lib/securityEvents';
+import { resolveBaseUrl } from '@lib/url';
+import { buildInstallmentReference } from '@lib/cumbre2026';
+import { buildInstallmentSchedule, type InstallmentFrequency } from '@lib/cumbreInstallments';
+import { createPaymentPlan, getBookingById, getPlanByBookingId, updateInstallment } from '@lib/cumbreStore';
+import { createStripeInstallmentSession } from '@lib/stripe';
+import { buildWompiCheckoutUrl } from '@lib/wompi';
+
+export const prerender = false;
+
+function normalizeFrequency(raw: string | null | undefined): InstallmentFrequency {
+  const value = (raw || '').toString().trim().toUpperCase();
+  if (value === 'BIWEEKLY' || value === 'QUINCENAL') return 'BIWEEKLY';
+  return 'MONTHLY';
+}
+
+export const POST: APIRoute = async ({ request, clientAddress }) => {
+  const contentType = request.headers.get('content-type') || '';
+  let payload: any = {};
+
+  try {
+    if (contentType.includes('application/json')) {
+      payload = await request.json();
+    } else {
+      const form = await request.formData();
+      payload = {
+        bookingId: form.get('bookingId'),
+        frequency: form.get('frequency'),
+      };
+    }
+  } catch {
+    return new Response(JSON.stringify({ ok: false, error: 'Payload invalido' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const bookingId = (payload.bookingId || '').toString();
+  if (!bookingId) {
+    return new Response(JSON.stringify({ ok: false, error: 'bookingId requerido' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const allowed = await enforceRateLimit(`cumbre.installments:${clientAddress ?? 'unknown'}`);
+  if (!allowed) {
+    void logSecurityEvent({
+      type: 'rate_limited',
+      identifier: 'cumbre.installments',
+      ip: clientAddress,
+      detail: 'Cumbre installments',
+    });
+    return new Response(JSON.stringify({ ok: false, error: 'Demasiadas solicitudes' }), {
+      status: 429,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  try {
+    const booking = await getBookingById(bookingId);
+    if (!booking) {
+      return new Response(JSON.stringify({ ok: false, error: 'Reserva no encontrada' }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    const existingPlan = await getPlanByBookingId(bookingId);
+    if (existingPlan) {
+      return new Response(JSON.stringify({ ok: false, error: 'La reserva ya tiene un plan de cuotas' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    const frequency = normalizeFrequency(payload.frequency);
+    const currency = booking.currency === 'COP' ? 'COP' : 'USD';
+    const schedule = buildInstallmentSchedule({
+      totalAmount: Number(booking.total_amount || 0),
+      currency,
+      frequency,
+    });
+
+    const provider = currency === 'COP' ? 'wompi' : 'stripe';
+    const plan = await createPaymentPlan({
+      bookingId,
+      frequency,
+      startDate: schedule.startDate,
+      endDate: schedule.endDate,
+      totalAmount: Number(booking.total_amount || 0),
+      currency,
+      installmentCount: schedule.installmentCount,
+      installmentAmount: schedule.installmentAmount,
+      provider,
+      autoDebit: true,
+      installments: schedule.installments,
+    });
+
+    const baseUrl = resolveBaseUrl(request);
+    const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}`;
+
+    if (provider === 'stripe') {
+      const interval = frequency === 'BIWEEKLY' ? 'week' : 'month';
+      const intervalCount = frequency === 'BIWEEKLY' ? 2 : 1;
+      const cancelAt = new Date(`${schedule.endDate}T23:59:59-05:00`).getTime() / 1000;
+      const session = await createStripeInstallmentSession({
+        amount: schedule.installmentAmount,
+        currency: 'USD',
+        description: 'Cumbre Mundial 2026 - Cuotas',
+        interval,
+        intervalCount,
+        successUrl: statusUrl,
+        cancelUrl: statusUrl,
+        cancelAt: Math.floor(cancelAt),
+        metadata: {
+          cumbre_booking_id: bookingId,
+          cumbre_plan_id: plan.id,
+          cumbre_frequency: frequency,
+        },
+        customerEmail: booking.contact_email || undefined,
+      });
+
+      if (!session.url) {
+        return new Response(JSON.stringify({ ok: false, error: 'No se pudo iniciar el pago en cuotas' }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({
+        ok: true,
+        planId: plan.id,
+        provider: 'stripe',
+        url: session.url,
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    const firstInstallment = schedule.installments[0];
+    const reference = buildInstallmentReference({
+      bookingId,
+      planId: plan.id,
+      installmentIndex: firstInstallment.installmentIndex,
+    });
+    await updateInstallment(schedule.installments[0]?.installmentIndex
+      ? schedule.installments[0].installmentIndex.toString()
+      : '', {});
+
+    const { url } = buildWompiCheckoutUrl({
+      amountInCents: Math.round(firstInstallment.amount * 100),
+      currency: 'COP',
+      description: 'Cumbre Mundial 2026 - Cuota 1',
+      redirectUrl: statusUrl,
+      reference,
+      email: booking.contact_email || undefined,
+    });
+
+    return new Response(JSON.stringify({
+      ok: true,
+      planId: plan.id,
+      provider: 'wompi',
+      url,
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  } catch (error: any) {
+    console.error('[cumbre.installments] error', error);
+    return new Response(JSON.stringify({ ok: false, error: 'Error creando plan de cuotas' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+};

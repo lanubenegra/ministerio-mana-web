@@ -87,6 +87,18 @@ export function buildPaymentReference(bookingId: string, paymentIndex: number): 
   return `${prefix}-${bookingId}-P${index}-${rand}`;
 }
 
+export function buildInstallmentReference(params: {
+  bookingId: string;
+  planId: string;
+  installmentIndex: number;
+}): string {
+  const prefixRaw = process.env.CUMBRE_REFERENCE_PREFIX || 'MM-EVT-CM26';
+  const prefix = prefixRaw.replace(/[^A-Z0-9_-]/gi, '').toUpperCase() || 'MM-EVT-CM26';
+  const index = String(params.installmentIndex).padStart(2, '0');
+  const rand = crypto.randomBytes(3).toString('hex').toUpperCase();
+  return `${prefix}-${params.bookingId}-PLN-${params.planId}-P${index}-${rand}`;
+}
+
 export function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
@@ -99,6 +111,13 @@ export function generateAccessToken(): { token: string; hash: string } {
 export function parseReferenceBookingId(reference: string | null | undefined): string | null {
   if (!reference) return null;
   const match = reference.match(/MM-EVT-CM26-([a-f0-9-]{8,})-P\d{2}-/i);
+  if (!match) return null;
+  return match[1];
+}
+
+export function parseReferencePlanId(reference: string | null | undefined): string | null {
+  if (!reference) return null;
+  const match = reference.match(/MM-EVT-CM26-[a-f0-9-]{8,}-PLN-([a-f0-9-]{8,})-P\d{2}-/i);
   if (!match) return null;
   return match[1];
 }
