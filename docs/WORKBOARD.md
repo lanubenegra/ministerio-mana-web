@@ -10,10 +10,7 @@
 ---
 
 ## Backlog
-- MANA-009 UI Cumbre Mundial 2026 (landing + inscripcion + registro)
-  - Owner: NOVA
-  - Scope: `src/pages/eventos/cumbre-mundial-2026/**`, `src/components/eventos/**`
-  - Description: Landing y formularios con estilo Maná
+
 
 - MANA-004 Agregar más data attributes para animaciones
   - Owner: TBD
@@ -46,7 +43,12 @@
 ---
 
 ## In Progress
-_Vacío - nada en desarrollo activo_
+- MANA-009 UI Cumbre Mundial 2026 (landing + inscripcion + registro)
+  - Owner: NOVA
+  - Branch: `feat/cumbre-ui`
+  - Scope: `src/pages/eventos/cumbre-mundial-2026/**`, `src/components/cumbre2026/**`
+  - Description: Landing y formularios con estilo Maná (Steppers, Forms, Status)
+
 
 ---
 

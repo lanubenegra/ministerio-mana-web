@@ -1,0 +1,39 @@
+---
+import CumbreLayout from '@components/cumbre2026/CumbreLayout.astro';
+
+const { bookingId } = Astro.url.searchParams;
+---
+
+<CumbreLayout title="¡Todo listo! | Cumbre 2026">
+  <div class="min-h-screen flex items-center justify-center p-6">
+    <div class="relative bg-white/5 border border-white/10 p-12 rounded-[3rem] backdrop-blur-md max-w-lg w-full text-center space-y-8 animate-fade-in-up">
+       
+       <!-- Animated Check Icon -->
+       <div class="w-24 h-24 bg-brand-teal rounded-full flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(40,166,189,0.5)]">
+         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+         </svg>
+       </div>
+
+       <div class="space-y-4">
+         <h1 class="font-display text-4xl font-bold text-white">¡Registro Exitoso!</h1>
+         <p class="text-white/70 text-lg leading-relaxed">
+           Tu inscripción y la de tu grupo ha sido confirmada correctamente.
+         </p>
+         <p class="text-white/50 text-sm">
+           Hemos enviado un correo con todos los detalles y tu comprobante de reserva.
+         </p>
+       </div>
+
+       <div class="pt-4 space-y-4">
+          <a href="/" class="block w-full py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors">
+            Volver al Inicio
+          </a>
+       </div>
+       
+       <!-- Decorative Confetti (CSS only for now) -->
+       <div class="absolute -top-4 -left-4 w-8 h-8 bg-brand-teal rounded-full opacity-50 animate-bounce" style="animation-delay: 0.1s"></div>
+       <div class="absolute -bottom-6 -right-2 w-6 h-6 bg-[#4CC9E0] rounded-full opacity-50 animate-bounce" style="animation-delay: 0.3s"></div>
+    </div>
+  </div>
+</CumbreLayout>
