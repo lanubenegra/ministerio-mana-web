@@ -1,4 +1,3 @@
-
 ---
 import SEO from '@components/SEO.astro';
 import Header from '@components/Header.astro';
@@ -18,11 +17,16 @@ const { title, description, image, type = 'website', structuredData, noindex = f
       async
       defer
     ></script>
-    <script src="/js/scroll-reveal.js" defer></script>
   </head>
   <body>
     <Header />
     <main class="min-h-[60vh]"><slot /></main>
     <Footer />
+    
+    <!-- Lenis Smooth Scroll -->
+    <script src="/src/scripts/lenis.ts" type="module"></script>
+    
+    <!-- GSAP ScrollTrigger Animations (only for home page) -->
+    <script src="/src/scripts/home-animations.ts" type="module"></script>
   </body>
 </html>

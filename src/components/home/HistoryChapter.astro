@@ -1,163 +1,225 @@
 ---
 interface IdentitySection {
   id: string;
+  year?: string;
   title: string;
   subtitle?: string;
   content: string[];
+  visual: 'intro' | 'map-origins' | 'pandemic-digital' | 'globe-vision' | 'values-grid';
   highlight?: string;
-  rotate: string; // Globe rotation
-  pin?: { x: number; y: number; angle: number; len: number; label: string };
 }
 
 const sections: IdentitySection[] = [
   {
     id: 'intro',
-    title: 'Es momento de',
-    highlight: 'ORAR AGRADECER',
-    content: [],
-    rotate: '0deg', // Default
+    title: 'Nuestra Historia',
+    visual: 'intro',
+    content: ['Todo gran movimiento de fe comienza con un paso de obediencia.'],
+  },
+  {
+    id: 'origins',
+    year: '2016',
+    title: 'De Londres a Medellín',
+    subtitle: 'El Inicio',
+    visual: 'map-origins',
+    content: [
+      'La Iglesia Ministerio Maná surge tras la llegada a Medellín de los Pastores Carlos Ríos y su esposa Gloria Cano desde Londres.',
+      'Un llamado transatlántico que marcó el comienzo de una nueva temporada espiritual en la ciudad.',
+    ],
+  },
+  {
+    id: 'pandemic',
+    year: '2020',
+    title: 'Expansión Digital',
+    subtitle: 'Ministerio Maná Global',
+    visual: 'pandemic-digital',
+    content: [
+      'Con la llegada de la pandemia, el Ministerio Maná se fortaleció y consolidó como una respuesta a la necesidad de quienes querían crecer espiritualmente a través de medios virtuales.',
+      'Oficializamos el nombre "Ministerio Maná", contando con 3 grandes frentes de acción: Iglesias Maná, Escuela Bíblica y el Devocional Maná.',
+    ],
+    highlight: '3 Grandes Frentes'
+  },
+  {
+    id: 'vision',
+    year: '2030',
+    title: 'Visión Global',
+    visual: 'globe-vision',
+    content: [
+      'Ser una iglesia bíblica, cristocéntrica y relevante en su entorno, con presencia nacional e internacional en el 2030.',
+      'Una iglesia que discipula, predica el evangelio como estilo de vida y enseña a amar a Dios genuinamente.',
+    ],
+    highlight: 'Nacional e Internacional'
   },
   {
     id: 'mision',
     title: 'Nuestra Misión',
+    visual: 'values-grid',
     content: [
-      'Somos una iglesia que enseña las Escrituras, edificando las vidas de los hijos de Dios a través de hábitos espirituales que los lleven a conocer, amar y obedecer a Dios, con un alto grado de compromiso en el servicio ministerial para dar cumplimiento al plan de Dios.',
-      'Formamos hombres y mujeres de Dios que guiados por el Espíritu Santo lleguen a ser sus instrumentos en el establecimiento de grupos pequeños e iglesias locales que impacten su entorno cercano y el mundo.',
+      'Somos una iglesia que enseña las Escrituras, edificando vidas a través de hábitos espirituales.',
+      'Formamos hombres y mujeres de Dios guiados por el Espíritu Santo para impactar su entorno.',
     ],
-    rotate: '-15deg',
-  },
-  {
-    id: 'vision',
-    title: 'Nuestra Visión',
-    highlight: '2030',
-    content: [
-      'Ser una iglesia bíblica, cristocéntrica y relevante en su entorno, con presencia nacional e internacional en el 2030.',
-      'Una iglesia que discipula a quienes han nacido de nuevo, que predica el evangelio como un estilo de vida a través de todos los medios posibles, enseñando a amar a Dios genuinamente y a servir a su prójimo.',
-    ],
-    rotate: '25deg',
-    pin: { x: 75, y: 45, angle: 30, len: 80, label: 'Visión 2030' }
   },
   {
     id: 'valores',
     title: 'Principios y Valores',
+    visual: 'values-grid',
     content: [
-      'Enseñamos la Palabra de Dios como fundamento de fe y práctica.',
-      'Procuramos depender de Dios a través de hábitos de vida piadosos.',
-      'Desafiamos a servir a Dios en el liderazgo para el uso de los dones.',
-      'Proclamamos nuestra fe para dar a conocer a Dios.',
-      'Propiciamos ambientes de Adoración y de consagración a Dios.',
+      'Palabra de Dios como fundamento.',
+      'Dependencia de Dios través de hábitos piadosos.',
+      'Servicio a Dios en el liderazgo.',
+      'Proclamación de la fe.',
+      'Ambientes de Adoración y consagración.',
     ],
-    rotate: '60deg',
-  },
-  {
-    id: 'objetivos',
-    title: 'Nuestros Objetivos',
-    content: [
-      'Cumplir en obediencia la gran comisión de llevar el evangelio hasta lo último de la tierra.',
-      'Discipular a quienes han experimentado un nuevo nacimiento hasta que lleguen a la madurez.',
-      'Capacitar a los hijos de Dios por el Espíritu Santo en el uso de sus dones.',
-    ],
-    rotate: '100deg',
-    pin: { x: 50, y: 50, angle: -90, len: 65, label: 'Objetivos' }
-  },
+  }
 ];
 ---
 
-<section id="cap-identidad" class="relative bg-[#1A255C] text-white overflow-hidden" style="contain: paint;">
-  <!-- Background atmos -->
-  <div class="absolute inset-0 z-0">
-    <div class="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-[#151e4a] to-transparent"></div>
-    <!-- Nebula glow -->
-    <div class="absolute top-[20%] right-[-10%] w-[800px] h-[800px] bg-brand-teal/10 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow"></div>
-    <div class="absolute bottom-[10%] left-[-10%] w-[600px] h-[600px] bg-brand-medium/10 rounded-full blur-[100px] mix-blend-screen"></div>
+<section id="cap-historia" class="relative bg-[#1A255C] text-white overflow-hidden" style="contain: paint;">
+  <!-- Deep Space Background -->
+  <div class="absolute inset-0 z-0 bg-[#0f172a]">
+    <div class="absolute inset-0 bg-gradient-to-b from-[#1a255c] via-[#151e4a] to-[#0f172a] opacity-90"></div>
+    <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-teal/5 rounded-full blur-[150px] mix-blend-screen animate-pulse-slow"></div>
   </div>
 
-  <div class="container-tight relative z-10 grid gap-10 lg:grid-cols-2 min-h-screen py-24">
+  <div class="container-tight relative z-10 grid lg:grid-cols-2 gap-12 min-h-screen py-24">
     
-    <!-- Left Column: Scroll Content -->
-    <div class="flex flex-col gap-[80vh] py-[20vh] relative z-20">
+    <!-- LEFT COLUMN: Timeline Scroll -->
+    <div class="relative z-20 flex flex-col gap-[60vh] py-[10vh] pl-4 md:pl-0">
+      <!-- Continuous Timeline Line -->
+      <div class="absolute left-4 md:left-8 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-brand-teal/50 to-transparent z-0 hidden md:block"></div>
+
       {sections.map((item, index) => (
         <article 
-          class="flex flex-col justify-center min-h-[50vh] transition-opacity duration-500"
+          class="relative pl-6 md:pl-24 transition-opacity duration-700"
           data-history-scene
-          data-rotate={item.rotate}
+          data-visual={item.visual}
           id={`scene-${item.id}`}
         >
-          {item.id === 'intro' ? (
-             /* Special layout for Intro */
-            <div class="space-y-4" data-animate="fade-up">
-              <p class="text-2xl font-light tracking-[0.2em] font-display text-brand-teal/80">Es momento de</p>
-              <h2 class="text-6xl md:text-8xl font-black leading-[0.9] text-transparent bg-clip-text bg-gradient-to-r from-brand-teal via-white to-brand-teal">
-                ORAR<br/>AGRADECER
-              </h2>
-            </div>
-          ) : (
-            <div class="space-y-8" data-animate="fade-up">
-               <div class="flex items-center gap-4">
-                  <span class="text-xs font-bold font-mono text-brand-teal/60">0{index + 1}</span>
-                  <div class="h-px w-12 bg-brand-teal/40"></div>
-               </div>
-               
-               <h2 class="text-4xl md:text-6xl font-black leading-tight text-white mb-6">
-                 {item.title} <br/>
-                 {item.highlight && <span class="text-brand-teal">{item.highlight}</span>}
+          <!-- Timeline Dot -->
+          <div class="absolute left-[3px] md:left-[29px] top-2 w-3 h-3 rounded-full bg-brand-teal border-2 border-[#1A255C] shadow-[0_0_15px_var(--mana-teal)] z-10 hidden md:block group-hover:scale-150 transition-transform"></div>
+          
+          <div class="space-y-6" data-animate="fade-up">
+             {item.year && (
+               <span class="text-6xl md:text-8xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-brand-teal to-white/20 select-none opacity-90">
+                 {item.year}
+               </span>
+             )}
+             
+             <div class="space-y-2">
+               {item.subtitle && <p class="text-sm font-bold tracking-[0.2em] uppercase text-brand-teal/80">{item.subtitle}</p>}
+               <h2 class="text-3xl md:text-5xl font-bold leading-tight text-white/95">
+                 {item.title}
                </h2>
+             </div>
 
-               <div class="space-y-6">
-                 {item.content.map((paragraph) => (
-                   item.id === 'valores' || item.id === 'objetivos' ? (
-                     /* List style for values/objectives */
-                     <div class="flex gap-4 group">
-                       <div class="mt-1.5 w-2 h-2 rounded-full bg-brand-teal group-hover:shadow-[0_0_10px_var(--mana-teal)] transition-all"></div>
-                       <p class="text-lg text-white/80 leading-relaxed max-w-lg font-light group-hover:text-white transition-colors">{paragraph}</p>
-                     </div>
-                   ) : (
-                     /* Standard paragraph */
-                     <p class="text-xl text-white/80 leading-relaxed max-w-lg font-light text-pretty border-l-2 border-brand-teal/20 pl-6 hover:border-brand-teal/60 transition-colors">
-                       {paragraph}
-                     </p>
-                   )
-                 ))}
-               </div>
-            </div>
-          )}
+             <div class="space-y-4 max-w-lg">
+               {item.content.map((p) => (
+                 item.id === 'valores' ? (
+                   <div class="flex items-start gap-3">
+                     <div class="mt-2 w-1.5 h-1.5 rounded-full bg-brand-teal flex-shrink-0"></div>
+                     <p class="text-lg text-white/80 font-light leading-relaxed">{p}</p>
+                   </div>
+                 ) : (
+                   <p class="text-lg md:text-xl text-white/80 font-light leading-relaxed text-pretty border-l-2 border-white/10 pl-4 hover:border-brand-teal/50 transition-colors">
+                     {p}
+                   </p>
+                 )
+               ))}
+               {item.highlight && <p class="text-brand-teal font-bold text-xl mt-2">{item.highlight}</p>}
+             </div>
+          </div>
         </article>
       ))}
     </div>
 
-    <!-- Right Column: Sticky Visual (Globe) -->
-    <div class="hidden lg:block relative h-full">
-      <div class="sticky top-[20vh] h-[60vh] flex items-center justify-center perspective-1000">
+    <!-- RIGHT COLUMN: Sticky Visuals (Ayocin Style) -->
+    <div class="hidden lg:block relative h-full pointer-events-none">
+      <div class="sticky top-0 h-screen flex items-center justify-center perspective-1000">
         
-        <!-- The Atmos Globe -->
-        <div class="relative w-[500px] h-[500px] transition-all duration-1000 ease-out preserve-3d" data-history-globe>
-          <!-- Outer Ring -->
-          <div class="absolute inset-[-20px] rounded-full border border-white/5 opacity-80 animate-[spin_60s_linear_infinite]"></div>
-          <div class="absolute inset-[-60px] rounded-full border border-white/5 opacity-40 animate-[spin_80s_linear_infinite_reverse]"></div>
-          
-          <!-- Globe Sphere -->
-          <div class="absolute inset-0 rounded-full bg-[#1c2850] shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_0_50px_rgba(40,166,189,0.1)] overflow-hidden backdrop-blur-sm border border-white/10">
-            <!-- Map Texture -->
-            <div class="absolute inset-[-25%] w-[150%] h-[150%] bg-[url('/img/dots-map.png')] bg-cover opacity-40 mix-blend-overlay transition-transform duration-1000 ease-out" 
-                 style="transform: rotate(var(--globe-rotate, 0deg)) scale(1.2);"></div>
+        <!-- Visual Container -->
+        <div class="relative w-full max-w-[500px] aspect-square transition-all duration-700">
             
-            <!-- Atmosphere Glow -->
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(40,166,189,0.2),transparent_60%)]"></div>
-          </div>
-          
-          <!-- Dynamic Pins -->
-          {sections.map((item) => item.pin && (
-             <div 
-               class="absolute top-1/2 left-1/2 w-0 h-0 transition-opacity duration-500"
-               style={`opacity: 0`} 
-               data-pin-for={item.id}
-             >
-               <div class="absolute w-1 h-1 bg-white rounded-full shadow-[0_0_15px_white]"
-                    style={`transform: rotate(${item.pin.angle}deg) translateX(${item.pin.len + 20}px)`}></div>
-               <div class="absolute h-px bg-gradient-to-r from-transparent via-white to-transparent"
-                    style={`width: ${item.pin.len * 2}px; transform: translate(-50%, -50%) rotate(${item.pin.angle}deg);`}></div>
-             </div>
-          ))}
+            <!-- 1. Intro Visual -->
+            <div class="absolute inset-0 flex items-center justify-center transition-all duration-700 opacity-0 translate-y-10 scale-90" data-visual-id="intro">
+               <div class="text-center space-y-2">
+                  <div class="w-1 h-32 bg-gradient-to-b from-transparent via-brand-teal to-transparent mx-auto"></div>
+                  <h3 class="text-4xl font-intro font-light tracking-[0.5em] text-white">HISTORIA</h3>
+                  <div class="w-32 h-1 bg-gradient-to-r from-transparent via-brand-teal to-transparent mx-auto"></div>
+               </div>
+            </div>
+
+            <!-- 2. Origins Visual (Map Line) -->
+            <div class="absolute inset-0 transition-all duration-700 opacity-0 translate-x-20" data-visual-id="map-origins">
+               <div class="relative w-full h-full bg-[#1c2850]/50 rounded-full border border-white/10 backdrop-blur-md p-8 shadow-2xl">
+                  <div class="absolute inset-0 bg-[url('/img/dots-map.png')] bg-contain bg-no-repeat bg-center opacity-30"></div>
+                  <!-- Abstract connection line styling -->
+                  <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                    <path d="M70,30 Q50,20 30,60" fill="none" stroke="#28A6BD" stroke-width="0.5" stroke-dasharray="2 2" class="animate-[dash_20s_linear_infinite]">
+                         <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
+                    </path>
+                    <circle cx="70" cy="30" r="2" fill="white" />
+                    <text x="75" y="30" fill="white" font-size="3" font-family="sans-serif">Londres</text>
+                    <circle cx="30" cy="60" r="2" fill="#28A6BD" />
+                    <text x="35" y="60" fill="#28A6BD" font-size="3" font-weight="bold" font-family="sans-serif">Medellín</text>
+                  </svg>
+               </div>
+            </div>
+
+            <!-- 3. Pandemic Visual (Laptop) -->
+            <div class="absolute inset-0 transition-all duration-700 opacity-0 scale-75" data-visual-id="pandemic-digital">
+                <div class="relative w-full h-full flex items-center justify-center">
+                   <div class="w-[80%] aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border border-white/20 shadow-2xl transform rotate-[-5deg] hover:rotate-0 transition-transform duration-500 overflow-hidden group">
+                      <div class="absolute inset-0 bg-brand-teal/10 group-hover:bg-brand-teal/20 transition-colors"></div>
+                      <div class="absolute inset-0 flex items-center justify-center">
+                         <div class="w-16 h-16 rounded-full border-2 border-white/30 flex items-center justify-center">
+                            <div class="w-4 h-4 bg-white rounded-full animate-ping"></div>
+                         </div>
+                      </div>
+                      <!-- Screen Glow -->
+                      <div class="absolute bottom-0 inset-x-0 h-1/2 bg-gradient-to-t from-brand-teal/40 to-transparent"></div>
+                   </div>
+                </div>
+            </div>
+
+            <!-- 4. Vision Globe -->
+            <div class="absolute inset-0 transition-all duration-700 opacity-0 translate-y-20" data-visual-id="globe-vision">
+               <div class="relative w-full h-full animate-[float_6s_ease-in-out_infinite]">
+                  <div class="absolute inset-4 rounded-full border border-brand-teal/30 animate-[spin_40s_linear_infinite]"></div>
+                  <div class="absolute inset-12 rounded-full border border-white/10 animate-[spin_30s_linear_infinite_reverse]"></div>
+                  <div class="absolute inset-0 rounded-full bg-radial-gradient from-[#28A6BD]/20 to-transparent blur-md"></div>
+                  <!-- Placeholder for Globe Texture -->
+                  <div class="absolute inset-[15%] rounded-full bg-[#1c2850] overflow-hidden shadow-[inset_-20px_-20px_50px_rgba(0,0,0,0.5)]">
+                     <div class="absolute inset-0 bg-[url('/img/dots-map.png')] bg-cover opacity-60 mix-blend-overlay"></div>
+                  </div>
+                  <!-- Orbit Pin -->
+                  <div class="absolute top-1/2 left-1/2 w-[140%] h-[140%] -translate-x-1/2 -translate-y-1/2 border border-dashed border-white/10 rounded-full animate-[spin_20s_linear_infinite]">
+                     <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1.5 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_white]"></div>
+                  </div>
+               </div>
+            </div>
+
+            <!-- 5. Mission/Values Grid -->
+            <div class="absolute inset-0 transition-all duration-700 opacity-0 scale-90" data-visual-id="values-grid">
+               <div class="grid grid-cols-2 gap-4 h-full content-center p-8">
+                  <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                     <span class="text-3xl">❤️</span>
+                     <p class="mt-2 text-sm text-white/70">Amar a Dios</p>
+                  </div>
+                  <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                     <span class="text-3xl">🤝</span>
+                     <p class="mt-2 text-sm text-white/70">Servir al Prójimo</p>
+                  </div>
+                  <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                     <span class="text-3xl">📖</span>
+                     <p class="mt-2 text-sm text-white/70">Biblia</p>
+                  </div>
+                  <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-colors">
+                     <span class="text-3xl">🌍</span>
+                     <p class="mt-2 text-sm text-white/70">Misiones</p>
+                  </div>
+               </div>
+            </div>
+
         </div>
       </div>
     </div>
@@ -165,47 +227,67 @@ const sections: IdentitySection[] = [
 </section>
 
 <script>
-  /* Local Script for granular control of this specific component */
   function initHistory() {
     const scenes = document.querySelectorAll('[data-history-scene]');
-    const globe = document.querySelector('[data-history-globe]') as HTMLElement;
+    const visuals = document.querySelectorAll('[data-visual-id]');
     
-    if (!scenes.length || !globe) return;
+    if (!scenes.length) return;
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          // Activate scene
-          entry.target.classList.add('opacity-100', 'translate-y-0');
-          entry.target.classList.remove('opacity-30', 'translate-y-10');
+          // 1. Activate Text Scene
+          entry.target.classList.add('opacity-100', 'translate-x-0');
+          entry.target.classList.remove('opacity-30', '-translate-x-4');
           
-          // Rotate globe
-          const rot = (entry.target as HTMLElement).dataset.rotate || '0deg';
-          globe.style.setProperty('--globe-rotate', rot);
-          
-          // Pins logic could go here
+          // 2. Activate Corresponding Visual
+          const visualId = (entry.target as HTMLElement).dataset.visual;
+          if (visualId) {
+             visuals.forEach(v => {
+                const el = v as HTMLElement;
+                if (el.dataset.visualId === visualId) {
+                   // Active State
+                   el.classList.add('opacity-100', 'scale-100', 'translate-y-0', 'translate-x-0');
+                   el.classList.remove('opacity-0', 'scale-90', 'translate-y-10', 'translate-x-20');
+                } else {
+                   // Inactive State
+                   el.classList.remove('opacity-100', 'scale-100', 'translate-y-0', 'translate-x-0');
+                   el.classList.add('opacity-0');
+                   // Specific exit animations based on id could go here, for now simple fade out
+                }
+             });
+          }
+
         } else {
-           entry.target.classList.add('opacity-30', 'translate-y-10');
-           entry.target.classList.remove('opacity-100', 'translate-y-0');
+           entry.target.classList.add('opacity-30', '-translate-x-4');
+           entry.target.classList.remove('opacity-100', 'translate-x-0');
         }
       });
     }, {
       threshold: 0.5,
-      rootMargin: '-10% 0px -10% 0px'
+      rootMargin: '-20% 0px -20% 0px'
     });
 
     scenes.forEach(scene => {
-        scene.classList.add('transition-all', 'duration-700', 'opacity-30', 'translate-y-10'); // Init state
+        scene.classList.add('transition-all', 'duration-700', 'opacity-30', '-translate-x-4');
         observer.observe(scene);
     });
   }
 
-  // Run on load and swap
   document.addEventListener('astro:page-load', initHistory);
   document.addEventListener('DOMContentLoaded', initHistory);
 </script>
 
 <style>
-  .preserve-3d { transform-style: preserve-3d; }
-  .text-pretty { text-wrap: pretty; }
+  .font-intro { font-family: 'Intro', sans-serif; }
+  .perspective-1000 { perspective: 1000px; }
+  
+  @keyframes dash {
+    to { stroke-dashoffset: 0; }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
 </style>

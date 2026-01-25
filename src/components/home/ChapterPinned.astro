@@ -1,0 +1,50 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  reverse?: boolean;
+}
+
+const { id, title, subtitle, image, reverse = false } = Astro.props;
+---
+
+<section 
+  id={id} 
+  class="relative flex h-screen w-full items-center overflow-hidden bg-cosmic-900 py-20"
+  data-pin="true"
+>
+  <div class={`container mx-auto flex h-full w-full flex-col px-6 md:flex-row ${reverse ? 'md:flex-row-reverse' : ''} items-center gap-12`}>
+    
+    <!-- Text Content -->
+    <div class="flex flex-1 flex-col justify-center space-y-8 z-10">
+      <span class="inline-block h-1 w-20 bg-accent-cyan/50 rounded-full"></span>
+      <h2 class="font-display text-5xl font-bold leading-tight text-starlight-100 md:text-7xl">
+        {title}
+      </h2>
+      <p class="max-w-xl text-xl leading-relaxed text-starlight-300">
+        {subtitle}
+      </p>
+      
+      <div class="pt-8">
+        <slot name="features" />
+      </div>
+
+      <slot name="cta" />
+    </div>
+
+    <!-- Visual Panel -->
+    <div class="relative flex-1 h-[60vh] w-full md:h-[80vh]">
+      <div class="absolute inset-0 rounded-[2rem] overflow-hidden border border-glass-border bg-glass-surface shadow-2xl backdrop-blur-sm">
+        <div class="absolute inset-0 bg-gradient-to-br from-accent-cyan/10 to-transparent mix-blend-screen pointer-events-none z-10"></div>
+        <img 
+            src={image} 
+            alt={title} 
+            class="h-full w-full object-cover opacity-80"
+            loading="lazy"
+        />
+      </div>
+    </div>
+  </div>
+</section>
