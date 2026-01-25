@@ -14,7 +14,10 @@ function validateCron(request: Request): boolean {
   const secret = env('CUMBRE_CRON_SECRET');
   if (!secret) return true;
   const header = request.headers.get('x-cron-secret');
-  return Boolean(header && header === secret);
+  if (header && header === secret) return true;
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+  return Boolean(token && token === secret);
 }
 
 export const POST: APIRoute = async ({ request }) => {
