@@ -43,16 +43,19 @@
 ---
 
 ## In Progress
-- MANA-009 UI Cumbre Mundial 2026 (landing + inscripcion + registro)
-  - Owner: NOVA
-  - Branch: `feat/cumbre-ui`
-  - Scope: `src/pages/eventos/cumbre-mundial-2026/**`, `src/components/cumbre2026/**`
-  - Description: Landing y formularios con estilo Maná (Steppers, Forms, Status)
+_Vacío - nada en desarrollo activo_
 
 
 ---
 
 ## Review
+- MANA-009 UI Cumbre Mundial 2026 (landing + inscripcion + registro)
+  - Owner: NOVA
+  - Branch: `feat/cumbre-ui`
+  - Scope: `src/pages/eventos/cumbre-mundial-2026/**`, `src/components/cumbre2026/**` (Nuevo)
+  - Status: ✅ Implementado
+  - Notes: Landing, Inscripción (Stepper), Registro (Detalle), Estado
+
 - MANA-001 Home parallax animations (Ayocin-style)
   - Owner: NOVA
   - Branch: `ui/home-storytelling`

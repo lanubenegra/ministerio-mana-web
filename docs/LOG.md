@@ -6,8 +6,9 @@
 
 ## 2026-01-25
 **Hoy**
-- NOVA: Actualizó WORKBOARD con estado real del proyecto
+- NOVA: Actualizó WORKBOARD con estado real del proyecto (MANA-008)
 - NOVA: Creó LOG.md con historial de últimos días
+- NOVA: Implementó UI Cumbre 2026 (Landing + Forms) (MANA-009)
 - DELTA: Creó estructura inicial de WORKBOARD y LOG
 - DELTA: Backend Cumbre Mundial 2026 (booking/pagos/webhooks base)
 
