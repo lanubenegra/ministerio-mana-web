@@ -9,27 +9,25 @@ module.exports = {
         body: ['"Intro"', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Ubuntu', 'Cantarell', 'Noto Sans', 'Helvetica Neue', 'Arial', 'sans-serif'],
       },
       colors: {
-        cosmic: {
-          900: 'rgb(var(--cosmic-void) / <alpha-value>)',
-          800: 'rgb(var(--cosmic-nebula) / <alpha-value>)',
-        },
-        starlight: {
-          100: 'rgb(var(--text-main) / <alpha-value>)',
-          300: 'rgb(var(--text-muted) / <alpha-value>)',
-          500: 'rgb(var(--text-faint) / <alpha-value>)',
-        },
-        accent: {
-          cyan: 'rgb(var(--accent-cyan) / <alpha-value>)',
-          gold: 'rgb(var(--accent-gold) / <alpha-value>)',
-        },
-        // Legacy support
         brand: {
-          DEFAULT: 'rgb(var(--cosmic-void) / <alpha-value>)',
-          dark: '#0B0D17',
+          DEFAULT: '#293C74',
+          dark: '#1A255C',
           medium: '#3F58A1',
           light: '#CBD9E6',
           teal: '#28A6BD'
         },
+        accent: {
+          DEFAULT: '#F6519B',
+          soft: '#FF8AB8'
+        },
+        neutral: {
+          50: '#F5EFEB',
+          100: '#F1F3F8',
+          200: '#CBD9E6',
+          500: '#6C748C',
+          700: '#3B4258',
+          900: '#1C2130'
+        }
       },
       boxShadow: {
         brand: '0 14px 40px -18px rgba(41, 60, 116, 0.45)',
