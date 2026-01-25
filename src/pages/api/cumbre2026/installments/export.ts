@@ -12,7 +12,10 @@ function validateExport(request: Request): boolean {
   const secret = env('CUMBRE_EXPORT_SECRET');
   if (!secret) return false;
   const header = request.headers.get('x-export-secret');
-  return Boolean(header && header === secret);
+  if (header && header === secret) return true;
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+  return Boolean(token && token === secret);
 }
 
 function csvEscape(value: unknown): string {

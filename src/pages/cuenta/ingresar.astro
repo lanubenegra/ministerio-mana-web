@@ -1,0 +1,56 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Accede a tu cuenta | Ministerio Maná" description="Ingresa para ver tus pagos y gestionar tus cuotas.">
+  <section class="py-20 px-4 md:px-8">
+    <div class="max-w-lg mx-auto bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm">
+      <h1 class="text-3xl font-bold text-white mb-2">Accede a tu cuenta</h1>
+      <p class="text-white/60 mb-6">Te enviaremos un enlace de acceso a tu correo.</p>
+
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-white/60 mb-2 uppercase tracking-wider">Correo</label>
+          <input type="email" id="login-email" required class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all" placeholder="tucorreo@email.com">
+        </div>
+        <button type="submit" class="w-full bg-brand-teal text-white px-6 py-3 rounded-xl font-bold hover:brightness-110 transition-all">
+          Enviar enlace
+        </button>
+      </form>
+
+      <p id="login-status" class="text-sm text-white/60 mt-4"></p>
+      <div class="mt-8 text-xs text-white/40">
+        <p>¿Necesitas ayuda? Escríbenos al WhatsApp de soporte.</p>
+        <a href="https://wa.me/573148297534" class="text-brand-teal underline">Contactar soporte</a>
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
+
+    const form = document.getElementById('login-form');
+    const emailInput = document.getElementById('login-email');
+    const statusEl = document.getElementById('login-status');
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      statusEl.textContent = 'Enviando enlace...';
+
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const email = emailInput.value.trim();
+        const redirectTo = `${window.location.origin}/cuenta`;
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: redirectTo },
+        });
+        if (error) throw error;
+        statusEl.textContent = 'Listo. Revisa tu correo para continuar.';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'No pudimos enviar el enlace. Intenta nuevamente.';
+      }
+    });
+  </script>
+</BaseLayout>
