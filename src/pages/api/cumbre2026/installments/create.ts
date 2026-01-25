@@ -4,7 +4,7 @@ import { logSecurityEvent } from '@lib/securityEvents';
 import { resolveBaseUrl } from '@lib/url';
 import { buildInstallmentReference } from '@lib/cumbre2026';
 import { buildInstallmentSchedule, type InstallmentFrequency } from '@lib/cumbreInstallments';
-import { createPaymentPlan, getBookingById, getPlanByBookingId, updateInstallment } from '@lib/cumbreStore';
+import { createPaymentPlan, getBookingById, getPlanByBookingId, getInstallmentByPlanIndex, updateInstallment } from '@lib/cumbreStore';
 import { createStripeInstallmentSession } from '@lib/stripe';
 import { buildWompiCheckoutUrl } from '@lib/wompi';
 
@@ -147,9 +147,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       planId: plan.id,
       installmentIndex: firstInstallment.installmentIndex,
     });
-    await updateInstallment(schedule.installments[0]?.installmentIndex
-      ? schedule.installments[0].installmentIndex.toString()
-      : '', {});
+    const installmentRow = await getInstallmentByPlanIndex(plan.id, firstInstallment.installmentIndex);
+    if (installmentRow) {
+      await updateInstallment(installmentRow.id, { provider_reference: reference });
+    }
 
     const { url } = buildWompiCheckoutUrl({
       amountInCents: Math.round(firstInstallment.amount * 100),
