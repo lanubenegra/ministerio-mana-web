@@ -16,7 +16,7 @@ const CITY_ALIASES: Record<string, string> = {
   cucuta: 'Cucuta',
   neiva: 'Neiva',
   villavicencio: 'Villavicencio',
-  santa marta: 'Santa Marta',
+  'santa marta': 'Santa Marta',
   sincelejo: 'Sincelejo',
   tunja: 'Tunja',
   riohacha: 'Riohacha',
