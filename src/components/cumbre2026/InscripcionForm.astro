@@ -5,6 +5,7 @@ const countryLabel = isColombia ? 'Colombia' : 'Internacional';
 const currencyLabel = isColombia ? 'Pago en Pesos (COP)' : 'Pago en Dólares (USD)';
 const countryEmoji = isColombia ? '🇨🇴' : '🌎';
 const currencyCode = isColombia ? 'COP' : 'USD';
+const installmentDeadline = (import.meta.env?.CUMBRE_INSTALLMENT_DEADLINE ?? '2026-05-15') as string;
 
 const pricing = isColombia
   ? {
@@ -35,7 +36,12 @@ const formatter = new Intl.NumberFormat(isColombia ? 'es-CO' : 'en-US', {
 const formatPrice = (value) => formatter.format(value);
 ---
 
-<div id="cumbre-form-app" data-country-group={countryGroup} class="grid lg:grid-cols-[2fr_1fr] gap-8 items-start">
+<div
+  id="cumbre-form-app"
+  data-country-group={countryGroup}
+  data-installment-deadline={installmentDeadline}
+  class="grid lg:grid-cols-[2fr_1fr] gap-8 items-start"
+>
   
   <!-- Left Column: Steps -->
   <div class="space-y-8">
@@ -237,10 +243,28 @@ const formatPrice = (value) => formatter.format(value);
                   </div>
                </label>
             </div>
-            <div id="custom-amount-box" class="hidden bg-black/20 border border-white/10 rounded-xl p-4 space-y-2">
-               <label class="block text-xs font-bold text-white/60 uppercase tracking-wider">Valor del abono</label>
-               <input type="number" id="custom-amount" min="1" step="1" class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-brand-teal" placeholder="Ingresa el valor que deseas pagar">
-               <p class="text-xs text-white/40">Puedes hacer varios pagos hasta completar el total.</p>
+            <div id="installment-box" class="hidden bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
+               <p class="text-xs font-bold text-white/60 uppercase tracking-wider">Frecuencia de cobro</p>
+               <div class="grid sm:grid-cols-2 gap-3 text-sm">
+                  <label class="cursor-pointer group">
+                     <input type="radio" name="installmentFrequency" value="MONTHLY" class="peer sr-only" checked>
+                     <div class="text-center p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
+                        <span class="block font-bold text-white">Mensual</span>
+                        <span class="block text-xs text-white/60">Cobro automático</span>
+                     </div>
+                  </label>
+                  <label class="cursor-pointer group">
+                     <input type="radio" name="installmentFrequency" value="BIWEEKLY" class="peer sr-only">
+                     <div class="text-center p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
+                        <span class="block font-bold text-white">Quincenal</span>
+                        <span class="block text-xs text-white/60">Cobro automático</span>
+                     </div>
+                  </label>
+               </div>
+               <div class="text-xs text-white/50 space-y-1">
+                  <p><span id="installment-count">0</span> cuotas de <span id="installment-amount">$0</span>.</p>
+                  <p>Último cobro: <span id="installment-end">15 de mayo</span>.</p>
+               </div>
             </div>
             <p class="text-xs text-white/50">
                El cupo con alojamiento se garantiza con un abono igual o superior al 50%.
@@ -302,6 +326,7 @@ const formatPrice = (value) => formatter.format(value);
     leaderId: 'leader',
     leaderOptOut: false,
     isSolo: false,
+    installmentPreview: null,
     prices: {
        CO: {
           lodging: 850000,
@@ -350,8 +375,11 @@ const formatPrice = (value) => formatter.format(value);
           payBtnLabel: document.getElementById('pay-amount-label'),
           payBtn: document.getElementById('btn-pay'),
           paymentOptions: document.querySelectorAll('input[name="paymentOption"]'),
-          customAmountBox: document.getElementById('custom-amount-box'),
-          customAmountInput: document.getElementById('custom-amount'),
+          installmentBox: document.getElementById('installment-box'),
+          installmentFrequencyInputs: document.querySelectorAll('input[name="installmentFrequency"]'),
+          installmentCount: document.getElementById('installment-count'),
+          installmentAmount: document.getElementById('installment-amount'),
+          installmentEnd: document.getElementById('installment-end'),
           depositAmount: document.getElementById('deposit-amount'),
           form: document.getElementById('booking-form'),
           errorMsg: document.getElementById('error-msg'),
@@ -391,8 +419,10 @@ const formatPrice = (value) => formatter.format(value);
           });
        }
 
-       if (this.dom.customAmountInput) {
-          this.dom.customAmountInput.addEventListener('input', () => this.updatePayLabel());
+       if (this.dom.installmentFrequencyInputs?.length) {
+          this.dom.installmentFrequencyInputs.forEach(input => {
+             input.addEventListener('change', () => this.updateInstallmentPreview());
+          });
        }
     },
 
@@ -622,18 +652,92 @@ const formatPrice = (value) => formatter.format(value);
        return selected?.value || 'FULL';
     },
 
-    getCustomAmount() {
-       const raw = this.dom.customAmountInput?.value || '';
-       const value = Number(raw);
-       if (!Number.isFinite(value) || value <= 0) return null;
-       return value;
+    getInstallmentFrequency() {
+       const selected = document.querySelector('input[name="installmentFrequency"]:checked');
+       return selected?.value === 'BIWEEKLY' ? 'BIWEEKLY' : 'MONTHLY';
+    },
+
+    getInstallmentDeadline() {
+       return this.dom.app?.dataset.installmentDeadline || '2026-05-15';
+    },
+
+    formatLongDate(value) {
+       try {
+          const [year, month, day] = value.split('-').map(Number);
+          const date = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
+          return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
+       } catch {
+          return value;
+       }
+    },
+
+    addMonths(date, months) {
+       const year = date.getUTCFullYear();
+       const month = date.getUTCMonth() + months;
+       const day = date.getUTCDate();
+       const targetYear = year + Math.floor(month / 12);
+       const targetMonth = ((month % 12) + 12) % 12;
+       const maxDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+       const safeDay = Math.min(day, maxDay);
+       return new Date(Date.UTC(targetYear, targetMonth, safeDay));
+    },
+
+    addDays(date, days) {
+       const next = new Date(date.getTime());
+       next.setUTCDate(next.getUTCDate() + days);
+       return next;
+    },
+
+    roundCurrency(amount) {
+       if (this.currency === 'COP') return Math.round(amount);
+       return Math.round(amount * 100) / 100;
+    },
+
+    updateInstallmentPreview() {
+       const total = this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
+       const frequency = this.getInstallmentFrequency();
+       const deadline = this.getInstallmentDeadline();
+
+       const [year, month, day] = deadline.split('-').map(Number);
+       const end = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
+       let current = new Date();
+       current = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth(), current.getUTCDate()));
+
+       if (end < current) {
+         this.installmentPreview = { count: 1, amount: this.roundCurrency(total), endDate: deadline };
+       } else {
+         const dueDates = [];
+         let pointer = current;
+         while (pointer <= end) {
+           dueDates.push(pointer);
+           pointer = frequency === 'BIWEEKLY' ? this.addDays(pointer, 14) : this.addMonths(pointer, 1);
+         }
+         const count = dueDates.length || 1;
+         const amount = this.roundCurrency(total / count);
+         this.installmentPreview = { count, amount, endDate: deadline };
+       }
+
+       if (this.dom.installmentCount) {
+          this.dom.installmentCount.textContent = String(this.installmentPreview.count);
+       }
+       if (this.dom.installmentAmount) {
+          this.dom.installmentAmount.textContent = this.formatPrice(this.installmentPreview.amount);
+       }
+       if (this.dom.installmentEnd) {
+          this.dom.installmentEnd.textContent = this.formatLongDate(this.installmentPreview.endDate);
+       }
     },
 
     getPaymentAmount(total) {
        const option = this.getSelectedPaymentOption();
        if (option === 'FULL') return total;
        if (option === 'DEPOSIT') return this.getDepositAmount(total);
-       if (option === 'INSTALLMENTS') return this.getCustomAmount();
+       if (option === 'INSTALLMENTS') {
+          if (!this.installmentPreview) {
+             this.updateInstallmentPreview();
+          }
+          return this.installmentPreview?.amount || 0;
+       }
        return total;
     },
 
@@ -651,8 +755,11 @@ const formatPrice = (value) => formatter.format(value);
 
     updatePaymentUI() {
        const option = this.getSelectedPaymentOption();
-       if (this.dom.customAmountBox) {
-          this.dom.customAmountBox.classList.toggle('hidden', option !== 'INSTALLMENTS');
+       if (this.dom.installmentBox) {
+          this.dom.installmentBox.classList.toggle('hidden', option !== 'INSTALLMENTS');
+       }
+       if (option === 'INSTALLMENTS') {
+          this.updateInstallmentPreview();
        }
        const total = this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
        this.updatePayLabel(total);
@@ -667,6 +774,9 @@ const formatPrice = (value) => formatter.format(value);
        if (this.dom.depositAmount) {
           const deposit = this.getDepositAmount(total);
           this.dom.depositAmount.textContent = this.formatPrice(deposit);
+       }
+       if (this.getSelectedPaymentOption() === 'INSTALLMENTS') {
+          this.updateInstallmentPreview();
        }
        this.updatePayLabel(total);
     },
@@ -738,25 +848,35 @@ const formatPrice = (value) => formatter.format(value);
           const totalAmount = Number(bookingData.totalAmount || 0);
           const depositAmount = Number(bookingData.depositThreshold || this.getDepositAmount(totalAmount));
           const paymentOption = this.getSelectedPaymentOption();
-          let paymentKind = 'custom';
-          let amount;
 
-          if (paymentOption === 'FULL') {
-             paymentKind = 'full';
-          } else if (paymentOption === 'DEPOSIT') {
-             amount = depositAmount;
-          } else {
-             amount = this.getCustomAmount();
+          if (paymentOption === 'INSTALLMENTS') {
+             const frequency = this.getInstallmentFrequency();
+             const planRes = await fetch('/api/cumbre2026/installments/create', {
+                method: 'POST',
+                headers: {
+                   'content-type': 'application/json',
+                   accept: 'application/json',
+                },
+                body: JSON.stringify({
+                   bookingId: bookingData.bookingId,
+                   frequency,
+                }),
+             });
+             const planData = await planRes.json();
+             if (!planRes.ok || !planData?.url) {
+                throw new Error(planData?.error || 'No se pudo iniciar el plan de cuotas');
+             }
+             window.location.href = planData.url;
+             return;
           }
 
-          if (paymentKind !== 'full' && (!amount || amount <= 0)) {
-             throw new Error('Ingresa un valor válido para el abono');
-          }
+          const paymentKind = paymentOption === 'FULL' ? 'full' : 'custom';
+          const amount = paymentOption === 'DEPOSIT' ? depositAmount : undefined;
 
           const paymentPayload = {
              bookingId: bookingData.bookingId,
              paymentKind,
-             ...(paymentKind !== 'full' ? { amount } : {}),
+             ...(amount ? { amount } : {}),
           };
 
           const payRes = await fetch('/api/payments/create', {

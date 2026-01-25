@@ -2,7 +2,16 @@ import type { APIRoute } from 'astro';
 import type Stripe from 'stripe';
 import { verifyStripeWebhook, getStripeClient } from '@lib/stripe';
 import { logPaymentEvent, logSecurityEvent } from '@lib/securityEvents';
-import { recordPayment, recomputeBookingTotals, getBookingById } from '@lib/cumbreStore';
+import {
+  recordPayment,
+  recomputeBookingTotals,
+  getBookingById,
+  getPlanByProviderSubscription,
+  getNextPendingInstallment,
+  updateInstallment,
+  updatePaymentPlan,
+  addPlanPayment,
+} from '@lib/cumbreStore';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 
 export const prerender = false;
@@ -55,6 +64,83 @@ async function processEvent(event: Stripe.Event): Promise<void> {
           await recomputeBookingTotals(bookingId);
         }
       }
+
+      const planId = session.metadata?.cumbre_plan_id;
+      if (planId && session.subscription) {
+        await updatePaymentPlan(planId, {
+          provider_subscription_id: String(session.subscription),
+          provider_customer_id: session.customer ? String(session.customer) : null,
+        });
+      }
+      break;
+    }
+    case 'invoice.paid': {
+      const invoice = event.data.object as Stripe.Invoice;
+      const subscriptionId = invoice.subscription ? String(invoice.subscription) : null;
+      if (!subscriptionId) break;
+      const plan = await getPlanByProviderSubscription(subscriptionId);
+      if (!plan) break;
+
+      const installment = await getNextPendingInstallment(plan.id);
+      if (!installment) break;
+
+      const amount = invoice.amount_paid ? invoice.amount_paid / 100 : 0;
+      const currency = invoice.currency?.toUpperCase() || plan.currency || 'USD';
+      const providerTxId = invoice.payment_intent ? String(invoice.payment_intent) : invoice.id;
+      const reference = invoice.id;
+
+      await updateInstallment(installment.id, {
+        status: 'PAID',
+        provider_tx_id: providerTxId,
+        provider_reference: reference,
+        paid_at: new Date().toISOString(),
+      });
+      await addPlanPayment(plan.id, amount);
+
+      await recordPayment({
+        bookingId: plan.booking_id,
+        provider: 'stripe',
+        providerTxId,
+        reference,
+        amount,
+        currency,
+        status: 'APPROVED',
+        planId: plan.id,
+        installmentId: installment.id,
+        rawEvent: invoice,
+      });
+
+      const booking = await getBookingById(plan.booking_id);
+      if (booking?.contact_email) {
+        await sendCumbreEmail('payment_received', {
+          to: booking.contact_email,
+          fullName: booking.contact_name ?? undefined,
+          bookingId: plan.booking_id,
+          amount,
+          currency,
+          totalPaid: booking.total_paid,
+          totalAmount: booking.total_amount,
+        });
+      }
+
+      await recomputeBookingTotals(plan.booking_id);
+      break;
+    }
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object as Stripe.Invoice;
+      const subscriptionId = invoice.subscription ? String(invoice.subscription) : null;
+      if (!subscriptionId) break;
+      const plan = await getPlanByProviderSubscription(subscriptionId);
+      if (!plan) break;
+
+      const installment = await getNextPendingInstallment(plan.id);
+      if (!installment) break;
+
+      await updateInstallment(installment.id, {
+        status: 'FAILED',
+        last_error: invoice.last_finalization_error?.message || 'Stripe invoice payment failed',
+        attempt_count: Number(installment.attempt_count || 0) + 1,
+      });
       break;
     }
     case 'payment_intent.succeeded': {

@@ -110,7 +110,7 @@ export function generateAccessToken(): { token: string; hash: string } {
 
 export function parseReferenceBookingId(reference: string | null | undefined): string | null {
   if (!reference) return null;
-  const match = reference.match(/MM-EVT-CM26-([a-f0-9-]{8,})-P\d{2}-/i);
+  const match = reference.match(/MM-EVT-CM26-([a-f0-9-]{8,})(?:-PLN-[a-f0-9-]{8,})?-P\d{2}-/i);
   if (!match) return null;
   return match[1];
 }
