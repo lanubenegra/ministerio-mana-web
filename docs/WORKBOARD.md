@@ -42,8 +42,8 @@
   - Owner: DELTA
   - Branch: `feat/cumbre-ui`
   - Scope: `src/pages/api/cumbre2026/**`, `src/pages/api/cuenta/**`, `src/lib/cumbre*`, `src/lib/supabase*`
-  - Description: Booking, pagos, webhooks, planes de cuotas, cuenta usuario y export CSV
-  - Status: En curso (pendiente notificaciones y verificacion end-to-end)
+  - Description: Booking, pagos, webhooks, planes de cuotas, cuenta usuario, export CSV y contabilidad
+  - Status: En curso (pendiente notificaciones, exportes contabilidad y verificacion end-to-end)
 
 
 ---

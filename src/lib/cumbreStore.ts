@@ -15,6 +15,11 @@ export type BookingRecord = {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  contact_document_type?: string | null;
+  contact_document_number?: string | null;
+  contact_country?: string | null;
+  contact_city?: string | null;
+  contact_church?: string | null;
   country_group: string;
   currency: string;
   total_amount: number;
@@ -269,6 +274,21 @@ export async function getNextPendingInstallment(planId: string): Promise<Install
   return data as InstallmentRecord | null;
 }
 
+export async function listPendingInstallments(planId: string): Promise<InstallmentRecord[]> {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_installments')
+    .select('*')
+    .eq('plan_id', planId)
+    .in('status', ['PENDING', 'FAILED'])
+    .order('installment_index', { ascending: true });
+  if (error) {
+    console.error('[cumbre.installments] pending list error', error);
+    return [];
+  }
+  return (data || []) as InstallmentRecord[];
+}
+
 export async function getInstallmentByPlanIndex(planId: string, index: number): Promise<InstallmentRecord | null> {
   const supabase = ensureSupabase();
   const { data, error } = await supabase
@@ -282,6 +302,43 @@ export async function getInstallmentByPlanIndex(planId: string, index: number): 
     return null;
   }
   return data as InstallmentRecord | null;
+}
+
+export async function applyManualPaymentToPlan(params: {
+  planId: string;
+  amount: number;
+  reference?: string | null;
+  paidAt?: string;
+}): Promise<{ paidAmount: number; remainingAmount: number; paidInstallments: number }> {
+  const installments = await listPendingInstallments(params.planId);
+  let remaining = Number(params.amount || 0);
+  let paidAmount = 0;
+  let paidCount = 0;
+
+  for (const installment of installments) {
+    const installmentAmount = Number(installment.amount || 0);
+    if (remaining + 0.01 < installmentAmount) break;
+    remaining = remaining - installmentAmount;
+    paidAmount += installmentAmount;
+    paidCount += 1;
+    await updateInstallment(installment.id, {
+      status: 'PAID',
+      provider_reference: params.reference ?? installment.provider_reference ?? null,
+      paid_at: params.paidAt ?? new Date().toISOString(),
+      last_error: null,
+    });
+  }
+
+  if (paidAmount > 0) {
+    await addPlanPayment(params.planId, paidAmount);
+    await refreshPlanNextDueDate(params.planId);
+  }
+
+  return {
+    paidAmount,
+    remainingAmount: remaining,
+    paidInstallments: paidCount,
+  };
 }
 
 export async function addPlanPayment(planId: string, amount: number): Promise<void> {

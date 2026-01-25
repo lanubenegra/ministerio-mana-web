@@ -11,6 +11,8 @@ Guia corta para cron de cuotas, export CSV y acceso de cuenta.
 - `CUMBRE_CRON_SECRET`
 - `CUMBRE_EXPORT_SECRET`
 - `CUMBRE_INSTALLMENT_DEADLINE` (por defecto `2026-05-15`)
+- `CUMBRE_ADMIN_EXPORT_SECRET`
+- `CUMBRE_MANUAL_SECRET`
 
 > Nota: puedes reutilizar `SUPABASE_URL` y `SUPABASE_ANON_KEY` como `PUBLIC_*`.
 
@@ -48,9 +50,34 @@ curl -L "https://TU-DOMINIO/api/cumbre2026/installments/export?token=TU_SECRETO"
 
 Abre el CSV en Excel/Sheets para el control de pagos.
 
+## Export Admin (participantes + pagos)
+
+Endpoint:
+- `GET /api/cumbre2026/admin/export`
+- Header requerido: `x-export-secret: <CUMBRE_ADMIN_EXPORT_SECRET>`
+- Alternativa: `?token=<CUMBRE_ADMIN_EXPORT_SECRET>`
+
+Ejemplo:
+
+```bash
+curl -L "https://TU-DOMINIO/api/cumbre2026/admin/export?token=TU_SECRETO" \
+  -o cumbre-admin.csv
+```
+
+## Formulario manual (pagos físicos)
+
+Ruta:
+- `/admin/cumbre/manual?token=TU_CUMBRE_MANUAL_SECRET`
+
+El formulario crea reservas manuales y permite registrar abonos.
+
 ## Supabase Auth (cuentas)
 
 1. En Supabase -> Auth, habilita Email OTP.
 2. En Auth -> URL Configuration, agrega el Site URL de produccion.
 3. Agrega un Redirect URL valido: `https://TU-DOMINIO/cuenta`.
 4. Configura `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` en el entorno.
+
+## SQL extra (manual)
+
+- Ejecuta `docs/sql/cumbre_bookings_extra.sql` para campos adicionales de reservas manuales.
