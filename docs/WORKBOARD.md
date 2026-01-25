@@ -10,6 +10,11 @@
 ---
 
 ## Backlog
+- MANA-009 UI Cumbre Mundial 2026 (landing + inscripcion + registro)
+  - Owner: NOVA
+  - Scope: `src/pages/eventos/cumbre-mundial-2026/**`, `src/components/eventos/**`
+  - Description: Landing y formularios con estilo Maná
+
 - MANA-004 Agregar más data attributes para animaciones
   - Owner: TBD
   - Scope: `src/components/home/**`
@@ -32,6 +37,11 @@
   - Owner: DELTA
   - Scope: CI/CD, Vercel deployment
   - Description: Confirmar que Lenis/GSAP funcionan en prod
+
+- MANA-008 Backend Cumbre Mundial 2026
+  - Owner: DELTA
+  - Scope: `src/pages/api/cumbre2026/**`, `src/pages/api/payments/**`, `src/lib/cumbre*`
+  - Description: Booking, pagos, webhooks y correo base
 
 ---
 

@@ -13,6 +13,22 @@
 - Pendientes:
 
 ## Entradas
+### 2026-01-25 (Cumbre Mundial 2026 - backend)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se agrego esquema SQL para cumbre: bookings, participants, payments.
+  - Se creo backend base de cumbre (booking create/get, registration submit, status).
+  - Se creo endpoint unificado de pagos (/api/payments/create).
+  - Se agrego endpoint para eventos Wompi reenviados con HMAC interno.
+  - Se extendio webhook Stripe para registrar pagos cumbre.
+  - Se agrego mailer con SendGrid/Resend (segun env).
+  - Se actualizo .env.example con variables de cumbre y webhook interno.
+- Pruebas: N/A (pendiente)
+- Pendientes:
+  - Crear paginas /eventos/cumbre-mundial-2026 (UI).
+  - Ejecutar SQL en Supabase.
+  - Configurar env vars en Vercel (CUMBRE_*, INTERNAL_WEBHOOK_SECRET, SENDGRID_API_KEY).
+
 ### 2026-01-24 (Sesión completa)
 
 #### Parte 1 - Intento de Cosmic Design (REVERTIDO)
