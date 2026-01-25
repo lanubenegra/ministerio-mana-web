@@ -1,0 +1,28 @@
+---
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+---
+
+<section class="relative h-[80vh] w-full overflow-hidden flex items-center justify-center bg-cosmic-void" data-section="panorama">
+    <!-- Wide Background (Parallax Target) -->
+    <div class="absolute inset-0 bg-[url('/panorama-stars.jpg')] bg-cover bg-center opacity-40"></div>
+    
+    <!-- Glass Overlay Content -->
+    <div class="relative z-10 max-w-4xl text-center px-6">
+        <div class="glass-panel inline-block backdrop-blur-xl border border-white/10 p-12 rounded-[3rem]">
+            <p class="font-display text-3xl md:text-5xl font-medium leading-snug text-starlight-100 tracking-wide">
+                "{text}"
+            </p>
+        </div>
+    </div>
+</section>
+
+<style>
+    .glass-panel {
+        background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+</style>
