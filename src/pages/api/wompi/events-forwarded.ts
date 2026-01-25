@@ -11,6 +11,8 @@ import {
   getNextPendingInstallment,
   updateInstallment,
   addPlanPayment,
+  updatePaymentPlan,
+  refreshPlanNextDueDate,
 } from '@lib/cumbreStore';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 
@@ -71,6 +73,10 @@ export const POST: APIRoute = async ({ request }) => {
     const amount = amountInCents ? amountInCents / 100 : 0;
     const currency = transaction?.currency || 'COP';
     const providerTxId = transaction?.id ? String(transaction.id) : null;
+    const paymentSourceId = transaction?.payment_source_id
+      ?? transaction?.payment_method?.token
+      ?? transaction?.payment_method?.id
+      ?? null;
 
     let installmentId: string | null = null;
     if (planId) {
@@ -88,7 +94,14 @@ export const POST: APIRoute = async ({ request }) => {
         });
         if (status === 'APPROVED') {
           await addPlanPayment(planId, amount);
+          await refreshPlanNextDueDate(planId);
         }
+      }
+
+      if (paymentSourceId) {
+        await updatePaymentPlan(planId, {
+          provider_payment_method_id: String(paymentSourceId),
+        });
       }
     }
 

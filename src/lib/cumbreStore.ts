@@ -299,6 +299,14 @@ export async function addPlanPayment(planId: string, amount: number): Promise<vo
   await updatePaymentPlan(planId, { amount_paid: newPaid });
 }
 
+export async function refreshPlanNextDueDate(planId: string): Promise<void> {
+  const next = await getNextPendingInstallment(planId);
+  await updatePaymentPlan(planId, {
+    next_due_date: next?.due_date ?? null,
+    status: next ? 'ACTIVE' : 'COMPLETED',
+  });
+}
+
 export async function listDueInstallments(limit = 25): Promise<(InstallmentRecord & { plan: PaymentPlanRecord })[]> {
   const supabase = ensureSupabase();
   const today = new Date().toISOString().slice(0, 10);

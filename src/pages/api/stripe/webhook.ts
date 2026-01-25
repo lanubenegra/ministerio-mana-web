@@ -11,6 +11,7 @@ import {
   updateInstallment,
   updatePaymentPlan,
   addPlanPayment,
+  refreshPlanNextDueDate,
 } from '@lib/cumbreStore';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 
@@ -30,7 +31,8 @@ async function processEvent(event: Stripe.Event): Promise<void> {
       });
 
       const bookingId = session.metadata?.cumbre_booking_id;
-      if (bookingId) {
+      const isSubscription = session.mode === 'subscription' || Boolean(session.subscription);
+      if (bookingId && !isSubscription) {
         const amount = session.amount_total ? session.amount_total / 100 : 0;
         const currency = session.currency?.toUpperCase() || 'USD';
         const providerTxId = session.payment_intent ? String(session.payment_intent) : session.id;
@@ -96,6 +98,7 @@ async function processEvent(event: Stripe.Event): Promise<void> {
         paid_at: new Date().toISOString(),
       });
       await addPlanPayment(plan.id, amount);
+      await refreshPlanNextDueDate(plan.id);
 
       await recordPayment({
         bookingId: plan.booking_id,
