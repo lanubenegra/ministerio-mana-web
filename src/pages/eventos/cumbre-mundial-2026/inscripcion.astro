@@ -1,6 +1,9 @@
 ---
 import CumbreLayout from '@components/cumbre2026/CumbreLayout.astro';
 import InscripcionForm from '@components/cumbre2026/InscripcionForm.astro';
+
+const geo = Astro.locals?.geo ?? { country: 'CO' };
+const countryGroup = geo.country === 'CO' ? 'CO' : 'INT';
 ---
 
 <CumbreLayout title="Inscripción Cumbre 2026 | Ministerio Maná" description="Reserva tu lugar y el de tu familia.">
@@ -19,7 +22,7 @@ import InscripcionForm from '@components/cumbre2026/InscripcionForm.astro';
     </div>
 
     <!-- The Form -->
-    <InscripcionForm />
+    <InscripcionForm countryGroup={countryGroup} />
     
   </div>
 </CumbreLayout>
