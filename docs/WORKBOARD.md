@@ -35,15 +35,15 @@
   - Scope: CI/CD, Vercel deployment
   - Description: Confirmar que Lenis/GSAP funcionan en prod
 
-- MANA-008 Backend Cumbre Mundial 2026
-  - Owner: DELTA
-  - Scope: `src/pages/api/cumbre2026/**`, `src/pages/api/payments/**`, `src/lib/cumbre*`
-  - Description: Booking, pagos, webhooks y correo base
-
 ---
 
 ## In Progress
-_Vacío - nada en desarrollo activo_
+- MANA-008 Backend Cumbre Mundial 2026
+  - Owner: DELTA
+  - Branch: `feat/cumbre-ui`
+  - Scope: `src/pages/api/cumbre2026/**`, `src/pages/api/cuenta/**`, `src/lib/cumbre*`, `src/lib/supabase*`
+  - Description: Booking, pagos, webhooks, planes de cuotas, cuenta usuario y export CSV
+  - Status: En curso (pendiente notificaciones y verificacion end-to-end)
 
 
 ---
