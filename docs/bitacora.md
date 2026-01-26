@@ -61,6 +61,8 @@
   - Se agregaron secretos/env para exports y formularios manuales de Cumbre.
   - Se normalizo ciudad/iglesia para estandarizar registros.
   - Se agrego inbox de eventos Wompi reenviados para no perder webhooks.
+  - Se actualizo `/api/wompi/events-forwarded` para guardar evento crudo y seguir el flujo Cumbre cuando aplica.
+  - Se agrego SQL de `mm_wompi_event_inbox` en `docs/sql/wompi_event_inbox.sql`.
   - Fix build: ruta de `AccountButton` resuelta con `Astro.resolve`.
   - Fix export admin: cabeceras completas aun sin datos.
   - Se agregaron guias operativas: `docs/cumbre-ops.md`, `docs/cumbre-qa.md`, `docs/contabilidad-ops.md`.
