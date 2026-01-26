@@ -13,6 +13,38 @@
 - Pendientes:
 
 ## Entradas
+
+### 2026-01-25/26 (Branding Corporativo & Sistema de Cuentas)
+- Responsable: Antigravity
+- Cambios:
+  - **Branding Corporativo:**
+    - Migración de tema "Cosmic/Espacial" a identidad corporativa Navy/Gold del Ministerio
+    - Actualización completa de `/cuenta/ingresar` y `/cuenta/` (dashboard) con paleta institucional
+    - Cambio de fondo oscuro a light mode (`bg-slate-50`) para mejor legibilidad
+    - Sidebar del dashboard ahora usa Navy Blue (`#293C74`) como color principal
+  - **Integración de Logos SVG:**
+    - Recepción y procesamiento de logos oficiales del Ministerio y Cumbre 2026
+    - Renombrado de archivos SVG para compatibilidad web (eliminación de espacios y acentos):
+      - `Logo Ministerio Maná.svg` → `logo-ministerio-mana.svg`
+      - `-Cumbre Maná 2026 ven y ayúdanos.svg` → `cumbre-2026-logo-white.svg`
+      - Y otros archivos similares
+    - Actualización de todas las referencias en código
+    - Reemplazo de favicon y logo principal del sitio
+  - **Sistema de Acceso a Cuenta:**
+    - Creación de `AccountButton.astro` con detección automática de sesión Supabase
+    - Integración en header principal (desktop y mobile)
+    - Estados dinámicos:
+      - Sin sesión: "Iniciar sesión" → `/cuenta/ingresar`
+      - Con sesión: Nombre + iniciales + dropdown con "Mi Cuenta" y "Cerrar sesión"
+    - Creación de `src/scripts/account-button.ts` para lógica bundleada (fix CSP)
+- Pruebas:
+  - Verificación de logos en producción (Vercel)
+  - Debugging de errores CSP y module resolution
+  - Fix de Internal Server Error por uso de `Astro.resolve()` deprecado
+- Pendientes:
+  - Verificar que el botón de cuenta funcione correctamente en producción
+  - Considerar reducir items en header desktop para evitar overflow
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:
