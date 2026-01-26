@@ -71,6 +71,7 @@
   - Se ajusto registro post-pago: tipo de menu (tradicional/vegetariano) en lugar de alergias.
   - CTA de Cumbre condicionado por env `PUBLIC_CUMBRE_WHATSAPP_ONLY` (WhatsApp en prod, inscripcion en preview).
   - Se evito error JS en Inscripcion al avanzar (null checks en totales).
+  - Se actualizo subtotal en paso 1 al cambiar nombre/reserva del responsable.
   - Fix build: ruta de `AccountButton` resuelta con `Astro.resolve`.
   - Fix export admin: cabeceras completas aun sin datos.
   - Se agregaron guias operativas: `docs/cumbre-ops.md`, `docs/cumbre-qa.md`, `docs/contabilidad-ops.md`.

@@ -563,6 +563,7 @@ const formatPrice = (value) => formatter.format(value);
        if (!leader) return;
        leader.name = name;
        this.renderList();
+       this.updateTotals();
     },
 
     updateLeaderPackage() {
