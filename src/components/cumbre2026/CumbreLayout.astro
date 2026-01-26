@@ -8,7 +8,7 @@ const isLight = variant === 'light';
 const mainBg = isLight ? 'bg-slate-50 text-brand-dark' : 'bg-brand-void text-white';
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} hideHeader hideFooter>
   <div class={`relative min-h-screen ${mainBg} overflow-hidden`}>
     <!-- Shared Background Effects (Dark Mode Only) -->
     {!isLight && (

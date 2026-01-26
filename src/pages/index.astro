@@ -3,6 +3,13 @@ export const prerender = false;
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 
+const cumbreOnly =
+  (import.meta.env?.PUBLIC_CUMBRE_ONLY ?? process.env?.PUBLIC_CUMBRE_ONLY) === 'true';
+
+if (cumbreOnly) {
+  return Astro.redirect('/eventos/cumbre-mundial-2026');
+}
+
 // Home Chapters
 import HeroChapter from '@components/home/HeroChapter.astro';
 import HistoryChapter from '@components/home/HistoryChapter.astro';

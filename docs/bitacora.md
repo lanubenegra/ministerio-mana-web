@@ -65,6 +65,8 @@
   - Se agrego SQL de `mm_wompi_event_inbox` en `docs/sql/wompi_event_inbox.sql`.
   - Se agrego Turnstile en la inscripcion de Cumbre y se envio token en booking.
   - Se ajusto validacion Turnstile en pagos Cumbre para evitar bloqueo sin token.
+  - Se habilito modo Cumbre-only: home redirige por env var, header/footer ocultos en Cumbre.
+  - CTA de Cumbre actualizado para inscripcion via WhatsApp.
   - Fix build: ruta de `AccountButton` resuelta con `Astro.resolve`.
   - Fix export admin: cabeceras completas aun sin datos.
   - Se agregaron guias operativas: `docs/cumbre-ops.md`, `docs/cumbre-qa.md`, `docs/contabilidad-ops.md`.
