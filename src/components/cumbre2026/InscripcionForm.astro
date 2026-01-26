@@ -1,4 +1,5 @@
 ---
+import TurnstileWidget from '@components/TurnstileWidget.astro';
 const { countryGroup = 'CO' } = Astro.props;
 const isColombia = countryGroup === 'CO';
 const countryLabel = isColombia ? 'Colombia' : 'Internacional';
@@ -337,6 +338,10 @@ const formatPrice = (value) => formatter.format(value);
                </svg>
                <p>Al hacer clic en "Ir a Pagar", serás redirigido a la pasarela de pagos segura. No guardamos datos de tarjeta en este sitio.</p>
             </div>
+         </div>
+
+         <div class="pt-4 flex justify-center">
+            <TurnstileWidget appearance="always" theme="auto" />
          </div>
 
          <div class="pt-4 flex justify-between items-center border-t border-slate-200">
@@ -895,6 +900,7 @@ const formatPrice = (value) => formatter.format(value);
           phone: fd.get('leader_phone'),
           countryGroup: fd.get('countryGroup') || this.countryGroup,
           participants: participantsPayload,
+          turnstile: fd.get('cf-turnstile-response'),
        };
 
        this.dom.errorMsg.classList.add('hidden');

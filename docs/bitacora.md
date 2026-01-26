@@ -63,6 +63,8 @@
   - Se agrego inbox de eventos Wompi reenviados para no perder webhooks.
   - Se actualizo `/api/wompi/events-forwarded` para guardar evento crudo y seguir el flujo Cumbre cuando aplica.
   - Se agrego SQL de `mm_wompi_event_inbox` en `docs/sql/wompi_event_inbox.sql`.
+  - Se agrego Turnstile en la inscripcion de Cumbre y se envio token en booking.
+  - Se ajusto validacion Turnstile en pagos Cumbre para evitar bloqueo sin token.
   - Fix build: ruta de `AccountButton` resuelta con `Astro.resolve`.
   - Fix export admin: cabeceras completas aun sin datos.
   - Se agregaron guias operativas: `docs/cumbre-ops.md`, `docs/cumbre-qa.md`, `docs/contabilidad-ops.md`.
