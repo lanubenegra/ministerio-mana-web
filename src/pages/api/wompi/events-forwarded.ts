@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import crypto from 'node:crypto';
 import { verifyWompiWebhook } from '@lib/wompi';
 import { logSecurityEvent } from '@lib/securityEvents';
+import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { parseReferenceBookingId, parseReferencePlanId } from '@lib/cumbre2026';
 import {
   recordPayment,
@@ -25,9 +26,14 @@ function env(key: string): string | undefined {
 function validInternalSignature(payload: string, signature: string | null): boolean {
   const secret = env('INTERNAL_WEBHOOK_SECRET');
   if (!secret || !signature) return false;
+  const normalized = signature.trim().toLowerCase();
   const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-  if (expected.length !== signature.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  if (expected.length !== normalized.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(normalized));
+}
+
+function sha256Hex(payload: string): string {
+  return crypto.createHash('sha256').update(payload).digest('hex');
 }
 
 export const POST: APIRoute = async ({ request }) => {
@@ -47,32 +53,97 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
+  let event: any = null;
+  let parseError: string | null = null;
   try {
-    if (wompiSignature) {
+    event = JSON.parse(payload);
+  } catch (error: any) {
+    parseError = error?.message ?? 'JSON parse error';
+  }
+
+  const transaction = event?.data?.transaction;
+  const reference = transaction?.reference ?? null;
+  const status = transaction?.status ?? null;
+  const currency = transaction?.currency ?? null;
+  const amountInCents = transaction?.amount_in_cents ?? null;
+  const txId = transaction?.id ?? null;
+  const bodySha256 = sha256Hex(payload);
+
+  if (!supabaseAdmin) {
+    console.error('[wompi.forwarded] missing supabase admin env vars');
+    return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const { error: inboxError } = await supabaseAdmin
+    .from('mm_wompi_event_inbox')
+    .upsert(
+      {
+        body_sha256: bodySha256,
+        tx_id: txId ? String(txId) : null,
+        reference,
+        status,
+        currency,
+        amount_in_cents: amountInCents ? Number(amountInCents) : null,
+        raw_body: payload,
+        payload: event ?? null,
+        parse_error: parseError,
+      },
+      { onConflict: 'body_sha256', ignoreDuplicates: true }
+    );
+
+  if (inboxError) {
+    console.error('[wompi.forwarded] inbox insert error', inboxError);
+    return new Response(JSON.stringify({ ok: false, error: 'DB error' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  if (parseError || !event) {
+    return new Response(JSON.stringify({ ok: true, stored: true, parse_error: true }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  if (wompiSignature) {
+    try {
       const ok = verifyWompiWebhook(payload, wompiSignature);
       if (!ok) {
         throw new Error('Firma Wompi invalida');
       }
+    } catch (error: any) {
+      console.error('[wompi.forwarded] wompi signature error', error);
+      void logSecurityEvent({
+        type: 'webhook_invalid',
+        identifier: 'wompi.forwarded',
+        detail: error?.message || 'Firma Wompi invalida',
+      });
+      return new Response(JSON.stringify({ ok: true, stored: true, ignored: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
     }
+  }
 
-    const event = JSON.parse(payload);
-    const transaction = event?.data?.transaction;
-    const reference = transaction?.reference ?? null;
+  try {
     const bookingId = parseReferenceBookingId(reference);
     const planId = parseReferencePlanId(reference);
 
     if (!bookingId && !planId) {
-      return new Response(JSON.stringify({ ok: true, ignored: true }), {
+      return new Response(JSON.stringify({ ok: true, stored: true, ignored: true }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
       });
     }
 
-    const status = transaction?.status ?? 'PENDING';
-    const amountInCents = Number(transaction?.amount_in_cents || 0);
-    const amount = amountInCents ? amountInCents / 100 : 0;
-    const currency = transaction?.currency || 'COP';
-    const providerTxId = transaction?.id ? String(transaction.id) : null;
+    const normalizedStatus = transaction?.status ?? 'PENDING';
+    const amount = amountInCents ? Number(amountInCents) / 100 : 0;
+    const normalizedCurrency = transaction?.currency || 'COP';
+    const providerTxId = txId ? String(txId) : null;
     const paymentSourceId = transaction?.payment_source_id
       ?? transaction?.payment_method?.token
       ?? transaction?.payment_method?.id
@@ -85,14 +156,16 @@ export const POST: APIRoute = async ({ request }) => {
       if (installment) {
         installmentId = installment.id;
         await updateInstallment(installment.id, {
-          status: status === 'APPROVED' ? 'PAID' : 'FAILED',
+          status: normalizedStatus === 'APPROVED' ? 'PAID' : 'FAILED',
           provider_tx_id: providerTxId,
           provider_reference: reference,
-          paid_at: status === 'APPROVED' ? new Date().toISOString() : null,
-          attempt_count: status === 'APPROVED' ? installment.attempt_count : Number(installment.attempt_count || 0) + 1,
-          last_error: status === 'APPROVED' ? null : 'Wompi payment failed',
+          paid_at: normalizedStatus === 'APPROVED' ? new Date().toISOString() : null,
+          attempt_count: normalizedStatus === 'APPROVED'
+            ? installment.attempt_count
+            : Number(installment.attempt_count || 0) + 1,
+          last_error: normalizedStatus === 'APPROVED' ? null : 'Wompi payment failed',
         });
-        if (status === 'APPROVED') {
+        if (normalizedStatus === 'APPROVED') {
           await addPlanPayment(planId, amount);
           await refreshPlanNextDueDate(planId);
         }
@@ -112,15 +185,15 @@ export const POST: APIRoute = async ({ request }) => {
         providerTxId,
         reference,
         amount,
-        currency,
-        status,
+        currency: normalizedCurrency,
+        status: normalizedStatus,
         planId: planId ?? undefined,
         installmentId: installmentId ?? undefined,
         rawEvent: event,
       });
     }
 
-    if (status === 'APPROVED' && bookingId) {
+    if (normalizedStatus === 'APPROVED' && bookingId) {
       const booking = await getBookingById(bookingId);
       if (booking?.contact_email) {
         await sendCumbreEmail('payment_received', {
@@ -128,28 +201,24 @@ export const POST: APIRoute = async ({ request }) => {
           fullName: booking.contact_name ?? undefined,
           bookingId,
           amount,
-          currency,
+          currency: normalizedCurrency,
           totalPaid: booking.total_paid,
           totalAmount: booking.total_amount,
         });
       }
       await recomputeBookingTotals(bookingId);
     }
-
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
   } catch (error: any) {
-    console.error('[wompi.forwarded] error', error);
+    console.error('[wompi.forwarded] processing error', error);
     void logSecurityEvent({
       type: 'webhook_invalid',
       identifier: 'wompi.forwarded',
-      detail: error?.message || 'Forwarded webhook error',
-    });
-    return new Response(JSON.stringify({ ok: false, error: 'Webhook invalido' }), {
-      status: 400,
-      headers: { 'content-type': 'application/json' },
+      detail: error?.message || 'Forwarded webhook processing error',
     });
   }
+
+  return new Response(JSON.stringify({ ok: true, stored: true }), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
 };

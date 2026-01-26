@@ -45,6 +45,36 @@
   - Verificar que el botón de cuenta funcione correctamente en producción
   - Considerar reducir items en header desktop para evitar overflow
 
+### 2026-01-26 (Cuentas, cuotas y contabilidad)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se agregaron cuentas de usuario con Supabase OTP: `/cuenta/ingresar` y `/cuenta/`.
+  - Se implemento cron de cuotas y export CSV de cuotas para Cumbre.
+  - Se agregaron planes de pago (cumbre_payment_plans) e installments (cumbre_installments) + SQL extra.
+  - Se agrego ledger de donaciones (tabla donations) con campos contables completos.
+  - Se actualizo checkout de donaciones (Wompi/Stripe) para capturar datos contables.
+  - Se agregaron webhooks para actualizar estado de donaciones.
+  - Se agrego generador de referencia de donaciones con prefijo configurable.
+  - Se creo export contabilidad por proveedor (wompi/stripe/physical).
+  - Se agrego export admin de Cumbre con participantes, pagos y estado.
+  - Se agrego formulario manual de Cumbre para pagos fisicos y abonos.
+  - Se agregaron secretos/env para exports y formularios manuales de Cumbre.
+  - Se normalizo ciudad/iglesia para estandarizar registros.
+  - Se agrego inbox de eventos Wompi reenviados para no perder webhooks.
+  - Se actualizo `/api/wompi/events-forwarded` para guardar evento crudo y seguir el flujo Cumbre cuando aplica.
+  - Se agrego SQL de `mm_wompi_event_inbox` en `docs/sql/wompi_event_inbox.sql`.
+  - Se agrego Turnstile en la inscripcion de Cumbre y se envio token en booking.
+  - Se ajusto validacion Turnstile en pagos Cumbre para evitar bloqueo sin token.
+  - Se habilito modo Cumbre-only: home redirige por env var, header/footer ocultos en Cumbre.
+  - CTA de Cumbre actualizado para inscripcion via WhatsApp.
+  - Fix build: ruta de `AccountButton` resuelta con `Astro.resolve`.
+  - Fix export admin: cabeceras completas aun sin datos.
+  - Se agregaron guias operativas: `docs/cumbre-ops.md`, `docs/cumbre-qa.md`, `docs/contabilidad-ops.md`.
+- Pruebas: N/A (pendiente QA end-to-end)
+- Pendientes:
+  - Configurar Wompi/Stripe en produccion.
+  - Validar webhooks y flujos reales de pago.
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:

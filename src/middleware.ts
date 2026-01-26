@@ -108,9 +108,16 @@ function isLocalhost(request: Request): boolean {
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const { cookies, locals, request } = context;
+  const url = new URL(request.url);
+  const cumbreOnly =
+    (import.meta.env?.PUBLIC_CUMBRE_ONLY ?? process.env?.PUBLIC_CUMBRE_ONLY) === 'true';
   const isSecure = isSecureRequest(request);
 
   const nonce = randomBytes(16).toString('base64');
+
+  if (cumbreOnly && url.pathname === '/') {
+    return Response.redirect(`${url.origin}/eventos/cumbre-mundial-2026`, 302);
+  }
 
   if (IS_PROD && !isSecure && !isLocalhost(request)) {
     const url = new URL(request.url);

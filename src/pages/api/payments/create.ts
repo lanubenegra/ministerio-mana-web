@@ -51,18 +51,22 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   );
   if (turnstileConfigured) {
     const token = payload.cfToken?.toString() || payload['cf-turnstile-response'];
-    const okCaptcha = await verifyTurnstile(token, clientAddress);
-    if (!okCaptcha) {
-      void logSecurityEvent({
-        type: 'captcha_failed',
-        identifier: 'cumbre.payment',
-        ip: clientAddress,
-        detail: 'Turnstile invalido',
-      });
-      return new Response(JSON.stringify({ ok: false, error: 'Captcha invalido' }), {
-        status: 400,
-        headers: { 'content-type': 'application/json' },
-      });
+    if (token) {
+      const okCaptcha = await verifyTurnstile(token, clientAddress);
+      if (!okCaptcha) {
+        void logSecurityEvent({
+          type: 'captcha_failed',
+          identifier: 'cumbre.payment',
+          ip: clientAddress,
+          detail: 'Turnstile invalido',
+        });
+        return new Response(JSON.stringify({ ok: false, error: 'Captcha invalido' }), {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+    } else {
+      console.warn('[CUMBRE] Turnstile sin token en pago: se omite validacion');
     }
   } else {
     console.warn('[CUMBRE] Turnstile no configurado: bypass en entorno local/dev');
