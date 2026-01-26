@@ -96,11 +96,15 @@
            </div>
         </div>
 
-        <!-- Health -->
+        <!-- Menu Type -->
         <div>
-           <label class="block text-xs text-white/60 mb-2 uppercase font-bold">Alergias o Restricciones Alimentarias</label>
-           <textarea name="medicalInfo" rows="2" class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-teal placeholder-white/20" placeholder="Ninguna, Vegetariano, Alérgico al maní..."></textarea>
-           <p class="text-xs text-white/30 mt-1">Déjalo en blanco si no aplica.</p>
+           <label class="block text-xs text-white/60 mb-2 uppercase font-bold">Tipo de menú</label>
+           <select name="menuType" class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-teal">
+              <option value="">Seleccionar</option>
+              <option value="TRADICIONAL">Menú tradicional</option>
+              <option value="VEGETARIANO">Menú vegetariano</option>
+           </select>
+           <p class="text-xs text-white/30 mt-1">Solo contamos con menú tradicional o vegetariano.</p>
         </div>
      </div>
   </div>
@@ -228,7 +232,7 @@
               documentNumber: fd.get(`${prefix}docNumber`),
               birthdate: fd.get(`${prefix}birthDate`),
               gender: fd.get(`${prefix}gender`),
-              allergies: fd.get(`${prefix}medicalInfo`),
+              dietType: fd.get(`${prefix}menuType`),
             });
           });
 
