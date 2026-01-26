@@ -28,6 +28,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       payload = {
         bookingId: form.get('bookingId'),
         frequency: form.get('frequency'),
+        token: form.get('token'),
       };
     }
   } catch {
@@ -100,7 +101,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     });
 
     const baseUrl = resolveBaseUrl(request);
-    const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}`;
+    const tokenParam = payload.token ? `&token=${encodeURIComponent(payload.token)}` : '';
+    const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}${tokenParam}`;
 
     if (provider === 'stripe') {
       const interval = frequency === 'BIWEEKLY' ? 'week' : 'month';

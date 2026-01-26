@@ -28,6 +28,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         bookingId: form.get('bookingId'),
         amount: form.get('amount'),
         paymentKind: form.get('paymentKind'),
+        token: form.get('token'),
         cfToken: form.get('cf-turnstile-response'),
       };
     }
@@ -121,7 +122,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const paymentIndex = (await countPayments(bookingId)) + 1;
     const reference = buildPaymentReference(bookingId, paymentIndex);
     const baseUrl = resolveBaseUrl(request);
-    const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}`;
+    const tokenParam = payload.token ? `&token=${encodeURIComponent(payload.token)}` : '';
+    const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}${tokenParam}`;
 
     if (booking.currency === 'COP') {
       await recordPayment({

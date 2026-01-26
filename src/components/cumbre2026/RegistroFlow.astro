@@ -212,12 +212,51 @@
         const btn = document.getElementById('btn-save');
         btn.textContent = 'Guardando...';
         btn.disabled = true;
-        
-        // Simulating submit for demo
-        await new Promise(r => setTimeout(r, 1500));
-        
-        // Redirect to success/status
-        window.location.href = `/eventos/cumbre-mundial-2026/estado?bookingId=${this.bookingId}`;
+
+        try {
+          const form = document.getElementById('details-form');
+          const fd = new FormData(form);
+          const participants = [];
+
+          this.booking.participants.forEach((p) => {
+            const participantId = p.id;
+            if (!participantId) return;
+            const prefix = `p_${participantId}_`;
+            participants.push({
+              id: participantId,
+              documentType: fd.get(`${prefix}docType`),
+              documentNumber: fd.get(`${prefix}docNumber`),
+              birthdate: fd.get(`${prefix}birthDate`),
+              gender: fd.get(`${prefix}gender`),
+              allergies: fd.get(`${prefix}medicalInfo`),
+            });
+          });
+
+          const res = await fetch('/api/cumbre2026/registration/submit', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              accept: 'application/json',
+            },
+            body: JSON.stringify({
+              bookingId: this.bookingId,
+              token: this.token,
+              participants,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data?.ok) {
+            throw new Error(data?.error || 'No se pudo guardar el registro');
+          }
+
+          window.location.href = `/eventos/cumbre-mundial-2026/estado?bookingId=${this.bookingId}&token=${this.token}`;
+        } catch (err) {
+          console.error(err);
+          alert(err?.message || 'No se pudo guardar. Intenta nuevamente.');
+          btn.textContent = 'Guardar y Finalizar';
+          btn.disabled = false;
+          return;
+        }
      }
   };
 

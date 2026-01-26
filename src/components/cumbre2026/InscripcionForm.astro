@@ -925,6 +925,15 @@ const formatPrice = (value) => formatter.format(value);
           const totalAmount = Number(bookingData.totalAmount || 0);
           const depositAmount = Number(bookingData.depositThreshold || this.getDepositAmount(totalAmount));
           const paymentOption = this.getSelectedPaymentOption();
+          const bookingToken = bookingData.token;
+
+          if (bookingData?.bookingId && bookingToken) {
+             try {
+                localStorage.setItem(`cumbre-token:${bookingData.bookingId}`, bookingToken);
+             } catch (e) {
+                console.warn('No se pudo guardar token en localStorage');
+             }
+          }
 
           if (paymentOption === 'INSTALLMENTS') {
              const frequency = this.getInstallmentFrequency();
@@ -937,6 +946,7 @@ const formatPrice = (value) => formatter.format(value);
                 body: JSON.stringify({
                    bookingId: bookingData.bookingId,
                    frequency,
+                   token: bookingToken,
                 }),
              });
              const planData = await planRes.json();
@@ -954,6 +964,7 @@ const formatPrice = (value) => formatter.format(value);
              bookingId: bookingData.bookingId,
              paymentKind,
              ...(amount ? { amount } : {}),
+             token: bookingToken,
           };
 
           const payRes = await fetch('/api/payments/create', {
