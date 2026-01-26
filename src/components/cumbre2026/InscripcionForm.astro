@@ -47,97 +47,107 @@ const formatPrice = (value) => formatter.format(value);
   <div class="space-y-8">
     
     <!-- Step Indicator -->
-    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 pb-10 backdrop-blur-md">
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 pb-10 shadow-sm">
        <div class="flex items-center justify-between relative">
           <!-- Connector Line -->
-          <div class="absolute left-0 right-0 top-1/2 h-0.5 bg-white/10 -z-10"></div>
+          <div class="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-100 -z-10"></div>
           
           <button type="button" class="step-btn active relative" data-step="1">
-             <span class="w-10 h-10 rounded-full bg-brand-teal text-white flex items-center justify-center font-bold">1</span>
-             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">Ubicación</span>
+             <span class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold shadow-md shadow-brand-navy/20">1</span>
+             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-brand-navy whitespace-nowrap">Ubicación</span>
           </button>
           
           <button type="button" class="step-btn opacity-50 relative" data-step="2">
-             <span class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center font-bold border border-white/20">2</span>
-             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-white/60 whitespace-nowrap">Grupo</span>
+             <span class="w-10 h-10 rounded-full bg-white text-brand-navy flex items-center justify-center font-bold border-2 border-slate-200">2</span>
+             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-400 whitespace-nowrap">Grupo</span>
           </button>
 
           <button type="button" class="step-btn opacity-50 relative" data-step="3">
-             <span class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center font-bold border border-white/20">3</span>
-             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-white/60 whitespace-nowrap">Confirmar</span>
+             <span class="w-10 h-10 rounded-full bg-white text-brand-navy flex items-center justify-center font-bold border-2 border-slate-200">3</span>
+             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-400 whitespace-nowrap">Confirmar</span>
           </button>
        </div>
     </div>
 
     <!-- SCREENS -->
-    <form id="booking-form" class="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm min-h-[400px]">
+    <form id="booking-form" class="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl shadow-brand-navy/5 min-h-[400px]">
       
       <!-- STEP 1: Country & Leader -->
       <div id="step-1" class="step-content space-y-6">
-         <h2 class="text-2xl font-bold text-white">Tu ubicación</h2>
+         <h2 class="text-2xl font-bold text-brand-navy">Tu ubicación</h2>
          
          <div class="space-y-3">
-            <div class="flex items-center gap-4 p-6 rounded-2xl border border-white/10 bg-white/5">
+            <div class="flex items-center gap-4 p-6 rounded-2xl border border-slate-200 bg-slate-50">
                <span class="text-3xl">{countryEmoji}</span>
                <div>
-                  <span class="font-bold text-white block">{countryLabel}</span>
-                  <span class="text-xs text-white/60">{currencyLabel}</span>
+                  <span class="font-bold text-brand-dark block">{countryLabel}</span>
+                  <span class="text-xs text-slate-500">{currencyLabel}</span>
                </div>
             </div>
-            <p class="text-xs text-white/50">
+            <p class="text-xs text-slate-400">
                Detectamos tu ubicación automáticamente para mostrar el precio correcto.
             </p>
             <input type="hidden" name="countryGroup" id="country-group" value={countryGroup}>
          </div>
 
-         <div class="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+         <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
             <div class="flex items-center justify-between">
-               <h3 class="text-lg font-semibold text-white">Tarifas {countryLabel}</h3>
-               <span class="text-xs text-white/40 uppercase tracking-wider">{currencyCode}</span>
+               <h3 class="text-lg font-semibold text-brand-navy">Tarifas {countryLabel}</h3>
+               <span class="text-xs text-slate-500 uppercase tracking-wider">{currencyCode}</span>
             </div>
             <div class="grid md:grid-cols-2 gap-3 text-sm">
                {priceRows.map((row) => (
-                 <div class="flex items-center justify-between bg-black/20 rounded-lg px-4 py-3 border border-white/5">
-                   <span class="text-white/80">{row.label}</span>
-                   <span class="font-bold text-white">{formatPrice(pricing[row.key])}</span>
+                 <div class="flex items-center justify-between bg-white rounded-lg px-4 py-3 border border-slate-200 shadow-sm">
+                   <span class="text-slate-600">{row.label}</span>
+                   <span class="font-bold text-brand-dark">{formatPrice(pricing[row.key])}</span>
                  </div>
                ))}
             </div>
-            <div class="text-xs text-white/50 space-y-2">
+            <div class="text-xs text-slate-400 space-y-2">
                <p>Los valores se muestran según tu ubicación.</p>
                <p>
                  Niños 0 a 7 años: el valor incluye solo material de trabajo. Si requiere alimentación y alojamiento
-                 individual, contáctanos. <a href="/eventos/cumbre-mundial-2026/condiciones" class="underline hover:text-white">Ver condiciones comerciales</a>.
+                 individual, contáctanos. <a href="/eventos/cumbre-mundial-2026/condiciones" class="underline hover:text-brand-dark">Ver condiciones comerciales</a>.
                </p>
             </div>
          </div>
 
-         <div class="space-y-4 pt-4">
-            <h3 class="text-lg font-medium text-white">Datos del Responsable</h3>
-            <p class="text-xs text-white/50">
+         <div class="space-y-4 pt-4 border-t border-slate-200">
+            <h3 class="text-lg font-semibold text-brand-navy">Datos del Responsable</h3>
+            <p class="text-xs text-slate-400">
                El responsable se agrega automáticamente como participante. Puedes eliminarlo si no asistirá.
             </p>
             <div class="grid md:grid-cols-2 gap-4">
-               <div>
-                  <label class="block text-xs font-bold text-white/60 mb-1 uppercase tracking-wider">Nombre Completo</label>
-                  <input type="text" name="leaderName" required class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all" placeholder="Ej: Juan Pérez">
+               <div class="space-y-1">
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</label>
+                  <input type="text" name="leader_id" required placeholder="Cédula o Pasaporte"
+                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
                </div>
-               <div>
-                  <label class="block text-xs font-bold text-white/60 mb-1 uppercase tracking-wider">Email</label>
-                  <input type="email" name="leaderEmail" required class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all" placeholder="juan@email.com">
+               <div class="space-y-1">
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre Completo</label>
+                  <input type="text" name="leader_name" required placeholder="Como aparece en el documento"
+                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
                </div>
-               <div>
-                  <label class="block text-xs font-bold text-white/60 mb-1 uppercase tracking-wider">Teléfono / WhatsApp</label>
-                  <input type="tel" name="leaderPhone" required class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all" placeholder="+57 300 123 4567">
-               </div>
-               <div>
-                  <label class="block text-xs font-bold text-white/60 mb-1 uppercase tracking-wider">Tipo de asistencia</label>
-                  <select name="leaderPackage" id="leader-package" required class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-brand-teal focus:ring-1 focus:ring-brand-teal transition-all">
+            </div>
+
+            <div class="space-y-1">
+               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Email de contacto</label>
+               <input type="email" name="leader_email" required placeholder="Para enviar la confirmación"
+                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
+            </div>
+             
+             <div class="space-y-1">
+               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Celular / WhatsApp</label>
+               <input type="tel" name="leader_phone" required placeholder="+57 300..."
+                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
+            </div>
+            <div class="space-y-1">
+                  <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Tipo de asistencia</label>
+                  <select name="leader_package" id="leader-package" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all">
                      <option value="lodging">Con alojamiento</option>
                      <option value="no_lodging">Sin alojamiento</option>
                   </select>
                </div>
-            </div>
          </div>
 
          <div class="pt-4 flex justify-end">
@@ -147,61 +157,84 @@ const formatPrice = (value) => formatter.format(value);
          </div>
       </div>
 
-      <!-- STEP 2: Group Builder -->
-      <div id="step-2" class="step-content hidden space-y-6">
-         <h2 class="text-2xl font-bold text-white">Configura tu Grupo</h2>
-         <p class="text-white/60 text-sm">Agrega a todas las personas que asistirán contigo. Incluye la edad para calcular el valor.</p>
+      <!-- STEP 2: Group & Companions -->
+      <div id="step-2" class="step-content hidden space-y-8">
+         <h2 class="text-2xl font-bold text-brand-navy">Grupo y Acompañantes</h2>
 
-         <div class="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-            <p class="text-white/70 text-sm font-medium">¿Vas solo o con acompañantes?</p>
-            <div class="grid sm:grid-cols-2 gap-3 text-sm">
-               <label class="cursor-pointer group">
-                  <input type="radio" name="groupMode" value="SOLO" class="peer sr-only">
-                  <div class="text-center p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
-                     <span class="block font-bold text-white">Voy solo</span>
-                     <span class="block text-xs text-white/60">Solo el responsable</span>
+         <!-- Group Mode Selection -->
+         <div class="space-y-4">
+            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">¿Vienes solo o acompañado?</h3>
+            <div class="grid grid-cols-2 gap-4">
+               <label class="cursor-pointer">
+                  <input type="radio" name="groupMode" value="SOLO" class="peer sr-only" checked>
+                  <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center hover:bg-slate-100 peer-checked:bg-white peer-checked:border-brand-navy peer-checked:ring-2 peer-checked:ring-brand-navy/20 transition-all">
+                     <span class="block text-2xl mb-2">👤</span>
+                     <span class="font-bold text-brand-dark">Voy solo</span>
                   </div>
                </label>
-               <label class="cursor-pointer group">
-                  <input type="radio" name="groupMode" value="GROUP" class="peer sr-only" checked>
-                  <div class="text-center p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
-                     <span class="block font-bold text-white">Con acompañantes</span>
-                     <span class="block text-xs text-white/60">Agregar más personas</span>
+               <label class="cursor-pointer">
+                  <input type="radio" name="groupMode" value="GROUP" class="peer sr-only">
+                  <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center hover:bg-slate-100 peer-checked:bg-white peer-checked:border-brand-navy peer-checked:ring-2 peer-checked:ring-brand-navy/20 transition-all">
+                     <span class="block text-2xl mb-2">👥</span>
+                     <span class="font-bold text-brand-dark">Con grupo / familia</span>
                   </div>
                </label>
             </div>
          </div>
-         
+
          <!-- Add Person Form -->
-         <div id="add-person-box" class="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
-            <div class="grid lg:grid-cols-[2fr_1fr_1fr] gap-3">
-               <input type="text" id="new-p-name" placeholder="Nombre del asistente" class="bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-brand-teal">
-               <input type="number" id="new-p-age" min="0" max="120" placeholder="Edad" class="bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-brand-teal">
-               <div class="space-y-2">
-                  <select id="new-p-lodging" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-brand-teal">
-                     <option value="lodging">Con alojamiento</option>
-                     <option value="no_lodging">Sin alojamiento</option>
-                  </select>
-                  <p class="text-[11px] text-white/40">Aplica para mayores de 13 años.</p>
+         <div id="add-person-box" class="space-y-4 hidden pt-6 border-t border-slate-200">
+            <h3 class="text-lg font-semibold text-brand-navy">Agregar Acompañante</h3>
+            
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
+               <div class="grid md:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre</label>
+                     <input type="text" id="input-name" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all placeholder:text-sm" placeholder="Nombre del acompañante">
+                  </div>
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Edad</label>
+                     <input type="number" id="input-age" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all placeholder:text-sm" placeholder="Años">
+                  </div>
                </div>
+               
+               <div class="space-y-1 transition-opacity duration-300">
+                   <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo de asistencia</label>
+                   <select id="input-lodging" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-brand-dark outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all">
+                      <option value="lodging">Con alojamiento</option>
+                      <option value="no_lodging">Sin alojamiento</option>
+                   </select>
+                   <p class="text-xs text-slate-400 mt-1 pl-1">
+                      * Niños hasta 13 años se calculan automáticamente.
+                   </p>
+               </div>
+
+               <button type="button" id="btn-add-person" class="w-full py-3 bg-brand-navy text-white font-bold rounded-xl hover:bg-brand-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brand-navy/30">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Agregar a la lista
+               </button>
             </div>
-            <button type="button" id="btn-add-person" class="w-full py-2 border border-brand-teal text-brand-teal rounded-lg font-bold hover:bg-brand-teal hover:text-white transition-all text-sm uppercase tracking-wide">
-               + Agregar Persona
-            </button>
          </div>
 
-         <!-- List -->
-         <div id="participants-list" class="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-            <!-- Items injected by JS -->
-            <div class="text-center text-white/30 py-4 italic text-sm" id="empty-msg">No hay participantes aún</div>
+         <!-- Valid Participants List -->
+         <div class="space-y-2">
+            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Lista de asistentes</h3>
+            <div id="participants-list" class="space-y-2 min-h-[100px]">
+               <!-- Dynamic JS -->
+            </div>
+            <div id="empty-msg" class="text-center py-8 text-slate-400 bg-slate-50 border border-slate-200 rounded-xl border-dashed">
+               <p>No tienes acompañantes agregados.</p>
+            </div>
          </div>
 
-         <div class="pt-4 flex justify-between items-center">
-            <button type="button" class="btn-prev text-white/60 hover:text-white underline">
-               &larr; Volver
+         <div class="pt-8 flex justify-between border-t border-slate-200">
+            <button type="button" class="px-6 py-2 text-slate-500 font-medium hover:text-brand-navy transition-colors btn-prev">
+               &larr; Atrás
             </button>
-            <button type="button" class="btn-next bg-brand-teal text-white px-8 py-3 rounded-xl font-bold hover:brightness-110 transition-all">
-               Siguiente &rarr;
+            <button type="button" class="px-8 py-3 bg-brand-gold text-brand-dark font-bold rounded-full hover:scale-105 transition-transform btn-next shadow-lg shadow-brand-gold/20">
+               Confirmar Grupo &rarr;
             </button>
          </div>
       </div>
@@ -212,108 +245,147 @@ const formatPrice = (value) => formatter.format(value);
          
          <div class="bg-white/5 rounded-xl p-6 border border-white/10 space-y-4">
             <div class="flex justify-between text-white/70 text-sm">
-               <span>Total Grupo:</span>
-               <span id="summary-total" class="text-white font-bold text-lg">$0</span>
-            </div>
+      <div id="step-3" class="step-content hidden space-y-8">
+         <h2 class="text-2xl font-bold text-brand-navy">Confirma tu Reserva</h2>
+         
+         <div class="space-y-4">
+            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Método de pago</h3>
             
-            <div class="h-px bg-white/10"></div>
-            
-            <h3 class="font-bold text-white text-sm uppercase tracking-wide">Opciones de Pago</h3>
-            <p class="text-white/60 text-sm">Elige cómo deseas pagar. Puedes completar el valor, reservar tu cupo o pagar a cuotas.</p>
-            <div class="grid md:grid-cols-3 gap-4">
-               <label class="cursor-pointer group">
-                  <input type="radio" name="paymentOption" value="FULL" class="peer sr-only" checked>
-                  <div class="text-center p-4 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
-                     <span class="block font-bold text-white">Pago Total</span>
-                     <span class="block text-xs text-brand-teal mt-1">100%</span>
+            <div class="grid gap-3">
+               <!-- Full Payment -->
+               <label class="cursor-pointer">
+                  <input type="radio" name="payment_option" value="FULL" class="peer sr-only" checked>
+                  <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white peer-checked:border-brand-navy peer-checked:bg-white peer-checked:ring-2 peer-checked:ring-brand-navy/20 transition-all">
+                     <span class="text-2xl">💳</span>
+                     <div class="flex-1">
+                        <span class="block font-bold text-brand-dark">Pago Total</span>
+                        <span class="block text-xs text-slate-500">Paga el 100% ahora y asegura tu cupo.</span>
+                     </div>
                   </div>
                </label>
-               <label class="cursor-pointer group">
-                  <input type="radio" name="paymentOption" value="DEPOSIT" class="peer sr-only">
-                  <div class="text-center p-4 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
-                     <span class="block font-bold text-white">Reserva de cupo</span>
-                     <span class="block text-xs text-brand-teal mt-1" id="deposit-amount">50%</span>
+               
+               <!-- Deposit -->
+               <label class="cursor-pointer">
+                  <input type="radio" name="payment_option" value="DEPOSIT" class="peer sr-only">
+                  <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white peer-checked:border-brand-navy peer-checked:bg-white peer-checked:ring-2 peer-checked:ring-brand-navy/20 transition-all">
+                     <span class="text-2xl">🏦</span>
+                     <div class="flex-1">
+                        <span class="block font-bold text-brand-dark">Abono Inicial (50%)</span>
+                        <span class="block text-xs text-slate-500">Paga el 50% (<span id="deposit-amount" class="font-bold"></span>) para reservar.</span>
+                     </div>
                   </div>
                </label>
-               <label class="cursor-pointer group">
-                  <input type="radio" name="paymentOption" value="INSTALLMENTS" class="peer sr-only">
-                  <div class="text-center p-4 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
-                     <span class="block font-bold text-white">Pago a cuotas</span>
-                     <span class="block text-xs text-brand-teal mt-1">Elige tu abono</span>
-                  </div>
-               </label>
-            </div>
-            <div id="installment-box" class="hidden bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
-               <p class="text-xs font-bold text-white/60 uppercase tracking-wider">Frecuencia de cobro</p>
-               <div class="grid sm:grid-cols-2 gap-3 text-sm">
-                  <label class="cursor-pointer group">
-                     <input type="radio" name="installmentFrequency" value="MONTHLY" class="peer sr-only" checked>
-                     <div class="text-center p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
-                        <span class="block font-bold text-white">Mensual</span>
-                        <span class="block text-xs text-white/60">Cobro automático</span>
+
+               <!-- Installments (Only Colombia) -->
+               {isColombia && (
+                  <label class="cursor-pointer">
+                     <input type="radio" name="payment_option" value="INSTALLMENTS" class="peer sr-only">
+                     <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white peer-checked:border-brand-navy peer-checked:bg-white peer-checked:ring-2 peer-checked:ring-brand-navy/20 transition-all">
+                        <span class="text-2xl">📅</span>
+                        <div class="flex-1">
+                           <span class="block font-bold text-brand-dark">Plan de Cuotas</span>
+                           <span class="block text-xs text-slate-500">Paga mes a mes hasta Mayo 2026.</span>
+                        </div>
                      </div>
                   </label>
-                  <label class="cursor-pointer group">
-                     <input type="radio" name="installmentFrequency" value="BIWEEKLY" class="peer sr-only">
-                     <div class="text-center p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
-                        <span class="block font-bold text-white">Quincenal</span>
-                        <span class="block text-xs text-white/60">Cobro automático</span>
-                     </div>
+               )}
+            </div>
+
+            <!-- Installment Details -->
+            <div id="installment-box" class="hidden mt-4 p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+               <h4 class="font-bold text-brand-navy">Configura tus cuotas</h4>
+               <p class="text-xs text-slate-500">El pago se divide automáticamente hasta la fecha límite.</p>
+               
+               <div class="flex gap-4">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                     <input type="radio" name="installment_frequency" value="MONTHLY" class="text-brand-navy focus:ring-brand-navy" checked>
+                     <span class="text-sm text-brand-dark">Mensual</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                     <input type="radio" name="installment_frequency" value="BIWEEKLY" class="text-brand-navy focus:ring-brand-navy">
+                     <span class="text-sm text-brand-dark">Quincenal</span>
                   </label>
                </div>
-               <div class="text-xs text-white/50 space-y-1">
-                  <p><span id="installment-count">0</span> cuotas de <span id="installment-amount">$0</span>.</p>
-                  <p>Último cobro: <span id="installment-end">15 de mayo</span>.</p>
+
+               <div class="grid grid-cols-3 gap-2 text-center text-sm pt-2">
+                  <div class="bg-white p-3 rounded-lg border border-slate-200">
+                     <span class="block text-xs text-slate-400 uppercase">Cuotas</span>
+                     <span class="block font-bold text-brand-navy text-lg" id="installment-count">1</span>
+                  </div>
+                  <div class="bg-white p-3 rounded-lg border border-slate-200">
+                     <span class="block text-xs text-slate-400 uppercase">Valor Aprox</span>
+                     <span class="block font-bold text-brand-navy text-lg" id="installment-amount">$0</span>
+                  </div>
+                  <div class="bg-white p-3 rounded-lg border border-slate-200">
+                     <span class="block text-xs text-slate-400 uppercase">Finaliza</span>
+                     <span class="block font-bold text-brand-navy text-lg" id="installment-end">Mayo</span>
+                  </div>
+               </div>
+               <div class="text-xs text-center text-slate-400 bg-white/50 p-2 rounded">
                   <p>El cobro inicia al confirmar tu inscripción.</p>
                </div>
             </div>
-            <p class="text-xs text-white/50">
+            
+            <p class="text-xs text-slate-400">
                El cupo con alojamiento se garantiza con un abono igual o superior al 50%.
-               <a href="/eventos/cumbre-mundial-2026/condiciones" class="underline hover:text-white">Ver condiciones comerciales</a>.
+               <a href="/eventos/cumbre-mundial-2026/condiciones" class="underline hover:text-brand-dark">Ver condiciones comerciales</a>.
             </p>
 
-            <div class="bg-brand-medium/20 rounded-lg p-3 text-xs text-white/80 flex gap-2 items-start">
+            <div class="bg-brand-medium/10 rounded-lg p-3 text-xs text-brand-dark/80 flex gap-2 items-start border border-brand-medium/20">
                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-brand-teal flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                </svg>
-               <p>Al hacer clic en "Ir a Pagar", serás redirigido a Wompi (Colombia) o Stripe (internacional). No guardamos datos de tarjeta en este sitio.</p>
+               <p>Al hacer clic en "Ir a Pagar", serás redirigido a la pasarela de pagos segura. No guardamos datos de tarjeta en este sitio.</p>
             </div>
          </div>
 
-         <div class="pt-4 flex justify-between items-center">
-            <button type="button" class="btn-prev text-white/60 hover:text-white underline">
+         <div class="pt-4 flex justify-between items-center border-t border-slate-200">
+            <button type="button" class="btn-prev text-slate-500 hover:text-brand-navy font-medium underline">
                &larr; Volver
             </button>
-            <button type="submit" id="btn-pay" class="bg-gradient-to-r from-brand-teal to-[#4CC9E0] text-white px-8 py-4 rounded-xl font-bold shadow-lg w-full md:w-auto hover:scale-105 transition-transform">
+            <button type="submit" id="btn-pay" class="bg-brand-gold text-brand-dark px-8 py-4 rounded-xl font-bold shadow-lg shadow-brand-gold/20 w-full md:w-auto hover:scale-105 transition-transform">
                Ir a Pagar <span id="pay-amount-label"></span>
             </button>
          </div>
-         <div id="error-msg" class="hidden text-pink-500 text-sm text-center"></div>
+         <div id="error-msg" class="hidden text-pink-600 text-sm text-center bg-pink-50 border border-pink-200 p-3 rounded-lg"></div>
       </div>
 
     </form>
   </div>
 
-  <!-- Right Column: Summary Sticky -->
-  <div class="hidden lg:block">
-     <div class="sticky top-24 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
-        <h3 class="text-white font-bold mb-4 uppercase tracking-wider text-sm">Tu Inscripción</h3>
-        <div id="sidebar-list" class="space-y-2 text-sm text-white/70 mb-4">
-           <!-- Dynamic mirror -->
-           <p class="italic text-white/30">Agrega participantes para ver el resumen</p>
-        </div>
-        <div class="border-t border-white/10 pt-4 mt-auto">
-           <div class="flex justify-between items-center mb-1">
-              <span class="text-white/60">Subtotal</span>
-              <span class="text-white font-mono" id="side-subtotal">$0</span>
-           </div>
-           <div class="flex justify-between items-center text-xl font-bold text-brand-teal">
-              <span>Total Estimado</span>
-              <span id="side-total">$0</span>
-           </div>
-        </div>
-     </div>
-  </div>
+   <!-- Right Column: Summary Sticky -->
+   <div class="sticky top-24 space-y-6">
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-xl shadow-brand-navy/5">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Tu Inscripción</h3>
+          
+          <div id="sidebar-list" class="space-y-2 mb-6 min-h-[60px]">
+             <p class="italic text-slate-400 text-xs">Agrega participantes...</p>
+          </div>
+
+          <div class="border-t border-slate-100 pt-4 space-y-2">
+             <div class="flex justify-between text-slate-500 text-sm">
+                <span>Subtotal</span>
+                <span id="side-subtotal">$ 0</span>
+             </div>
+             <div class="flex justify-between text-brand-navy text-xl font-bold">
+                <span>Total Estimado</span>
+                <span id="side-total">$ 0</span>
+             </div>
+          </div>
+          
+          <div class="mt-4 p-3 bg-brand-gold/10 rounded-lg border border-brand-gold/20">
+             <p class="text-[10px] text-brand-dark/70 text-center leading-tight">
+               * El pago puede realizarse en su totalidad o en cuotas (disponible en el último paso).
+             </p>
+          </div>
+      </div>
+      
+      <!-- Help Box -->
+      <a href="https://wa.me/573148297534" target="_blank" class="block bg-[#25D366] text-white rounded-2xl p-4 shadow-lg shadow-green-500/20 hover:scale-[1.02] transition-transform text-center font-bold flex items-center justify-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+        ¿Necesitas ayuda?
+      </a>
+   </div>
 
 </div>
 
@@ -361,23 +433,23 @@ const formatPrice = (value) => formatter.format(value);
           btnsPrev: document.querySelectorAll('.btn-prev'),
           indicators: document.querySelectorAll('.step-btn'),
           countryInput: document.getElementById('country-group'),
-          leaderName: document.querySelector('input[name="leaderName"]'),
+          leaderName: document.querySelector('input[name="leader_name"]'),
           leaderPackage: document.getElementById('leader-package'),
           groupModeInputs: document.querySelectorAll('input[name="groupMode"]'),
           btnAddPerson: document.getElementById('btn-add-person'),
           addPersonBox: document.getElementById('add-person-box'),
-          inputName: document.getElementById('new-p-name'),
-          inputAge: document.getElementById('new-p-age'),
-          inputLodging: document.getElementById('new-p-lodging'),
+          inputName: document.getElementById('input-name'),
+          inputAge: document.getElementById('input-age'),
+          inputLodging: document.getElementById('input-lodging'),
           list: document.getElementById('participants-list'),
           sidebarList: document.getElementById('sidebar-list'),
           emptyMsg: document.getElementById('empty-msg'),
           totalDisplay: document.getElementById('summary-total'),
           payBtnLabel: document.getElementById('pay-amount-label'),
           payBtn: document.getElementById('btn-pay'),
-          paymentOptions: document.querySelectorAll('input[name="paymentOption"]'),
+          paymentOptions: document.querySelectorAll('input[name="payment_option"]'),
           installmentBox: document.getElementById('installment-box'),
-          installmentFrequencyInputs: document.querySelectorAll('input[name="installmentFrequency"]'),
+          installmentFrequencyInputs: document.querySelectorAll('input[name="installment_frequency"]'),
           installmentCount: document.getElementById('installment-count'),
           installmentAmount: document.getElementById('installment-amount'),
           installmentEnd: document.getElementById('installment-end'),
@@ -451,7 +523,7 @@ const formatPrice = (value) => formatter.format(value);
 
     validateStep1() {
        const fd = new FormData(this.dom.form);
-       if(!fd.get('leaderName') || !fd.get('leaderEmail') || !fd.get('leaderPhone') || !fd.get('leaderPackage')) {
+       if(!fd.get('leader_name') || !fd.get('leader_email') || !fd.get('leader_phone') || !fd.get('leader_package')) {
           alert('Por favor completa los datos del responsable');
           return false;
        }
@@ -592,32 +664,32 @@ const formatPrice = (value) => formatter.format(value);
 
        if(this.participants.length === 0) {
           this.dom.list.appendChild(this.dom.emptyMsg);
-          this.dom.sidebarList.innerHTML = '<p class="italic text-white/30">Agrega participantes...</p>';
+          this.dom.sidebarList.innerHTML = '<p class="italic text-slate-400">Agrega participantes...</p>';
           return;
        }
 
        this.participants.forEach(p => {
           // Main List Item
           const el = document.createElement('div');
-          el.className = 'flex justify-between items-center bg-black/20 p-3 rounded-lg border border-white/5';
+          el.className = 'flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200 shadow-sm';
           const leaderBadge = p.isLeader
-             ? '<span class="ml-2 text-[10px] uppercase tracking-wider text-brand-teal/80">Responsable</span>'
+             ? '<span class="ml-2 text-[10px] uppercase tracking-wider text-brand-gold bg-brand-navy/10 px-2 py-0.5 rounded-full font-bold">Responsable</span>'
              : '';
           const ageLabel = typeof p.age === 'number' ? ` · ${p.age} años` : '';
           const removeId = JSON.stringify(p.id);
           el.innerHTML = `
              <div>
-                <div class="font-bold text-white text-sm">${p.name}${leaderBadge}</div>
-                <div class="text-xs text-white/60">${this.getTypeLabel(p.packageType)}${ageLabel}</div>
+                <div class="font-bold text-brand-dark text-sm">${p.name}${leaderBadge}</div>
+                <div class="text-xs text-slate-500">${this.getTypeLabel(p.packageType)}${ageLabel}</div>
              </div>
-             <button type="button" class="text-pink-400 hover:text-pink-300 text-xs underline p-2" onclick="document.dispatchEvent(new CustomEvent('remove-p', {detail: ${removeId}}))">Eliminar</button>
+             <button type="button" class="text-red-500 hover:text-red-700 text-xs underline p-2" onclick="document.dispatchEvent(new CustomEvent('remove-p', {detail: ${removeId}}))">Eliminar</button>
           `;
           this.dom.list.appendChild(el);
 
           // Sidebar Item
           const sideEl = document.createElement('div');
-          sideEl.className = 'flex justify-between text-xs text-white/80';
-          sideEl.innerHTML = `<span>${p.name}</span> <span class="opacity-50">${this.formatPrice(this.getPrice(p.packageType))}</span>`;
+          sideEl.className = 'flex justify-between text-xs text-slate-600';
+          sideEl.innerHTML = `<span>${p.name}</span> <span class="font-medium text-brand-dark">${this.formatPrice(this.getPrice(p.packageType))}</span>`;
           this.dom.sidebarList.appendChild(sideEl);
        });
     },
@@ -649,12 +721,12 @@ const formatPrice = (value) => formatter.format(value);
     },
 
     getSelectedPaymentOption() {
-       const selected = document.querySelector('input[name="paymentOption"]:checked');
+       const selected = document.querySelector('input[name="payment_option"]:checked');
        return selected?.value || 'FULL';
     },
 
     getInstallmentFrequency() {
-       const selected = document.querySelector('input[name="installmentFrequency"]:checked');
+       const selected = document.querySelector('input[name="installment_frequency"]:checked');
        return selected?.value === 'BIWEEKLY' ? 'BIWEEKLY' : 'MONTHLY';
     },
 
@@ -818,9 +890,9 @@ const formatPrice = (value) => formatter.format(value);
           packageType: participant.packageType,
        }));
        const data = {
-          contactName: fd.get('leaderName'),
-          email: fd.get('leaderEmail'),
-          phone: fd.get('leaderPhone'),
+          contactName: fd.get('leader_name'),
+          email: fd.get('leader_email'),
+          phone: fd.get('leader_phone'),
           countryGroup: fd.get('countryGroup') || this.countryGroup,
           participants: participantsPayload,
        };
