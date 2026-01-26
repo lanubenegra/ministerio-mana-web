@@ -60,9 +60,47 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
+  const headers = [
+    'booking_id',
+    'contact_name',
+    'contact_email',
+    'contact_phone',
+    'country_group',
+    'currency',
+    'total_amount',
+    'total_paid',
+    'deposit_threshold',
+    'booking_status',
+    'booking_created_at',
+    'plan_status',
+    'plan_provider',
+    'plan_frequency',
+    'plan_installment_count',
+    'plan_installment_amount',
+    'plan_amount_paid',
+    'plan_next_due_date',
+    'last_payment_amount',
+    'last_payment_status',
+    'last_payment_date',
+    'participant_id',
+    'participant_name',
+    'participant_package_type',
+    'participant_relationship',
+    'participant_birthdate',
+    'participant_gender',
+    'participant_nationality',
+    'participant_document_type',
+    'participant_document_number',
+    'participant_room_preference',
+    'participant_blood_type',
+    'participant_allergies',
+    'participant_diet_type',
+    'participant_diet_notes',
+  ];
+
   const bookingIds = (bookings || []).map((row: any) => row.id);
   if (bookingIds.length === 0) {
-    return new Response('booking_id,participant_id\n', {
+    return new Response(`${headers.join(',')}\n`, {
       status: 200,
       headers: { 'content-type': 'text/csv; charset=utf-8' },
     });
@@ -102,44 +140,6 @@ export const GET: APIRoute = async ({ request }) => {
   for (const booking of bookings || []) {
     bookingMap.set(booking.id, booking);
   }
-
-  const headers = [
-    'booking_id',
-    'contact_name',
-    'contact_email',
-    'contact_phone',
-    'country_group',
-    'currency',
-    'total_amount',
-    'total_paid',
-    'deposit_threshold',
-    'booking_status',
-    'booking_created_at',
-    'plan_status',
-    'plan_provider',
-    'plan_frequency',
-    'plan_installment_count',
-    'plan_installment_amount',
-    'plan_amount_paid',
-    'plan_next_due_date',
-    'last_payment_amount',
-    'last_payment_status',
-    'last_payment_date',
-    'participant_id',
-    'participant_name',
-    'participant_package_type',
-    'participant_relationship',
-    'participant_birthdate',
-    'participant_gender',
-    'participant_nationality',
-    'participant_document_type',
-    'participant_document_number',
-    'participant_room_preference',
-    'participant_blood_type',
-    'participant_allergies',
-    'participant_diet_type',
-    'participant_diet_notes',
-  ];
 
   const rows = (participants || []).map((participant: any) => {
     const booking = bookingMap.get(participant.booking_id);
