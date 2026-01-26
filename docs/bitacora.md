@@ -69,6 +69,7 @@
   - CTA de Cumbre actualizado para inscripcion via WhatsApp.
   - Se conecto registro post-pago para guardar datos de asistentes en base de datos.
   - Se ajusto registro post-pago: tipo de menu (tradicional/vegetariano) en lugar de alergias.
+  - CTA de Cumbre condicionado por env `PUBLIC_CUMBRE_WHATSAPP_ONLY` (WhatsApp en prod, inscripcion en preview).
   - Fix build: ruta de `AccountButton` resuelta con `Astro.resolve`.
   - Fix export admin: cabeceras completas aun sin datos.
   - Se agregaron guias operativas: `docs/cumbre-ops.md`, `docs/cumbre-qa.md`, `docs/contabilidad-ops.md`.
