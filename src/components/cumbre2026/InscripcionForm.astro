@@ -822,6 +822,7 @@ const formatPrice = (value) => formatter.format(value);
           ? total
           : this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
        const amount = this.getPaymentAmount(baseTotal);
+       if (!this.dom.payBtnLabel) return;
        if (amount) {
           this.dom.payBtnLabel.textContent = `(${this.formatPrice(amount)})`;
        } else {
@@ -844,9 +845,15 @@ const formatPrice = (value) => formatter.format(value);
     updateTotals() {
        const total = this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
        const fmt = this.formatPrice(total);
-       this.dom.totalDisplay.textContent = fmt;
-       this.dom.sideSubtotal.textContent = fmt;
-       this.dom.sideTotal.textContent = fmt;
+       if (this.dom.totalDisplay) {
+          this.dom.totalDisplay.textContent = fmt;
+       }
+       if (this.dom.sideSubtotal) {
+          this.dom.sideSubtotal.textContent = fmt;
+       }
+       if (this.dom.sideTotal) {
+          this.dom.sideTotal.textContent = fmt;
+       }
        if (this.dom.depositAmount) {
           const deposit = this.getDepositAmount(total);
           this.dom.depositAmount.textContent = this.formatPrice(deposit);
