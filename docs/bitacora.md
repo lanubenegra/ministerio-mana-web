@@ -81,6 +81,20 @@
   - Configurar Wompi/Stripe en produccion.
   - Validar webhooks y flujos reales de pago.
 
+### 2026-01-27 (Recordatorios cuotas + links de pago)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se agrego cron de recordatorios para cuotas manuales (D-3, D-2, D0).
+  - Se genera link de pago por cuota (Wompi COP o Stripe USD) para enviar por email/WhatsApp.
+  - Se agrego tabla `cumbre_installment_reminders` para evitar duplicados.
+  - Se actualizo mailer con plantilla de recordatorio de cuota.
+  - Se actualizo webhook Stripe para marcar cuotas pagadas desde links manuales.
+  - Se actualizo `docs/cumbre-ops.md` con nuevo cron de recordatorios.
+- Pruebas: N/A (pendiente QA cron)
+- Pendientes:
+  - Ejecutar SQL `docs/sql/cumbre_installment_reminders.sql` en Supabase.
+  - Configurar `WHATSAPP_WEBHOOK_URL` (si aplica) y validar envio.
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:

@@ -6,6 +6,7 @@ import {
   recordPayment,
   recomputeBookingTotals,
   getBookingById,
+  getInstallmentById,
   getPlanByProviderSubscription,
   getNextPendingInstallment,
   updateInstallment,
@@ -38,6 +39,8 @@ async function processEvent(event: Stripe.Event): Promise<void> {
         const currency = session.currency?.toUpperCase() || 'USD';
         const providerTxId = session.payment_intent ? String(session.payment_intent) : session.id;
         const cumbreReference = session.metadata?.cumbre_reference ?? session.id;
+        const installmentId = session.metadata?.cumbre_installment_id || null;
+        const planId = session.metadata?.cumbre_plan_id || null;
 
         const serializedSession = JSON.parse(JSON.stringify(session));
         await recordPayment({
@@ -48,10 +51,26 @@ async function processEvent(event: Stripe.Event): Promise<void> {
           amount,
           currency,
           status: session.payment_status === 'paid' ? 'APPROVED' : 'PENDING',
+          planId,
+          installmentId,
           rawEvent: serializedSession,
         });
 
         if (session.payment_status === 'paid') {
+          if (installmentId) {
+            const installment = await getInstallmentById(installmentId);
+            await updateInstallment(installmentId, {
+              status: 'PAID',
+              provider_tx_id: providerTxId,
+              provider_reference: cumbreReference,
+              paid_at: new Date().toISOString(),
+              attempt_count: Number(installment?.attempt_count || 0) + 1,
+            });
+            if (planId) {
+              await addPlanPayment(planId, amount);
+              await refreshPlanNextDueDate(planId);
+            }
+          }
           const booking = await getBookingById(bookingId);
           if (booking?.contact_email) {
             await sendCumbreEmail('payment_received', {

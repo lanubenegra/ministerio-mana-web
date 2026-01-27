@@ -3,7 +3,8 @@ type CumbreEmailKind =
   | 'payment_received'
   | 'deposit_ok'
   | 'paid'
-  | 'payment_failed';
+  | 'payment_failed'
+  | 'installment_reminder';
 
 interface CumbreEmailPayload {
   to: string;
@@ -13,6 +14,10 @@ interface CumbreEmailPayload {
   currency?: string;
   totalPaid?: number;
   totalAmount?: number;
+  dueDate?: string;
+  installmentIndex?: number;
+  installmentCount?: number;
+  paymentLink?: string;
 }
 
 function env(key: string): string | undefined {
@@ -42,6 +47,8 @@ function buildSubject(kind: CumbreEmailKind): string {
       return 'Pago completo confirmado - Cumbre Mundial 2026';
     case 'payment_failed':
       return 'Pago no confirmado - Cumbre Mundial 2026';
+    case 'installment_reminder':
+      return 'Recordatorio de cuota - Cumbre Mundial 2026';
     default:
       return 'Cumbre Mundial 2026';
   }
@@ -52,6 +59,10 @@ function buildHtml(kind: CumbreEmailKind, payload: CumbreEmailPayload): string {
   const total = payload.totalAmount != null ? formatAmount(payload.totalAmount, payload.currency) : '';
   const paid = payload.totalPaid != null ? formatAmount(payload.totalPaid, payload.currency) : '';
   const amount = payload.amount != null ? formatAmount(payload.amount, payload.currency) : '';
+  const dueDate = payload.dueDate ? new Date(`${payload.dueDate}T00:00:00-05:00`) : null;
+  const dueLabel = dueDate
+    ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'America/Bogota' }).format(dueDate)
+    : '';
 
   let body = '';
   switch (kind) {
@@ -70,6 +81,13 @@ function buildHtml(kind: CumbreEmailKind, payload: CumbreEmailPayload): string {
     case 'payment_failed':
       body = `No pudimos confirmar tu pago. Puedes intentar de nuevo.`;
       break;
+    case 'installment_reminder': {
+      const index = payload.installmentIndex ? ` ${payload.installmentIndex}` : '';
+      const totalInstallments = payload.installmentCount ? `/${payload.installmentCount}` : '';
+      const due = dueLabel ? ` con vencimiento ${dueLabel}` : '';
+      body = `Este es un recordatorio de tu cuota${index}${totalInstallments}${due}.`;
+      break;
+    }
     default:
       body = 'Gracias por ser parte de la Cumbre Mundial 2026.';
       break;
@@ -79,12 +97,23 @@ function buildHtml(kind: CumbreEmailKind, payload: CumbreEmailPayload): string {
     ? `<p>Total: <strong>${total || '-'}</strong><br/>Pagado: <strong>${paid || '-'}</strong></p>`
     : '';
 
+  const action = payload.paymentLink
+    ? `<p style=\"margin:16px 0 0;\">\n      <a href=\"${payload.paymentLink}\" style=\"display:inline-block;background:#20b2c5;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700;\">Pagar cuota</a>\n    </p>`
+    : '';
+
+  const installmentInfo =
+    kind === 'installment_reminder'
+      ? `<p style=\"margin:0 0 12px;\">Valor de la cuota: <strong>${amount || '-'}</strong></p>`
+      : '';
+
   return `
   <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
     <h2 style="margin:0 0 8px;">Cumbre Mundial 2026</h2>
     <p style="margin:0 0 12px;">${greeting}</p>
     <p style="margin:0 0 12px;">${body}</p>
+    ${installmentInfo}
     ${totals}
+    ${action}
     <p style="margin:16px 0 0;">
       Si necesitas ayuda, escribe por WhatsApp al +57 314 829 7534.
     </p>

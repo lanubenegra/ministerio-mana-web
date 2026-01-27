@@ -66,6 +66,16 @@ export type InstallmentRecord = {
   paid_at: string | null;
 };
 
+export type InstallmentReminderRecord = {
+  id: string;
+  installment_id: string;
+  reminder_key: string;
+  channel: string;
+  sent_at: string;
+  payload: Record<string, unknown> | null;
+  error: string | null;
+};
+
 export async function getBookingById(id: string): Promise<BookingRecord | null> {
   const supabase = ensureSupabase();
   const { data, error } = await supabase
@@ -379,6 +389,82 @@ export async function listDueInstallments(limit = 25): Promise<(InstallmentRecor
     return [];
   }
   return (data || []) as (InstallmentRecord & { plan: PaymentPlanRecord })[];
+}
+
+export async function listInstallmentsByDueDates(
+  dueDates: string[],
+  limit = 200,
+): Promise<(InstallmentRecord & { plan: PaymentPlanRecord; booking: BookingRecord })[]> {
+  if (!dueDates.length) return [];
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_installments')
+    .select('*, plan:cumbre_payment_plans(*), booking:cumbre_bookings(*)')
+    .in('status', ['PENDING', 'FAILED'])
+    .in('due_date', dueDates)
+    .order('due_date', { ascending: true })
+    .limit(limit);
+  if (error) {
+    console.error('[cumbre.installments] due list error', error);
+    return [];
+  }
+  return (data || []) as (InstallmentRecord & { plan: PaymentPlanRecord; booking: BookingRecord })[];
+}
+
+export async function getInstallmentById(installmentId: string): Promise<InstallmentRecord | null> {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_installments')
+    .select('*')
+    .eq('id', installmentId)
+    .maybeSingle();
+  if (error) {
+    console.error('[cumbre.installments] lookup error', error);
+    return null;
+  }
+  return data as InstallmentRecord | null;
+}
+
+export async function hasInstallmentReminder(params: {
+  installmentId: string;
+  reminderKey: string;
+  channel: string;
+}): Promise<boolean> {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_installment_reminders')
+    .select('id')
+    .eq('installment_id', params.installmentId)
+    .eq('reminder_key', params.reminderKey)
+    .eq('channel', params.channel)
+    .maybeSingle();
+  if (error) {
+    console.error('[cumbre.reminders] lookup error', error);
+    return true;
+  }
+  return Boolean(data?.id);
+}
+
+export async function recordInstallmentReminder(params: {
+  installmentId: string;
+  reminderKey: string;
+  channel: string;
+  payload?: Record<string, unknown> | null;
+  error?: string | null;
+}): Promise<void> {
+  const supabase = ensureSupabase();
+  const { error } = await supabase
+    .from('cumbre_installment_reminders')
+    .insert({
+      installment_id: params.installmentId,
+      reminder_key: params.reminderKey,
+      channel: params.channel,
+      payload: params.payload ?? null,
+      error: params.error ?? null,
+    });
+  if (error) {
+    console.error('[cumbre.reminders] insert error', error);
+  }
 }
 
 export async function getPlanByProviderSubscription(subscriptionId: string): Promise<PaymentPlanRecord | null> {
