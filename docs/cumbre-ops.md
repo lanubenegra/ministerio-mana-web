@@ -43,6 +43,11 @@ Este cron envia recordatorios 3 dias antes, 2 dias antes y el mismo dia del venc
 Solo aplica para planes sin auto-debito (sin payment_source_id).
 Requiere un proveedor de email (SendGrid o Resend) y/o un webhook de WhatsApp si deseas ese canal.
 
+### Autodebito Wompi (tarjeta)
+
+Cuando el usuario paga la primera cuota con tarjeta, el webhook intenta **tokenizar** y guardar\n+`provider_payment_method_id` para que el cron de cuotas pueda cobrar automaticamente.
+Si el pago inicial fue por PSE/Nequi, no hay autodebito y se usan recordatorios.
+
 Endpoint:
 - `POST /api/cumbre2026/installments/reminders/run`
 - Header requerido: `x-cron-secret: <CUMBRE_CRON_SECRET>`

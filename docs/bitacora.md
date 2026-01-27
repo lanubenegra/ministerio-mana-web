@@ -89,6 +89,7 @@
   - Se agrego tabla `cumbre_installment_reminders` para evitar duplicados.
   - Se actualizo mailer con plantilla de recordatorio de cuota.
   - Se actualizo webhook Stripe para marcar cuotas pagadas desde links manuales.
+  - Se intento tokenizar tarjeta Wompi desde webhook (si viene token) para autodebito.
   - Se actualizo `docs/cumbre-ops.md` con nuevo cron de recordatorios.
 - Pruebas: N/A (pendiente QA cron)
 - Pendientes:

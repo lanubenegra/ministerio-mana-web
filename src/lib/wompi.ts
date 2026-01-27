@@ -145,6 +145,36 @@ export async function createWompiCharge(params: {
     : null;
 }
 
+export async function createWompiPaymentSource(params: {
+  token: string;
+  customerEmail: string;
+}): Promise<string | null> {
+  const privateKey = getPrivateKey();
+  const acceptanceToken = await getAcceptanceToken();
+  const apiBase = env('WOMPI_API_BASE') ?? DEFAULT_API_BASE;
+
+  const res = await fetch(`${apiBase}/payment_sources`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${privateKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      type: 'CARD',
+      token: params.token,
+      customer_email: params.customerEmail,
+      acceptance_token: acceptanceToken,
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Wompi payment source failed: ${detail}`);
+  }
+  const data = await res.json();
+  return data?.data?.id ? String(data.data.id) : null;
+}
+
 type ParsedSignature = {
   timestamp: string;
   signature: string;

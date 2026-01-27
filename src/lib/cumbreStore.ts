@@ -495,6 +495,20 @@ export async function getPlanByBookingId(bookingId: string): Promise<PaymentPlan
   return data as PaymentPlanRecord | null;
 }
 
+export async function getPlanById(planId: string): Promise<PaymentPlanRecord | null> {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_payment_plans')
+    .select('*')
+    .eq('id', planId)
+    .maybeSingle();
+  if (error) {
+    console.error('[cumbre.installments] plan lookup error', error);
+    return null;
+  }
+  return data as PaymentPlanRecord | null;
+}
+
 export async function recomputeBookingTotals(bookingId: string): Promise<void> {
   const supabase = ensureSupabase();
   const booking = await getBookingById(bookingId);
