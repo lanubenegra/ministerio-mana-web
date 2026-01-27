@@ -47,7 +47,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     });
   }
 
-  const turnstileConfigured = Boolean(
+  const runtimeEnv =
+    import.meta.env?.VERCEL_ENV ?? process.env?.VERCEL_ENV ?? process.env?.NODE_ENV ?? 'development';
+  const enforceTurnstile = runtimeEnv === 'production';
+  const turnstileConfigured = enforceTurnstile && Boolean(
     import.meta.env?.TURNSTILE_SECRET_KEY ?? process.env?.TURNSTILE_SECRET_KEY,
   );
   if (turnstileConfigured) {
