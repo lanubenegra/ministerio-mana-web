@@ -7,6 +7,10 @@ const currencyLabel = isColombia ? 'Pago en Pesos (COP)' : 'Pago en Dólares (US
 const countryEmoji = isColombia ? '🇨🇴' : '🌎';
 const currencyCode = isColombia ? 'COP' : 'USD';
 const installmentDeadline = (import.meta.env?.CUMBRE_INSTALLMENT_DEADLINE ?? '2026-05-15') as string;
+const testModeEnabled =
+  (import.meta.env?.PUBLIC_CUMBRE_TEST_MODE ?? process.env?.PUBLIC_CUMBRE_TEST_MODE) === 'true';
+const testAmountCop = Number(import.meta.env?.PUBLIC_CUMBRE_TEST_AMOUNT_COP ?? 5000);
+const testAmountUsd = Number(import.meta.env?.PUBLIC_CUMBRE_TEST_AMOUNT_USD ?? 1);
 
 const pricing = isColombia
   ? {
@@ -35,12 +39,21 @@ const formatter = new Intl.NumberFormat(isColombia ? 'es-CO' : 'en-US', {
   maximumFractionDigits: 0,
 });
 const formatPrice = (value) => formatter.format(value);
+const formatTestAmount = (value, currency) =>
+  new Intl.NumberFormat(currency === 'COP' ? 'es-CO' : 'en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: currency === 'COP' ? 0 : 2,
+  }).format(value);
 ---
 
 <div
   id="cumbre-form-app"
   data-country-group={countryGroup}
   data-installment-deadline={installmentDeadline}
+  data-test-mode-enabled={testModeEnabled ? 'true' : 'false'}
+  data-test-amount-cop={Number.isFinite(testAmountCop) ? testAmountCop : 5000}
+  data-test-amount-usd={Number.isFinite(testAmountUsd) ? testAmountUsd : 1}
   class="grid lg:grid-cols-[2fr_1fr] gap-8 items-start"
 >
   
@@ -289,6 +302,19 @@ const formatPrice = (value) => formatter.format(value);
                )}
             </div>
 
+            {testModeEnabled && (
+              <div class="mt-4 p-4 rounded-xl border border-amber-400/30 bg-amber-500/10 text-xs text-amber-100">
+                <label class="flex items-start gap-3 cursor-pointer">
+                  <input id="test-mode-toggle" type="checkbox" class="mt-1 h-4 w-4 rounded border-amber-300 text-amber-500 focus:ring-amber-400">
+                  <span>
+                    <strong class="block text-sm text-amber-100">Modo prueba de pasarela</strong>
+                    Activa un cobro mínimo para probar el flujo: {formatTestAmount(testAmountCop, 'COP')} / {formatTestAmount(testAmountUsd, 'USD')}.
+                    Solo disponible en preview.
+                  </span>
+                </label>
+              </div>
+            )}
+
             <!-- Installment Details -->
             <div id="installment-box" class="hidden mt-4 p-4 bg-white/5 rounded-xl space-y-4 border border-white/5">
                <h4 class="font-bold text-white text-sm">Configura tus cuotas</h4>
@@ -420,6 +446,10 @@ const formatPrice = (value) => formatter.format(value);
     init() {
        this.cacheDOM();
        this.countryGroup = this.dom.app?.dataset.countryGroup || this.dom.countryInput?.value || 'CO';
+       this.testModeEnabled = this.dom.app?.dataset.testModeEnabled === 'true';
+       this.testAmountCop = Number(this.dom.app?.dataset.testAmountCop || 5000);
+       this.testAmountUsd = Number(this.dom.app?.dataset.testAmountUsd || 1);
+       this.testMode = this.testModeEnabled && Boolean(this.dom.testToggle?.checked);
        this.bindEvents();
        this.updateCurrency();
        this.updateGroupMode();
@@ -450,6 +480,7 @@ const formatPrice = (value) => formatter.format(value);
           payBtnLabel: document.getElementById('pay-amount-label'),
           payBtn: document.getElementById('btn-pay'),
           paymentOptions: document.querySelectorAll('input[name="payment_option"]'),
+          testToggle: document.getElementById('test-mode-toggle'),
           installmentBox: document.getElementById('installment-box'),
           installmentFrequencyInputs: document.querySelectorAll('input[name="installment_frequency"]'),
           installmentCount: document.getElementById('installment-count'),
@@ -491,6 +522,13 @@ const formatPrice = (value) => formatter.format(value);
        if (this.dom.paymentOptions?.length) {
           this.dom.paymentOptions.forEach(input => {
              input.addEventListener('change', () => this.updatePaymentUI());
+          });
+       }
+
+       if (this.dom.testToggle) {
+          this.dom.testToggle.addEventListener('change', () => {
+             this.testMode = Boolean(this.dom.testToggle?.checked);
+             this.updateTotals();
           });
        }
 
@@ -703,6 +741,13 @@ const formatPrice = (value) => formatter.format(value);
        const map = this.currency === 'COP' ? this.prices.CO : this.prices.INT;
        return map[type] || 0;
     },
+
+    getEffectiveTotal() {
+       if (this.testModeEnabled && this.testMode) {
+          return this.currency === 'COP' ? this.testAmountCop : this.testAmountUsd;
+       }
+       return this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
+    },
     
     getTypeLabel(type) {
         const labels = {
@@ -772,7 +817,7 @@ const formatPrice = (value) => formatter.format(value);
     },
 
     updateInstallmentPreview() {
-       const total = this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
+       const total = this.getEffectiveTotal();
        const frequency = this.getInstallmentFrequency();
        const deadline = this.getInstallmentDeadline();
 
@@ -822,7 +867,7 @@ const formatPrice = (value) => formatter.format(value);
     updatePayLabel(total) {
        const baseTotal = typeof total === 'number'
           ? total
-          : this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
+          : this.getEffectiveTotal();
        const amount = this.getPaymentAmount(baseTotal);
        if (!this.dom.payBtnLabel) return;
        if (amount) {
@@ -840,12 +885,12 @@ const formatPrice = (value) => formatter.format(value);
        if (option === 'INSTALLMENTS') {
           this.updateInstallmentPreview();
        }
-       const total = this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
+       const total = this.getEffectiveTotal();
        this.updatePayLabel(total);
     },
 
     updateTotals() {
-       const total = this.participants.reduce((sum, p) => sum + this.getPrice(p.packageType), 0);
+       const total = this.getEffectiveTotal();
        const fmt = this.formatPrice(total);
        if (this.dom.totalDisplay) {
           this.dom.totalDisplay.textContent = fmt;
@@ -901,6 +946,7 @@ const formatPrice = (value) => formatter.format(value);
           fullName: participant.name,
           packageType: participant.packageType,
        }));
+       const testMode = this.testModeEnabled && this.testMode;
        const data = {
           contactName: fd.get('leader_name'),
           email: fd.get('leader_email'),
@@ -908,6 +954,7 @@ const formatPrice = (value) => formatter.format(value);
           countryGroup: fd.get('countryGroup') || this.countryGroup,
           participants: participantsPayload,
           turnstile: fd.get('cf-turnstile-response'),
+          testMode,
        };
 
        this.dom.errorMsg.classList.add('hidden');
@@ -956,6 +1003,7 @@ const formatPrice = (value) => formatter.format(value);
                    bookingId: bookingData.bookingId,
                    frequency,
                    token: bookingToken,
+                   testMode,
                 }),
              });
              const planData = await planRes.json();
@@ -974,6 +1022,7 @@ const formatPrice = (value) => formatter.format(value);
              paymentKind,
              ...(amount ? { amount } : {}),
              token: bookingToken,
+             testMode,
           };
 
           const payRes = await fetch('/api/payments/create', {

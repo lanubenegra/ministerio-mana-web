@@ -105,6 +105,14 @@
   - Se actualizo seccion de condiciones: menu tradicional/vegetariano y politica de cambios.
 - Pruebas: N/A
 
+### 2026-01-27 (Modo prueba pasarela)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se agrego opcion de pago de prueba (solo preview) para cobrar montos minimos en COP/USD.
+  - Se permite crear cuotas de prueba con total fijo (CUMBRE_TEST_AMOUNT_*).
+  - Se agregaron envs `CUMBRE_TEST_MODE` y `PUBLIC_CUMBRE_TEST_MODE`.
+- Pruebas: N/A
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:

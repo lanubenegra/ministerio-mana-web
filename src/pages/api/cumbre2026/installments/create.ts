@@ -10,6 +10,25 @@ import { buildWompiCheckoutUrl } from '@lib/wompi';
 
 export const prerender = false;
 
+function env(key: string): string | undefined {
+  return import.meta.env?.[key] ?? process.env?.[key];
+}
+
+function isTestModeAllowed(runtimeEnv: string): boolean {
+  if (runtimeEnv === 'production') return false;
+  const flag = env('CUMBRE_TEST_MODE') ?? env('PUBLIC_CUMBRE_TEST_MODE');
+  return flag === 'true';
+}
+
+function getTestAmount(currency: string): number {
+  const raw = currency === 'COP'
+    ? env('CUMBRE_TEST_AMOUNT_COP') ?? env('PUBLIC_CUMBRE_TEST_AMOUNT_COP')
+    : env('CUMBRE_TEST_AMOUNT_USD') ?? env('PUBLIC_CUMBRE_TEST_AMOUNT_USD');
+  const fallback = currency === 'COP' ? 5000 : 1;
+  const value = Number(raw ?? fallback);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
 function normalizeFrequency(raw: string | null | undefined): InstallmentFrequency {
   const value = (raw || '').toString().trim().toUpperCase();
   if (value === 'BIWEEKLY' || value === 'QUINCENAL') return 'BIWEEKLY';
@@ -77,10 +96,15 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       });
     }
 
+    const runtimeEnv =
+      import.meta.env?.VERCEL_ENV ?? process.env?.VERCEL_ENV ?? process.env?.NODE_ENV ?? 'development';
+    const allowTestMode = isTestModeAllowed(runtimeEnv);
+    const testMode = Boolean(payload.testMode) && allowTestMode;
     const frequency = normalizeFrequency(payload.frequency);
     const currency = booking.currency === 'COP' ? 'COP' : 'USD';
+    const totalAmount = testMode ? getTestAmount(currency) : Number(booking.total_amount || 0);
     const schedule = buildInstallmentSchedule({
-      totalAmount: Number(booking.total_amount || 0),
+      totalAmount,
       currency,
       frequency,
     });
@@ -91,7 +115,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       frequency,
       startDate: schedule.startDate,
       endDate: schedule.endDate,
-      totalAmount: Number(booking.total_amount || 0),
+      totalAmount,
       currency,
       installmentCount: schedule.installmentCount,
       installmentAmount: schedule.installmentAmount,

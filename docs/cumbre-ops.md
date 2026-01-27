@@ -13,11 +13,15 @@ Guia corta para cron de cuotas, export CSV y acceso de cuenta.
 - `CUMBRE_INSTALLMENT_DEADLINE` (por defecto `2026-05-15`)
 - `CUMBRE_ADMIN_EXPORT_SECRET`
 - `CUMBRE_MANUAL_SECRET`
+- `CUMBRE_TEST_MODE` (opcional, solo preview)
+- `CUMBRE_TEST_AMOUNT_COP` (opcional, default 5000)
+- `CUMBRE_TEST_AMOUNT_USD` (opcional, default 1)
 - `CUMBRE_EMAIL_FROM` (opcional, default `info@ministeriomana.org`)
 - `WHATSAPP_WEBHOOK_URL` (opcional para recordatorios por WhatsApp)
 - `WHATSAPP_WEBHOOK_TOKEN` (opcional, si tu webhook requiere auth)
 
 > Nota: puedes reutilizar `SUPABASE_URL` y `SUPABASE_ANON_KEY` como `PUBLIC_*`.
+> El modo prueba solo se permite fuera de produccion.
 
 ## Cron de cuotas (auto-debito)
 
