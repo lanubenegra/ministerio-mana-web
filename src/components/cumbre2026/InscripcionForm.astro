@@ -23,8 +23,8 @@ const pricing = isColombia
     };
 
 const priceRows = [
-  { label: 'Asistente + alojamiento', key: 'lodging' },
-  { label: 'Asistente sin alojamiento', key: 'no_lodging' },
+  { label: 'Asistencia + alimentación + alojamiento', key: 'lodging' },
+  { label: 'Asistencia + alimentación (sin alojamiento)', key: 'no_lodging' },
   { label: 'Niños 0 a 7 años', key: 'child_0_7' },
   { label: 'Niños 7 a 13 años', key: 'child_7_13' },
 ];
@@ -107,8 +107,9 @@ const formatPrice = (value) => formatter.format(value);
             <div class="text-xs text-white/50 space-y-2">
                <p>Los valores se muestran según tu ubicación.</p>
                <p>
-                 Niños 0 a 7 años: el valor incluye solo material de trabajo. Si requiere alimentación y alojamiento
-                 individual, contáctanos. <a href="/eventos/cumbre-mundial-2026/condiciones" class="underline hover:text-white">Ver condiciones comerciales</a>.
+                 Niños 0 a 7 años: incluye material de trabajo. Alimentación y alojamiento se comparten con sus padres.
+                 Si requiere alimentación y alojamiento individual, contáctanos.
+                 <a href="/eventos/cumbre-mundial-2026/condiciones" class="underline hover:text-white">Ver condiciones comerciales</a>.
                </p>
             </div>
          </div>
@@ -145,8 +146,8 @@ const formatPrice = (value) => formatter.format(value);
             <div class="space-y-1">
                   <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Tipo de asistencia</label>
                   <select name="leader_package" id="leader-package" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all">
-                     <option value="lodging">Con alojamiento</option>
-                     <option value="no_lodging">Sin alojamiento</option>
+                     <option value="lodging">Con alojamiento (evento + alimentación)</option>
+                     <option value="no_lodging">Sin alojamiento (evento + alimentación)</option>
                   </select>
                </div>
          </div>
@@ -202,8 +203,8 @@ const formatPrice = (value) => formatter.format(value);
                <div class="space-y-1 transition-opacity duration-300">
                    <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Tipo de asistencia</label>
                    <select id="input-lodging" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-brand-teal focus:ring-1 focus:ring-brand-teal transition-all">
-                      <option value="lodging" class="text-black">Con alojamiento</option>
-                      <option value="no_lodging" class="text-black">Sin alojamiento</option>
+                      <option value="lodging" class="text-black">Con alojamiento (evento + alimentación)</option>
+                      <option value="no_lodging" class="text-black">Sin alojamiento (evento + alimentación)</option>
                    </select>
                    <p class="text-xs text-white/40 mt-1 pl-1">
                       * Niños hasta 13 años se calculan automáticamente.
@@ -705,8 +706,8 @@ const formatPrice = (value) => formatter.format(value);
     
     getTypeLabel(type) {
         const labels = {
-            lodging: 'Adulto con alojamiento',
-            no_lodging: 'Adulto sin alojamiento',
+            lodging: 'Asistencia + alimentación + alojamiento',
+            no_lodging: 'Asistencia + alimentación (sin alojamiento)',
             child_0_7: 'Niño 0-7',
             child_7_13: 'Niño 7-13'
         };

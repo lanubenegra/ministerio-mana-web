@@ -96,6 +96,15 @@
   - Ejecutar SQL `docs/sql/cumbre_installment_reminders.sql` en Supabase.
   - Configurar `WHATSAPP_WEBHOOK_URL` (si aplica) y validar envio.
 
+### 2026-01-27 (Ajustes precios y condiciones)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se actualizo copy de paquetes: evento + alimentacion + alojamiento / evento + alimentacion.
+  - Se actualizo nota de ninos 0-7 (alojamiento/comida compartidos con padres).
+  - Se actualizo texto de alojamiento (habitaciones tipo seminario).
+  - Se actualizo seccion de condiciones: menu tradicional/vegetariano y politica de cambios.
+- Pruebas: N/A
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:
