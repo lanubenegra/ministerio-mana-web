@@ -240,8 +240,19 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       const baseUrl = resolveBaseUrl(request);
       const nextUrl = `${baseUrl}/eventos/cumbre-mundial-2026/registro?bookingId=${booking.id}&token=${encodeURIComponent(token.token)}`;
       const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent(nextUrl)}`;
-      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
-      if (!existingUser?.user) {
+      let shouldInvite = true;
+      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+      if (listError) {
+        console.warn('[cumbre.booking] listUsers error', listError);
+      } else {
+        const normalizedEmail = email.toLowerCase();
+        const existingUser = listData?.users?.find((user) => user.email?.toLowerCase() === normalizedEmail);
+        shouldInvite = !existingUser;
+      }
+      if (shouldInvite) {
         await supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo });
       }
     } catch (inviteError) {
