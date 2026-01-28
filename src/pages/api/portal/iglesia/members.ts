@@ -52,6 +52,12 @@ export const GET: APIRoute = async ({ request }) => {
   const targetChurch = isAdmin ? (requestedChurch || churchId) : churchId;
 
   if (!targetChurch) {
+    if (isAdmin) {
+      return new Response(JSON.stringify({ ok: true, members: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
     return new Response(JSON.stringify({ ok: false, error: 'Sin iglesia asignada' }), {
       status: 400,
       headers: { 'content-type': 'application/json' },

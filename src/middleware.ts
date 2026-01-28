@@ -10,6 +10,8 @@ const GEO_COOKIE_NAME = 'mana_geo';
 const GEO_COOKIE_TTL = 60 * 60 * 12; // 12 hours in seconds
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PROD = NODE_ENV === 'production';
+const VERCEL_ENV = process.env.VERCEL_ENV || (import.meta as any)?.env?.VERCEL_ENV;
+const IS_VERCEL_PREVIEW = VERCEL_ENV === 'preview';
 const SCRIPT_SRC_BASE = [
   "'self'",
   'https://challenges.cloudflare.com',
@@ -196,6 +198,9 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
 
   const scriptSrc = [...SCRIPT_SRC_BASE, `'nonce-${nonce}'`];
+  if (IS_VERCEL_PREVIEW) {
+    scriptSrc.push('https://vercel.live');
+  }
   if (!IS_PROD) {
     scriptSrc.push("'unsafe-eval'");
     scriptSrc.push("'unsafe-inline'"); // useful for rapid dev; remove when all inline scripts have nonce
