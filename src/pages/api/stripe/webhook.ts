@@ -13,6 +13,7 @@ import {
   updatePaymentPlan,
   addPlanPayment,
   refreshPlanNextDueDate,
+  markInstallmentLinksUsed,
 } from '@lib/cumbreStore';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 import { updateDonationById, updateDonationByReference } from '@lib/donationsStore';
@@ -66,6 +67,7 @@ async function processEvent(event: Stripe.Event): Promise<void> {
               paid_at: new Date().toISOString(),
               attempt_count: Number(installment?.attempt_count || 0) + 1,
             });
+            await markInstallmentLinksUsed(installmentId);
             if (planId) {
               await addPlanPayment(planId, amount);
               await refreshPlanNextDueDate(planId);
@@ -93,6 +95,17 @@ async function processEvent(event: Stripe.Event): Promise<void> {
           provider_subscription_id: String(session.subscription),
           provider_customer_id: session.customer ? String(session.customer) : null,
         });
+        const cancelAtRaw = session.metadata?.cumbre_cancel_at;
+        const cancelAt = cancelAtRaw ? Number(cancelAtRaw) : 0;
+        if (cancelAt && Number.isFinite(cancelAt)) {
+          try {
+            await stripe.subscriptions.update(String(session.subscription), {
+              cancel_at: Math.floor(cancelAt),
+            });
+          } catch (err) {
+            console.error('[stripe.webhook] cancel_at update failed', err);
+          }
+        }
       }
 
       const donationId = session.metadata?.donation_id;

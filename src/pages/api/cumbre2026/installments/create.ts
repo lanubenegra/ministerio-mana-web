@@ -150,11 +150,11 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
           intervalCount,
           successUrl: registerUrl,
           cancelUrl: statusUrl,
-          cancelAt: Math.floor(cancelAt),
           metadata: {
             cumbre_booking_id: bookingId,
             cumbre_plan_id: plan.id,
             cumbre_frequency: frequency,
+            cumbre_cancel_at: String(Math.floor(cancelAt)),
           },
           customerEmail: booking.contact_email || undefined,
         });
@@ -205,6 +205,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
             cumbre_installment_id: installmentRow?.id || '',
             cumbre_reference: reference,
             cumbre_frequency: frequency,
+            cumbre_cancel_at: String(Math.floor(cancelAt)),
           },
         });
 
