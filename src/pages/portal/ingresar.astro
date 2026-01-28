@@ -6,10 +6,13 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 <BaseLayout title="Accede al Portal Maná | Ministerio Maná" description="Ingresa al Portal Maná para ver tus aportes y gestionar tu inscripción." disableSmoothScroll>
   <main class="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#EBF1F6]">
     <!-- Corporate Clean Background -->
-    <div class="absolute inset-0 z-0">
+    <div class="absolute inset-0 z-0 overflow-hidden">
       <!-- Subtle Pattern -->
       <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23293C74\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
       
+      <!-- Stars Container for GSAP -->
+      <div id="stars-container" class="absolute inset-0 z-0 pointer-events-none"></div>
+
       <!-- Elegant Gradient Mesh -->
       <div class="absolute inset-0 bg-gradient-to-br from-white/80 via-transparent to-[#293C74]/5"></div>
       
@@ -32,7 +35,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
         <form id="login-form" class="relative space-y-6">
           <div class="space-y-2 text-left">
-            <label class="block text-xs font-bold text-[#293C74]/70 uppercase tracking-widest ml-1">Correo Electrónico</label>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
             <div class="relative group">
               <input 
                 type="email" 

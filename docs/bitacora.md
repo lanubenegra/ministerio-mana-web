@@ -18,8 +18,10 @@
 - Responsable: Codex
 - Cambios:
   - Portal Maná: agregado botón "Volver al inicio" en el dashboard.
+  - Portal Iglesias: formulario manual + listado por iglesia (backend + frontend).
+  - Registro Cumbre: se ajusta RegistroFlow para leer booking/participants del endpoint real.
 - Pruebas: N/A
-- Pendientes: Validar destino final del botón (home vs cumbre).
+- Pendientes: Validar flujo de registro post‑pago con bookingId + token reales.
 
 ### 2026-01-25/26 (Branding Corporativo & Sistema de Cuentas)
 - Responsable: Antigravity
