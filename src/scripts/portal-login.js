@@ -33,12 +33,12 @@ window.addEventListener('load', () => {
   }
 });
 
-const form = document.getElementById('login-form') as HTMLFormElement | null;
-const emailInput = document.getElementById('login-email') as HTMLInputElement | null;
+const form = document.getElementById('login-form');
+const emailInput = document.getElementById('login-email');
 const statusContainer = document.getElementById('login-status-container');
 const statusEl = document.getElementById('login-status');
 const statusIcon = document.getElementById('login-status-icon');
-const submitBtn = document.getElementById('btn-submit') as HTMLButtonElement | null;
+const submitBtn = document.getElementById('btn-submit');
 
 form?.addEventListener('submit', async (event) => {
   event.preventDefault();
