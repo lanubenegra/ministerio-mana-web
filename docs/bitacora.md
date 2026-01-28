@@ -14,6 +14,17 @@
 
 ## Entradas
 
+### 2026-01-28 (Portal Admin y equipos por iglesia)
+- Responsable: Codex
+- Cambios:
+  - Portal Maná: panel Admin/Superadmin para listar usuarios, asignar roles y resetear contraseñas.
+  - Portal Iglesias: listado de colaboradores por iglesia + invitaciones para delegados/líderes.
+  - API Admin: endpoints para listar usuarios, invitar cuentas y cambiar roles con permisos.
+- Pruebas: N/A
+- Pendientes:
+  - Validar envío de correos Supabase (SMTP SendGrid) para invitaciones y reset.
+  - Confirmar `PORTAL_SUPERADMIN_EMAILS` con los superadmins activos.
+
 ### 2026-01-28
 - Responsable: Codex
 - Cambios:

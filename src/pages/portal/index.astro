@@ -390,6 +390,15 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                   <div id="church-bookings-list" class="hidden space-y-4"></div>
                 </div>
 
+                <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-4">
+                  <h3 class="text-lg font-bold text-[#293C74]">Equipo de mi iglesia</h3>
+                  <p class="text-sm text-slate-500">Personas con acceso para registrar y dar seguimiento.</p>
+                  <div id="church-members-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-sm text-slate-500">
+                    No hay colaboradores registrados.
+                  </div>
+                  <div id="church-members-list" class="hidden space-y-3"></div>
+                </div>
+
                 <div id="church-invite-card" class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-4 hidden">
                   <h3 class="text-lg font-bold text-[#293C74]">Invitar colaborador</h3>
                   <p class="text-sm text-slate-500">Delegar registro y seguimiento dentro de la sede.</p>
@@ -406,6 +415,37 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                     <button type="button" id="church-invite-btn" class="w-full bg-[#293C74] text-white px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 transition-all">
                       Enviar invitación
                     </button>
+                  </div>
+                </div>
+
+                <div id="admin-users-card" class="hidden bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-5">
+                  <h3 class="text-lg font-bold text-[#293C74]">Usuarios y roles (Admin)</h3>
+                  <p class="text-sm text-slate-500">Crea usuarios, asigna roles y gestiona accesos globales.</p>
+                  <div class="space-y-3">
+                    <input id="admin-invite-email" type="email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all" placeholder="correo@ejemplo.com">
+                    <input id="admin-invite-name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all" placeholder="Nombre completo (opcional)">
+                    <select id="admin-invite-role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all">
+                      <option value="user">Usuario</option>
+                      <option value="admin">Admin</option>
+                      <option value="superadmin">Superadmin</option>
+                    </select>
+                    <select id="admin-invite-church-role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all">
+                      <option value="">Sin rol de iglesia</option>
+                      <option value="church_admin">Líder de iglesia</option>
+                      <option value="church_member">Delegado de iglesia</option>
+                    </select>
+                    <input id="admin-invite-church" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all" placeholder="Iglesia / sede (si aplica)">
+                    <p id="admin-invite-status" class="text-xs text-slate-500"></p>
+                    <button type="button" id="admin-invite-btn" class="w-full bg-[#293C74] text-white px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 transition-all">
+                      Crear / Invitar usuario
+                    </button>
+                  </div>
+                  <div class="pt-4 border-t border-slate-100 space-y-3">
+                    <h4 class="text-sm font-bold text-[#293C74]">Usuarios registrados</h4>
+                    <div id="admin-users-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4 text-xs text-slate-500">
+                      No hay usuarios para mostrar.
+                    </div>
+                    <div id="admin-users-list" class="hidden space-y-3"></div>
                   </div>
                 </div>
 

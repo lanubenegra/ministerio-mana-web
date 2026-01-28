@@ -47,6 +47,18 @@ const inviteChurchInput = document.getElementById('church-invite-church');
 const iglesiaNavLabel = document.getElementById('nav-iglesia-label');
 const iglesiaTitle = document.getElementById('iglesia-title');
 const iglesiaSubtitle = document.getElementById('iglesia-subtitle');
+const churchMembersEmpty = document.getElementById('church-members-empty');
+const churchMembersList = document.getElementById('church-members-list');
+const adminUsersCard = document.getElementById('admin-users-card');
+const adminInviteEmail = document.getElementById('admin-invite-email');
+const adminInviteName = document.getElementById('admin-invite-name');
+const adminInviteRole = document.getElementById('admin-invite-role');
+const adminInviteChurchRole = document.getElementById('admin-invite-church-role');
+const adminInviteChurch = document.getElementById('admin-invite-church');
+const adminInviteStatus = document.getElementById('admin-invite-status');
+const adminInviteBtn = document.getElementById('admin-invite-btn');
+const adminUsersEmpty = document.getElementById('admin-users-empty');
+const adminUsersList = document.getElementById('admin-users-list');
 
 // UI Helpers
 const navLinks = document.querySelectorAll('.nav-link');
@@ -70,6 +82,8 @@ let portalMemberships = [];
 let authMode = 'supabase';
 let churchParticipantsCount = 0;
 let portalAuthHeaders = {};
+let portalIsAdmin = false;
+let portalIsSuperadmin = false;
 
 function formatCurrency(value, currency) {
   if (!currency) return value;
@@ -146,6 +160,8 @@ async function loadAccount() {
 
     portalProfile = sessionPayload.profile || {};
     portalMemberships = sessionPayload.memberships || [];
+    portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
+    portalIsSuperadmin = portalProfile?.role === 'superadmin';
 
     const res = await fetch('/api/cuenta/resumen', { headers });
     const payload = await res.json();
@@ -188,7 +204,10 @@ async function loadAccount() {
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
     await loadChurchBookings(headers);
+    await loadChurchMembers(headers);
+    await loadAdminUsers(headers);
     setupInviteAccess();
+    initAdminInvite();
     await loadChurchDraft();
 
     if (authMode === 'password') {
@@ -348,6 +367,145 @@ async function loadChurchBookings(headers = {}) {
   } catch (err) {
     console.error(err);
   }
+}
+
+async function loadChurchMembers(headers = {}) {
+  if (!churchMembersList || !churchMembersEmpty) return;
+  try {
+    const res = await fetch('/api/portal/iglesia/members', { headers });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
+    const members = payload.members || [];
+    if (!members.length) {
+      churchMembersEmpty.classList.remove('hidden');
+      churchMembersList.classList.add('hidden');
+      return;
+    }
+    churchMembersEmpty.classList.add('hidden');
+    churchMembersList.classList.remove('hidden');
+    churchMembersList.innerHTML = '';
+    members.forEach((member) => {
+      const card = document.createElement('div');
+      const profile = member.profile || {};
+      card.className = 'rounded-2xl border border-slate-200 bg-white px-4 py-3';
+      card.innerHTML = `
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm font-bold text-[#293C74]">${profile.full_name || profile.email || 'Usuario'}</p>
+            <p class="text-xs text-slate-500">${profile.email || ''}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">${member.role}</p>
+            <p class="text-[10px] text-slate-400">${member.status}</p>
+          </div>
+        </div>
+      `;
+      churchMembersList.appendChild(card);
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadAdminUsers(headers = {}) {
+  if (!adminUsersCard) return;
+  if (!portalIsAdmin) {
+    adminUsersCard.classList.add('hidden');
+    return;
+  }
+  adminUsersCard.classList.remove('hidden');
+
+  try {
+    const res = await fetch('/api/portal/admin/users', { headers });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
+    renderAdminUsers(payload.users || []);
+  } catch (err) {
+    console.error(err);
+    if (adminUsersEmpty) adminUsersEmpty.classList.remove('hidden');
+  }
+}
+
+function renderAdminUsers(users) {
+  if (!adminUsersList || !adminUsersEmpty) return;
+  adminUsersList.innerHTML = '';
+  if (!users.length) {
+    adminUsersEmpty.classList.remove('hidden');
+    adminUsersList.classList.add('hidden');
+    return;
+  }
+  adminUsersEmpty.classList.add('hidden');
+  adminUsersList.classList.remove('hidden');
+
+  users.forEach((user) => {
+    const rolesLabel = (user.memberships || [])
+      .map((m) => `${m.role}${m.church?.name ? ` · ${m.church.name}` : ''}`)
+      .join(' | ');
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-slate-200 bg-slate-50/80 p-4 space-y-3';
+    const roleSelect = portalIsSuperadmin
+      ? `<select data-action="role" data-user="${user.user_id}" class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-[#293C74]">
+          <option value="user" ${user.role === 'user' ? 'selected' : ''}>Usuario</option>
+          <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+          <option value="superadmin" ${user.role === 'superadmin' ? 'selected' : ''}>Superadmin</option>
+        </select>`
+      : `<span class="text-xs font-bold text-[#293C74]">${user.role}</span>`;
+    card.innerHTML = `
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <p class="text-sm font-bold text-[#293C74]">${user.full_name || user.email}</p>
+          <p class="text-xs text-slate-500">${user.email}</p>
+          <p class="text-[10px] text-slate-400 mt-1">${rolesLabel || 'Sin rol de iglesia'}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          ${roleSelect}
+          <button data-action="reset" data-email="${user.email}" class="px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-bold text-[#293C74] hover:bg-slate-100">
+            Reset contraseña
+          </button>
+        </div>
+      </div>
+    `;
+    adminUsersList.appendChild(card);
+  });
+}
+
+function initAdminInvite() {
+  if (!adminInviteBtn || !adminInviteEmail || !adminInviteRole) return;
+  if (!portalIsAdmin) return;
+
+  if (!portalIsSuperadmin && adminInviteRole) {
+    adminInviteRole.querySelector('option[value="admin"]')?.setAttribute('disabled', 'disabled');
+    adminInviteRole.querySelector('option[value="superadmin"]')?.setAttribute('disabled', 'disabled');
+  }
+
+  adminInviteBtn.addEventListener('click', async () => {
+    if (!adminInviteStatus) return;
+    adminInviteStatus.textContent = 'Enviando...';
+    try {
+      const payload = {
+        email: adminInviteEmail.value.trim(),
+        fullName: adminInviteName?.value?.trim() || '',
+        role: adminInviteRole.value,
+        churchRole: adminInviteChurchRole?.value || '',
+        church: adminInviteChurch?.value?.trim() || '',
+      };
+      const res = await fetch('/api/portal/admin/invite', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo invitar');
+      adminInviteStatus.textContent = 'Invitación enviada.';
+      adminInviteEmail.value = '';
+      if (adminInviteName) adminInviteName.value = '';
+      if (adminInviteChurch) adminInviteChurch.value = '';
+      await loadAdminUsers(portalAuthHeaders);
+    } catch (err) {
+      console.error(err);
+      adminInviteStatus.textContent = err.message || 'Error al invitar';
+    }
+  });
 }
 
 async function loadChurchDraft() {
@@ -750,6 +908,51 @@ async function handlePlanAction(event) {
     target.disabled = false;
   }
 }
+
+adminUsersList?.addEventListener('change', async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) return;
+  if (target.dataset.action !== 'role') return;
+  const userId = target.dataset.user;
+  const role = target.value;
+  if (!userId) return;
+  try {
+    const res = await fetch('/api/portal/admin/role', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+      body: JSON.stringify({ userId, role }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo actualizar');
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'No se pudo actualizar el rol.');
+  }
+});
+
+adminUsersList?.addEventListener('click', async (event) => {
+  const target = event.target.closest('[data-action="reset"]');
+  if (!target) return;
+  const email = target.dataset.email;
+  if (!email) return;
+  target.textContent = 'Enviando...';
+  target.setAttribute('disabled', 'disabled');
+  try {
+    const res = await fetch('/api/portal/admin/reset-password', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo enviar');
+    target.textContent = 'Enviado';
+  } catch (err) {
+    console.error(err);
+    target.textContent = 'Reset contraseña';
+    target.removeAttribute('disabled');
+    alert(err.message || 'No se pudo enviar.');
+  }
+});
 
 logoutBtn?.addEventListener('click', async () => {
   logoutBtn.disabled = true;
