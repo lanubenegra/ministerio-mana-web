@@ -11,6 +11,9 @@ export default defineConfig({
   integrations: [tailwind({ config: { applyBaseStyles: true } }), sitemap()],
   experimental: { clientPrerender: true },
   vite: {
+    build: {
+      assetsInlineLimit: 0
+    },
     resolve: {
       alias: {
         '@components': '/src/components',

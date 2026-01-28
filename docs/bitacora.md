@@ -140,6 +140,32 @@
   - Ejecutar SQL actualizado `docs/sql/portal_iglesias.sql`.
   - Verificar envio de email OTP (SMTP en Supabase).
 
+### 2026-01-28 (Hotfix: Internal Server Error en Preview)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se detecto error 500: `Astro.resolve is not a function` en Astro 5 (rompia `/` y rutas portal).
+  - Se reemplazo `Astro.resolve(...)` por imports `?url` en:
+    - `src/layouts/BaseLayout.astro` (global.css, lenis, home-animations)
+    - `src/pages/portal/ingresar.astro` (portal-login)
+    - `src/pages/portal/index.astro` (portal-dashboard)
+    - `src/components/AccountButton.astro` (account-button)
+  - Se removio CSS duplicado en `src/pages/index.astro` que forzaba `/src/styles/global.css`.
+  - Se corrigio nonce CSP para Edge (middleware) usando `crypto.getRandomValues`.
+- Pruebas:
+  - Pendiente validar preview post-deploy (home + portal).
+- Pendientes:
+  - Verificar que el preview nuevo ya no arroje 500.
+  - Confirmar que portal carga scripts (sin 404) y aparece mensaje de “Enviando enlace mágico…”.
+
+### 2026-01-28 (Hotfix: CSP bloqueando scripts data:video/mp2t)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se renombro `src/scripts/*.ts` a `.js` para evitar MIME `video/mp2t` en Vercel.
+  - Se actualizo BaseLayout/Portal/AccountButton/ChurchesMap para importar scripts `?url` con `.js`.
+  - Se ajusto `astro.config.mjs` con `vite.build.assetsInlineLimit = 0` para evitar `data:` URLs.
+- Pruebas:
+  - Pendiente validar preview: scripts deben cargar sin CSP block ni MIME error.
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:
