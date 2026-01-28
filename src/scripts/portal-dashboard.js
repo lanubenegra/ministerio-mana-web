@@ -39,6 +39,13 @@ const churchBookingsEmpty = document.getElementById('church-bookings-empty');
 const churchBookingsList = document.getElementById('church-bookings-list');
 const churchBookingsSearch = document.getElementById('church-bookings-search');
 const churchBookingsStatus = document.getElementById('church-bookings-status');
+const churchPaymentsEmpty = document.getElementById('church-payments-empty');
+const churchPaymentsList = document.getElementById('church-payments-list');
+const churchPaymentsSearch = document.getElementById('church-payments-search');
+const churchPaymentsStatus = document.getElementById('church-payments-status');
+const churchPaymentsProvider = document.getElementById('church-payments-provider');
+const churchPaymentsFrom = document.getElementById('church-payments-from');
+const churchPaymentsTo = document.getElementById('church-payments-to');
 const churchExportBtn = document.getElementById('church-export-btn');
 const churchExportStatus = document.getElementById('church-export-status');
 const participantsList = document.getElementById('participants-list');
@@ -100,6 +107,7 @@ let portalChurchesCatalog = [];
 let portalIsCustomChurch = false;
 let churchBookingsData = [];
 let churchMembersData = [];
+let churchPaymentsData = [];
 
 function formatCurrency(value, currency) {
   if (!currency) return value;
@@ -249,6 +257,7 @@ async function loadAccount() {
     if (hasChurchAccess) {
       await loadChurchSelector(headers);
       await loadChurchBookings(headers);
+      await loadChurchPayments(headers);
       await loadChurchMembers(headers);
     }
     await loadAdminUsers(headers);
@@ -519,6 +528,90 @@ function renderChurchBookings(list) {
   });
 }
 
+function parseDateInput(value) {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function filterChurchPayments(list) {
+  const query = churchPaymentsSearch?.value?.trim().toLowerCase() || '';
+  const status = churchPaymentsStatus?.value || '';
+  const provider = churchPaymentsProvider?.value || '';
+  const from = parseDateInput(churchPaymentsFrom?.value);
+  const toRaw = churchPaymentsTo?.value;
+  const to = toRaw ? new Date(`${toRaw}T23:59:59`) : null;
+
+  return (list || []).filter((payment) => {
+    const booking = payment.booking || {};
+    const searchable = [
+      booking.contact_name,
+      booking.contact_email,
+      booking.contact_phone,
+      booking.contact_church,
+      payment.reference,
+      payment.provider_tx_id,
+      payment.booking_id,
+      payment.id,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    if (query && !searchable.includes(query)) return false;
+    if (status && payment.status !== status) return false;
+    if (provider && payment.provider !== provider) return false;
+    if (from || to) {
+      const created = payment.created_at ? new Date(payment.created_at) : null;
+      if (!created || Number.isNaN(created.getTime())) return false;
+      if (from && created < from) return false;
+      if (to && created > to) return false;
+    }
+    return true;
+  });
+}
+
+function renderChurchPayments(list) {
+  if (!churchPaymentsList || !churchPaymentsEmpty) return;
+  churchPaymentsList.innerHTML = '';
+  if (!list.length) {
+    churchPaymentsEmpty.classList.remove('hidden');
+    churchPaymentsList.classList.add('hidden');
+    return;
+  }
+  churchPaymentsEmpty.classList.add('hidden');
+  churchPaymentsList.classList.remove('hidden');
+
+  list.forEach((payment) => {
+    const booking = payment.booking || {};
+    const providerLabel = payment.provider ? payment.provider.toUpperCase() : '—';
+    const statusLabel = payment.status || 'PENDING';
+    const methodLabel = payment.method || '—';
+    const referenceLabel = (payment.reference || payment.id || '').toString();
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-slate-200 bg-white px-4 py-4';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pago</p>
+          <p class="text-sm font-bold text-[#293C74]">${formatCurrency(payment.amount, payment.currency)}</p>
+          <p class="text-xs text-slate-500">${providerLabel} · ${statusLabel}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Referencia</p>
+          <p class="text-xs font-bold text-[#293C74]">#${referenceLabel.slice(0, 10).toUpperCase()}</p>
+          <p class="text-xs text-slate-500">${formatDate(payment.created_at)}</p>
+        </div>
+      </div>
+      <div class="mt-2 text-xs text-slate-500">
+        ${booking.contact_name || booking.contact_email || 'Sin nombre'}
+        ${booking.contact_email ? ` · ${booking.contact_email}` : ''}
+      </div>
+      <div class="mt-2 text-[11px] text-slate-400">Método: ${methodLabel}</div>
+    `;
+    churchPaymentsList.appendChild(card);
+  });
+}
+
 async function loadChurchBookings(headers = {}) {
   if (!churchBookingsList || !churchBookingsEmpty) return;
     if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
@@ -538,6 +631,30 @@ async function loadChurchBookings(headers = {}) {
     churchBookingsData = payload.bookings || [];
     const filtered = filterChurchBookings(churchBookingsData);
     renderChurchBookings(filtered);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadChurchPayments(headers = {}) {
+  if (!churchPaymentsList || !churchPaymentsEmpty) return;
+  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
+    churchPaymentsEmpty.textContent = 'Selecciona una iglesia para ver los pagos.';
+    churchPaymentsEmpty.classList.remove('hidden');
+    churchPaymentsList.classList.add('hidden');
+    return;
+  }
+  try {
+    const url = new URL('/api/portal/iglesia/payments', window.location.origin);
+    if (portalSelectedChurchId) {
+      url.searchParams.set('churchId', portalSelectedChurchId);
+    }
+    const res = await fetch(url.toString(), { headers });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
+    churchPaymentsData = payload.payments || [];
+    const filtered = filterChurchPayments(churchPaymentsData);
+    renderChurchPayments(filtered);
   } catch (err) {
     console.error(err);
   }
@@ -884,6 +1001,7 @@ function initChurchManualForm() {
     if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
     churchFormStatus.textContent = 'Inscripción registrada.';
     await loadChurchBookings();
+    await loadChurchPayments();
     churchForm.reset();
     participantsList.innerHTML = '';
     participantsList.appendChild(buildParticipantRow());
@@ -1229,6 +1347,7 @@ churchSelectorInput?.addEventListener('change', async (event) => {
   portalIsCustomChurch = false;
   await saveChurchSelection(value, portalAuthHeaders);
   await loadChurchBookings(portalAuthHeaders);
+  await loadChurchPayments(portalAuthHeaders);
   await loadChurchMembers(portalAuthHeaders);
 });
 
@@ -1237,6 +1356,21 @@ churchBookingsSearch?.addEventListener('input', () => {
 });
 churchBookingsStatus?.addEventListener('change', () => {
   renderChurchBookings(filterChurchBookings(churchBookingsData));
+});
+churchPaymentsSearch?.addEventListener('input', () => {
+  renderChurchPayments(filterChurchPayments(churchPaymentsData));
+});
+churchPaymentsStatus?.addEventListener('change', () => {
+  renderChurchPayments(filterChurchPayments(churchPaymentsData));
+});
+churchPaymentsProvider?.addEventListener('change', () => {
+  renderChurchPayments(filterChurchPayments(churchPaymentsData));
+});
+churchPaymentsFrom?.addEventListener('change', () => {
+  renderChurchPayments(filterChurchPayments(churchPaymentsData));
+});
+churchPaymentsTo?.addEventListener('change', () => {
+  renderChurchPayments(filterChurchPayments(churchPaymentsData));
 });
 churchMembersSearch?.addEventListener('input', () => {
   renderChurchMembers(filterChurchMembers(churchMembersData));
