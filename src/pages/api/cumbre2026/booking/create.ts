@@ -13,6 +13,7 @@ import {
 } from '@lib/cumbre2026';
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
+import { resolveBaseUrl } from '@lib/url';
 
 export const prerender = false;
 
@@ -230,6 +231,18 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       totalPaid: 0,
       currency,
     });
+
+    try {
+      const baseUrl = resolveBaseUrl(request);
+      const nextUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${booking.id}&token=${encodeURIComponent(token.token)}`;
+      const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent(nextUrl)}`;
+      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+      if (!existingUser?.user) {
+        await supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo });
+      }
+    } catch (inviteError) {
+      console.error('[cumbre.booking] invite error', inviteError);
+    }
 
     return new Response(JSON.stringify({
       ok: true,

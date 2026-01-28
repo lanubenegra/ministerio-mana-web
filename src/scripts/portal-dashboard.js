@@ -36,6 +36,13 @@ const churchBookingsEmpty = document.getElementById('church-bookings-empty');
 const churchBookingsList = document.getElementById('church-bookings-list');
 const participantsList = document.getElementById('participants-list');
 const addParticipantBtn = document.getElementById('btn-add-participant');
+const inviteCard = document.getElementById('church-invite-card');
+const inviteEmail = document.getElementById('church-invite-email');
+const inviteRole = document.getElementById('church-invite-role');
+const inviteStatus = document.getElementById('church-invite-status');
+const inviteBtn = document.getElementById('church-invite-btn');
+const inviteChurchWrapper = document.getElementById('church-invite-church-wrapper');
+const inviteChurchInput = document.getElementById('church-invite-church');
 
 // UI Helpers
 const navLinks = document.querySelectorAll('.nav-link');
@@ -58,6 +65,7 @@ let portalProfile = null;
 let portalMemberships = [];
 let authMode = 'supabase';
 let churchParticipantsCount = 0;
+let portalAuthHeaders = {};
 
 function formatCurrency(value, currency) {
   if (!currency) return value;
@@ -110,6 +118,7 @@ async function loadAccount() {
     let headers = {};
     if (token) {
       headers = { Authorization: `Bearer ${token}` };
+      portalAuthHeaders = headers;
     } else {
       const fallbackRes = await fetch('/api/portal/password-session');
       if (!fallbackRes.ok) {
@@ -168,6 +177,7 @@ async function loadAccount() {
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
     await loadChurchBookings(headers);
+    setupInviteAccess();
 
     if (authMode === 'password') {
       if (onboardingModal) onboardingModal.classList.add('hidden');
@@ -186,6 +196,27 @@ async function loadAccount() {
     console.error(err);
     loadingEl.classList.add('hidden');
     errorEl.classList.remove('hidden');
+  }
+}
+
+function setupInviteAccess() {
+  if (!inviteCard) return;
+  const profileRole = portalProfile?.role || 'user';
+  const membershipRoles = (portalMemberships || []).map((m) => m?.role);
+  const canInvite = profileRole === 'admin' || profileRole === 'superadmin' || membershipRoles.includes('church_admin');
+  if (!canInvite) {
+    inviteCard.classList.add('hidden');
+    return;
+  }
+  inviteCard.classList.remove('hidden');
+  if (profileRole === 'admin' || profileRole === 'superadmin') {
+    inviteChurchWrapper?.classList.remove('hidden');
+  } else {
+    inviteChurchWrapper?.classList.add('hidden');
+    if (inviteRole) {
+      inviteRole.value = 'church_member';
+      inviteRole.querySelector('option[value="church_admin"]')?.setAttribute('disabled', 'disabled');
+    }
   }
 }
 
@@ -305,6 +336,78 @@ async function loadChurchBookings(headers = {}) {
   }
 }
 
+async function loadChurchDraft() {
+  if (!churchForm) return;
+  try {
+    const res = await fetch('/api/portal/iglesia/draft', { headers: portalAuthHeaders });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok || !payload.draft) return;
+    const draft = payload.draft;
+    document.getElementById('church-contact-name').value = draft.contactName || '';
+    document.getElementById('church-contact-email').value = draft.email || '';
+    document.getElementById('church-contact-phone').value = draft.phone || '';
+    document.getElementById('church-document-type').value = draft.documentType || 'CC';
+    document.getElementById('church-document-number').value = draft.documentNumber || '';
+    document.getElementById('church-country-group').value = draft.countryGroup || 'CO';
+    document.getElementById('church-country').value = draft.country || '';
+    document.getElementById('church-city').value = draft.city || '';
+    document.getElementById('church-name').value = draft.church || '';
+    document.getElementById('church-payment-option').value = draft.paymentOption || 'FULL';
+    document.getElementById('church-payment-amount').value = draft.paymentAmount || '';
+    document.getElementById('church-payment-frequency').value = draft.frequency || 'MONTHLY';
+    document.getElementById('church-payment-method').value = draft.paymentMethod || '';
+    document.getElementById('church-notes').value = draft.notes || '';
+    participantsList.innerHTML = '';
+    (draft.participants || []).forEach((item) => {
+      participantsList.appendChild(buildParticipantRow(item));
+    });
+    if (!participantsList.children.length) {
+      participantsList.appendChild(buildParticipantRow());
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+let draftTimer;
+function scheduleDraftSave() {
+  if (!churchForm || authMode === 'password') return;
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    saveChurchDraft();
+  }, 900);
+}
+
+async function saveChurchDraft() {
+  if (!churchForm) return;
+  const payload = {
+    contactName: document.getElementById('church-contact-name')?.value || '',
+    email: document.getElementById('church-contact-email')?.value || '',
+    phone: document.getElementById('church-contact-phone')?.value || '',
+    documentType: document.getElementById('church-document-type')?.value || '',
+    documentNumber: document.getElementById('church-document-number')?.value || '',
+    countryGroup: document.getElementById('church-country-group')?.value || 'CO',
+    country: document.getElementById('church-country')?.value || '',
+    city: document.getElementById('church-city')?.value || '',
+    church: document.getElementById('church-name')?.value || '',
+    paymentOption: document.getElementById('church-payment-option')?.value || 'FULL',
+    paymentAmount: document.getElementById('church-payment-amount')?.value || '',
+    frequency: document.getElementById('church-payment-frequency')?.value || 'MONTHLY',
+    paymentMethod: document.getElementById('church-payment-method')?.value || '',
+    notes: document.getElementById('church-notes')?.value || '',
+    participants: collectParticipants(),
+  };
+  try {
+    await fetch('/api/portal/iglesia/draft', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 function initChurchManualForm() {
   if (!churchForm || !participantsList || !addParticipantBtn) return;
   if (!participantsList.children.length) {
@@ -313,6 +416,11 @@ function initChurchManualForm() {
 
   addParticipantBtn.addEventListener('click', () => {
     participantsList.appendChild(buildParticipantRow());
+    scheduleDraftSave();
+  });
+
+  churchForm.querySelectorAll('input, select, textarea').forEach((input) => {
+    input.addEventListener('input', scheduleDraftSave);
   });
 
   churchForm.addEventListener('submit', async (event) => {
@@ -340,7 +448,7 @@ function initChurchManualForm() {
     try {
       const res = await fetch('/api/portal/iglesia/submit', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -350,9 +458,37 @@ function initChurchManualForm() {
       churchForm.reset();
       participantsList.innerHTML = '';
       participantsList.appendChild(buildParticipantRow());
+      await fetch('/api/portal/iglesia/draft', { method: 'DELETE', headers: portalAuthHeaders });
     } catch (error) {
       console.error(error);
       churchFormStatus.textContent = error.message || 'Error guardando';
+    }
+  });
+}
+
+function initInviteForm() {
+  if (!inviteBtn || !inviteEmail || !inviteRole) return;
+  inviteBtn.addEventListener('click', async () => {
+    if (!inviteStatus) return;
+    inviteStatus.textContent = 'Enviando invitación...';
+    try {
+      const payload = {
+        email: inviteEmail.value.trim(),
+        role: inviteRole.value,
+        church: inviteChurchInput?.value?.trim() || '',
+      };
+      const res = await fetch('/api/portal/iglesia/invite', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo invitar');
+      inviteStatus.textContent = 'Invitación enviada.';
+      inviteEmail.value = '';
+    } catch (err) {
+      console.error(err);
+      inviteStatus.textContent = err.message || 'No se pudo invitar';
     }
   });
 }
@@ -663,3 +799,5 @@ plansList?.addEventListener('click', handlePlanAction);
 
 loadAccount();
 initChurchManualForm();
+initInviteForm();
+loadChurchDraft();

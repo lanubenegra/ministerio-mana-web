@@ -377,18 +377,37 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 </div>
 
                 <div class="space-y-6">
-                  <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-4">
-                    <h3 class="text-lg font-bold text-[#293C74]">Inscritos de mi iglesia</h3>
-                    <p class="text-sm text-slate-500">Seguimiento por abonos y estado de registro.</p>
-                    <div id="church-bookings-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-sm text-slate-500">
-                      No hay registros todavía.
-                    </div>
-                    <div id="church-bookings-list" class="hidden space-y-4"></div>
+                <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-4">
+                  <h3 class="text-lg font-bold text-[#293C74]">Inscritos de mi iglesia</h3>
+                  <p class="text-sm text-slate-500">Seguimiento por abonos y estado de registro.</p>
+                  <div id="church-bookings-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-sm text-slate-500">
+                    No hay registros todavía.
                   </div>
+                  <div id="church-bookings-list" class="hidden space-y-4"></div>
+                </div>
 
-                  <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-3">
-                    <h3 class="text-lg font-bold text-[#293C74]">Acceso por rol</h3>
-                    <p class="text-sm text-slate-500">Si eres pastor o encargado, solicita acceso y podrás ver los inscritos de tu iglesia.</p>
+                <div id="church-invite-card" class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-4 hidden">
+                  <h3 class="text-lg font-bold text-[#293C74]">Invitar colaborador</h3>
+                  <p class="text-sm text-slate-500">Delegar registro y seguimiento dentro de la sede.</p>
+                  <div class="space-y-3">
+                    <input id="church-invite-email" type="email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all" placeholder="correo@ejemplo.com">
+                    <div id="church-invite-church-wrapper" class="hidden">
+                      <input id="church-invite-church" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all" placeholder="Iglesia / sede">
+                    </div>
+                    <select id="church-invite-role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all">
+                      <option value="church_member">Delegado de iglesia</option>
+                      <option value="church_admin">Líder de iglesia</option>
+                    </select>
+                    <p id="church-invite-status" class="text-xs text-slate-500"></p>
+                    <button type="button" id="church-invite-btn" class="w-full bg-[#293C74] text-white px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 transition-all">
+                      Enviar invitación
+                    </button>
+                  </div>
+                </div>
+
+                <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-3">
+                  <h3 class="text-lg font-bold text-[#293C74]">Acceso por rol</h3>
+                  <p class="text-sm text-slate-500">Si eres pastor o encargado, solicita acceso y podrás ver los inscritos de tu iglesia.</p>
                     <a href="https://wa.me/573148297534" class="inline-flex items-center gap-2 text-sm font-bold text-brand-teal hover:underline">
                       Solicitar acceso como líder de iglesia
                     </a>

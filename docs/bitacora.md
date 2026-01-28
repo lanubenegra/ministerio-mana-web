@@ -21,6 +21,8 @@
   - Portal Iglesias: formulario manual + listado por iglesia (backend + frontend).
   - Registro Cumbre: se ajusta RegistroFlow para leer booking/participants del endpoint real.
   - Auth Portal: login por contraseña usa Supabase (mismo rol que magic link) y página de activación de cuenta.
+  - Autosave en nube: drafts para registro post-pago y formulario manual de iglesias.
+  - Delegación: invitación de colaboradores por iglesia (church_admin/admin) con creación de usuario.
 - Pruebas: N/A
 - Pendientes: Validar flujo de registro post‑pago con bookingId + token reales.
 
