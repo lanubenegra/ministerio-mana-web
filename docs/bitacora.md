@@ -122,6 +122,23 @@
   - Se creo `docs/portal-iglesias.md` con guia inicial.
 - Pruebas: N/A
 
+### 2026-01-28 (Portal Maná - fase 2 login/onboarding)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se creo `/portal` y `/portal/ingresar` como rutas principales (alias `/cuenta` via redirect).
+  - Se actualizo copy: “Mis Aportes”, “Mis Eventos”, “Mi Perfil”, “Portal Maná”.
+  - Se agrego onboarding “Completa tu perfil” (nombre, telefono, ciudad, pais, relacion Maná, sede).
+  - Se agrego API `/api/portal/profile` para guardar perfil en `user_profiles`.
+  - Se ajusto `user_profiles` con campos nuevos (phone/city/country/affiliation/church_name/church_id).
+  - Se agrego tab “Mi Iglesia” con memberships (placeholder si no hay).
+  - Se corrigio logo teal/blanco en portal.
+  - Se permitio Supabase en CSP (connect-src) y se corrigieron rutas de scripts del portal.
+- Pruebas: Pendiente (login OTP + onboarding en preview)
+- Pendientes:
+  - Configurar `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` en Preview.
+  - Ejecutar SQL actualizado `docs/sql/portal_iglesias.sql`.
+  - Verificar envio de email OTP (SMTP en Supabase).
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:
