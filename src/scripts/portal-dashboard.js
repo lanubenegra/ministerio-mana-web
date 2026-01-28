@@ -159,6 +159,10 @@ async function loadAccount() {
     portalMemberships = sessionPayload.memberships || [];
     portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
     portalIsSuperadmin = portalProfile?.role === 'superadmin';
+    const hasChurchRole = (portalMemberships || []).some(
+      (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
+    );
+    const hasChurchAccess = portalIsAdmin || hasChurchRole;
 
     const { data: userData } = token ? await supabase.auth.getUser() : { data: { user: null } };
     const user = userData?.user;
@@ -217,8 +221,10 @@ async function loadAccount() {
     renderPlans(payload.plans || [], payload.bookings || []);
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
-    await loadChurchBookings(headers);
-    await loadChurchMembers(headers);
+    if (hasChurchAccess) {
+      await loadChurchBookings(headers);
+      await loadChurchMembers(headers);
+    }
     await loadAdminUsers(headers);
     setupInviteAccess();
     initAdminInvite();
@@ -885,7 +891,7 @@ async function updateProfile() {
     setTimeout(() => { profileStatus.textContent = ''; }, 3000);
   } catch (err) {
     console.error(err);
-    profileStatus.textContent = 'Error al actualizar el perfil.';
+    profileStatus.textContent = err?.message || 'Error al actualizar el perfil.';
     profileStatus.className = 'text-sm font-medium text-red-400';
   }
 }
@@ -1027,7 +1033,7 @@ onboardingForm?.addEventListener('submit', async (event) => {
     onboardingModal.classList.remove('flex');
   } catch (err) {
     console.error(err);
-    onboardingStatus.textContent = 'No pudimos guardar tu perfil. Intenta de nuevo.';
+    onboardingStatus.textContent = err?.message || 'No pudimos guardar tu perfil. Intenta de nuevo.';
   }
 });
 plansList?.addEventListener('click', handlePlanAction);
