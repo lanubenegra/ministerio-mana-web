@@ -80,7 +80,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   </main>
 
 
-  <script type="module">
+  <script type="module" nonce={Astro.locals.cspNonce}>
     import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
     import { gsap } from 'gsap';
 
