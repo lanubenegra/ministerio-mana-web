@@ -14,6 +14,13 @@
 
 ## Entradas
 
+### 2026-01-28
+- Responsable: Codex
+- Cambios:
+  - Portal Maná: agregado botón "Volver al inicio" en el dashboard.
+- Pruebas: N/A
+- Pendientes: Validar destino final del botón (home vs cumbre).
+
 ### 2026-01-25/26 (Branding Corporativo & Sistema de Cuentas)
 - Responsable: Antigravity
 - Cambios:
