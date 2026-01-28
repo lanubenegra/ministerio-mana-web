@@ -40,6 +40,15 @@ const statusContainer = document.getElementById('login-status-container');
 const statusEl = document.getElementById('login-status');
 const statusIcon = document.getElementById('login-status-icon');
 const submitBtn = document.getElementById('btn-submit');
+const passwordBtn = document.getElementById('btn-submit-password');
+let lastAction = 'otp';
+
+submitBtn?.addEventListener('click', () => {
+  lastAction = 'otp';
+});
+passwordBtn?.addEventListener('click', () => {
+  lastAction = 'password';
+});
 
 form?.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -48,6 +57,10 @@ form?.addEventListener('submit', async (event) => {
 
   submitBtn.disabled = true;
   submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  if (passwordBtn) {
+    passwordBtn.disabled = true;
+    passwordBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  }
   statusContainer.classList.remove('hidden');
   statusEl.textContent = 'Enviando enlace mágico...';
   statusIcon.classList.replace('bg-green-400', 'bg-brand-teal');
@@ -57,7 +70,8 @@ form?.addEventListener('submit', async (event) => {
     const email = emailInput.value.trim();
     const password = passwordInput?.value?.trim();
 
-    if (password) {
+    const action = event.submitter?.dataset?.action || lastAction;
+    if (password && action === 'password') {
       statusEl.textContent = 'Validando acceso...';
       const res = await fetch('/api/portal/password-login', {
         method: 'POST',
@@ -96,5 +110,9 @@ form?.addEventListener('submit', async (event) => {
     statusEl.textContent = 'Error al enviar enlace. Intenta de nuevo.';
     submitBtn.disabled = false;
     submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    if (passwordBtn) {
+      passwordBtn.disabled = false;
+      passwordBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
   }
 });

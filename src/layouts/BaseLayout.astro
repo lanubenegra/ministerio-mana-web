@@ -13,6 +13,7 @@ const {
   noindex = false,
   hideHeader = false,
   hideFooter = false,
+  disableSmoothScroll = false,
 } = Astro.props;
 ---
 <!doctype html>
@@ -34,6 +35,7 @@ const {
     {!hideFooter && <Footer />}
     
     <!-- Smooth Scroll & Parallax Animations -->
+    {!disableSmoothScroll && (
     <script>
       import Lenis from '@studio-freight/lenis';
       import { gsap } from 'gsap';
@@ -100,5 +102,6 @@ const {
         });
       });
     </script>
+    )}
   </body>
 </html>

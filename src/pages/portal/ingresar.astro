@@ -3,7 +3,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
 ---
 
-<BaseLayout title="Accede al Portal Maná | Ministerio Maná" description="Ingresa al Portal Maná para ver tus aportes y gestionar tu inscripción.">
+<BaseLayout title="Accede al Portal Maná | Ministerio Maná" description="Ingresa al Portal Maná para ver tus aportes y gestionar tu inscripción." disableSmoothScroll>
   <main class="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#EBF1F6]">
     <!-- Corporate Clean Background -->
     <div class="absolute inset-0 z-0">
@@ -61,14 +61,25 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             </div>
           </div>
 
-          <button type="submit" id="btn-submit" class="w-full relative group bg-[#293C74] text-white px-6 py-4 rounded-xl font-bold overflow-hidden shadow-lg shadow-[#293C74]/20 hover:shadow-[#293C74]/40 hover:-translate-y-0.5 transition-all duration-300">
-            <span class="relative z-10 flex items-center justify-center gap-2">
-              Ingresar con Código
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </span>
-          </button>
+          <div class="space-y-3">
+            <button type="submit" data-action="otp" id="btn-submit" class="w-full relative group bg-[#293C74] text-white px-6 py-4 rounded-xl font-bold overflow-hidden shadow-lg shadow-[#293C74]/20 hover:shadow-[#293C74]/40 hover:-translate-y-0.5 transition-all duration-300">
+              <span class="relative z-10 flex items-center justify-center gap-2">
+                Ingresar con Código
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </span>
+            </button>
+
+            <button type="submit" data-action="password" id="btn-submit-password" class="w-full relative group bg-white text-[#293C74] px-6 py-4 rounded-xl font-bold border border-[#293C74]/15 hover:border-[#293C74]/40 hover:bg-[#293C74]/5 transition-all duration-300">
+              <span class="relative z-10 flex items-center justify-center gap-2">
+                Ingresar con Contraseña
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.657 1.343-3 3-3s3 1.343 3 3v3h-6v-3zM6 10a6 6 0 0112 0v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4z" />
+                </svg>
+              </span>
+            </button>
+          </div>
         </form>
 
         <div id="login-status-container" class="hidden mt-6 text-center">

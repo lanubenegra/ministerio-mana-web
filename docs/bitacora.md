@@ -256,6 +256,13 @@
   - Configurar env `PORTAL_SUPERADMIN_PASSWORD` en Vercel.
   - (Opcional) `PORTAL_ADMIN_SESSION_SECRET` para firmar cookie con clave distinta.
 
+### 2026-01-28 (Portal login UX)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se agrego boton separado “Ingresar con Contraseña” para superadmins.
+  - Se desactivo smooth scroll en `/portal/ingresar` para evitar scroll pegado.
+- Pruebas: Pendiente en preview
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:
