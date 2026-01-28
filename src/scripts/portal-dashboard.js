@@ -30,6 +30,12 @@ const paymentsTable = document.getElementById('payments-table');
 const paymentsEmpty = document.getElementById('payments-empty');
 const churchMembershipsEmpty = document.getElementById('church-memberships-empty');
 const churchMembershipsList = document.getElementById('church-memberships-list');
+const churchForm = document.getElementById('church-manual-form');
+const churchFormStatus = document.getElementById('church-form-status');
+const churchBookingsEmpty = document.getElementById('church-bookings-empty');
+const churchBookingsList = document.getElementById('church-bookings-list');
+const participantsList = document.getElementById('participants-list');
+const addParticipantBtn = document.getElementById('btn-add-participant');
 
 // UI Helpers
 const navLinks = document.querySelectorAll('.nav-link');
@@ -51,6 +57,7 @@ const supabase = getSupabaseBrowserClient();
 let portalProfile = null;
 let portalMemberships = [];
 let authMode = 'supabase';
+let churchParticipantsCount = 0;
 
 function formatCurrency(value, currency) {
   if (!currency) return value;
@@ -160,6 +167,7 @@ async function loadAccount() {
     renderPlans(payload.plans || [], payload.bookings || []);
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
+    await loadChurchBookings(headers);
 
     if (authMode === 'password') {
       if (onboardingModal) onboardingModal.classList.add('hidden');
@@ -179,6 +187,174 @@ async function loadAccount() {
     loadingEl.classList.add('hidden');
     errorEl.classList.remove('hidden');
   }
+}
+
+function buildParticipantRow(data = {}) {
+  churchParticipantsCount += 1;
+  const row = document.createElement('div');
+  row.className = 'rounded-2xl border border-slate-200 bg-white p-4 space-y-3';
+  row.innerHTML = `
+    <div class="flex items-center justify-between">
+      <p class="text-xs font-bold text-[#293C74]">Persona ${churchParticipantsCount}</p>
+      <button type="button" class="text-xs font-bold text-red-500 hover:underline" data-action="remove">Quitar</button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <input type="text" data-field="fullName" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Nombre completo" value="${data.fullName || ''}">
+      <input type="number" min="0" data-field="age" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Edad" value="${data.age || ''}">
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <select data-field="lodging" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+        <option value="yes">Con alojamiento</option>
+        <option value="no">Sin alojamiento</option>
+      </select>
+      <select data-field="menuType" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+        <option value="">Tipo de menú</option>
+        <option value="TRADICIONAL">Menú tradicional</option>
+        <option value="VEGETARIANO">Menú vegetariano</option>
+      </select>
+      <input type="text" data-field="relationship" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Relación (ej: Hijo/a)" value="${data.relationship || ''}">
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="grid grid-cols-[110px_1fr] gap-2">
+        <select data-field="documentType" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+          <option value="CC">CC</option>
+          <option value="TI">TI</option>
+          <option value="CE">CE</option>
+          <option value="PASSPORT">Pasaporte</option>
+        </select>
+        <input type="text" data-field="documentNumber" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Documento" value="${data.documentNumber || ''}">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <input type="date" data-field="birthdate" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" value="${data.birthdate || ''}">
+        <select data-field="gender" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+          <option value="">Género</option>
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+        </select>
+      </div>
+    </div>
+  `;
+  const removeBtn = row.querySelector('[data-action="remove"]');
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+  });
+  return row;
+}
+
+function collectParticipants() {
+  const participants = [];
+  const rows = participantsList?.querySelectorAll('[data-field]') ? participantsList.querySelectorAll('.rounded-2xl') : [];
+  rows.forEach((row) => {
+    const getValue = (field) => row.querySelector(`[data-field="${field}"]`)?.value?.toString().trim() || '';
+    const ageValue = Number(getValue('age') || 0);
+    participants.push({
+      fullName: getValue('fullName'),
+      age: ageValue,
+      lodging: getValue('lodging'),
+      menuType: getValue('menuType'),
+      relationship: getValue('relationship'),
+      documentType: getValue('documentType'),
+      documentNumber: getValue('documentNumber'),
+      birthdate: getValue('birthdate'),
+      gender: getValue('gender'),
+    });
+  });
+  return participants.filter((p) => p.fullName);
+}
+
+async function loadChurchBookings(headers = {}) {
+  if (!churchBookingsList || !churchBookingsEmpty) return;
+  try {
+    const res = await fetch('/api/portal/iglesia/bookings', { headers });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
+    const bookings = payload.bookings || [];
+    if (!bookings.length) {
+      churchBookingsEmpty.classList.remove('hidden');
+      churchBookingsList.classList.add('hidden');
+      return;
+    }
+    churchBookingsEmpty.classList.add('hidden');
+    churchBookingsList.classList.remove('hidden');
+    churchBookingsList.innerHTML = '';
+    bookings.forEach((item) => {
+      const card = document.createElement('div');
+      card.className = 'rounded-2xl border border-slate-200 bg-slate-50/70 p-4';
+      card.innerHTML = `
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reserva</p>
+            <p class="text-sm font-bold text-[#293C74]">#${item.reference || item.id?.slice(0, 8).toUpperCase()}</p>
+            <p class="text-xs text-slate-500">${item.contact_name || item.contact_email || ''}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pagado</p>
+            <p class="text-sm font-bold text-[#293C74]">${formatCurrency(item.total_paid, item.currency)}</p>
+            <p class="text-xs text-slate-500">Total ${formatCurrency(item.total_amount, item.currency)}</p>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+          <span>${item.participant_count || 0} participantes</span>
+          <span>${item.status || 'PENDING'}</span>
+        </div>
+      `;
+      churchBookingsList.appendChild(card);
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function initChurchManualForm() {
+  if (!churchForm || !participantsList || !addParticipantBtn) return;
+  if (!participantsList.children.length) {
+    participantsList.appendChild(buildParticipantRow());
+  }
+
+  addParticipantBtn.addEventListener('click', () => {
+    participantsList.appendChild(buildParticipantRow());
+  });
+
+  churchForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!churchFormStatus) return;
+    churchFormStatus.textContent = 'Guardando...';
+    const payload = {
+      contactName: document.getElementById('church-contact-name')?.value || '',
+      email: document.getElementById('church-contact-email')?.value || '',
+      phone: document.getElementById('church-contact-phone')?.value || '',
+      documentType: document.getElementById('church-document-type')?.value || '',
+      documentNumber: document.getElementById('church-document-number')?.value || '',
+      countryGroup: document.getElementById('church-country-group')?.value || 'CO',
+      country: document.getElementById('church-country')?.value || '',
+      city: document.getElementById('church-city')?.value || '',
+      church: document.getElementById('church-name')?.value || '',
+      paymentOption: document.getElementById('church-payment-option')?.value || 'FULL',
+      paymentAmount: Number(document.getElementById('church-payment-amount')?.value || 0),
+      frequency: document.getElementById('church-payment-frequency')?.value || 'MONTHLY',
+      paymentMethod: document.getElementById('church-payment-method')?.value || '',
+      notes: document.getElementById('church-notes')?.value || '',
+      participants: collectParticipants(),
+    };
+
+    try {
+      const res = await fetch('/api/portal/iglesia/submit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
+      churchFormStatus.textContent = 'Inscripción registrada.';
+      await loadChurchBookings();
+      churchForm.reset();
+      participantsList.innerHTML = '';
+      participantsList.appendChild(buildParticipantRow());
+    } catch (error) {
+      console.error(error);
+      churchFormStatus.textContent = error.message || 'Error guardando';
+    }
+  });
 }
 
 function renderBookings(bookings) {
@@ -486,3 +662,4 @@ onboardingForm?.addEventListener('submit', async (event) => {
 plansList?.addEventListener('click', handlePlanAction);
 
 loadAccount();
+initChurchManualForm();
