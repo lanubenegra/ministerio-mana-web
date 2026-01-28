@@ -1,5 +1,5 @@
 import { supabaseAdmin } from './supabaseAdmin';
-import { statusFromPaid, depositThreshold } from './cumbre2026';
+import { statusFromPaid, depositThreshold, generateAccessToken, hashToken } from './cumbre2026';
 import { logSecurityEvent } from './securityEvents';
 import { sendCumbreEmail } from './cumbreMailer';
 
@@ -74,6 +74,15 @@ export type InstallmentReminderRecord = {
   sent_at: string;
   payload: Record<string, unknown> | null;
   error: string | null;
+};
+
+export type InstallmentLinkRecord = {
+  id: string;
+  installment_id: string;
+  token_hash: string;
+  expires_at: string | null;
+  used_at: string | null;
+  created_at: string;
 };
 
 export async function getBookingById(id: string): Promise<BookingRecord | null> {
@@ -464,6 +473,67 @@ export async function recordInstallmentReminder(params: {
     });
   if (error) {
     console.error('[cumbre.reminders] insert error', error);
+  }
+}
+
+export async function createInstallmentLinkToken(installmentId: string, ttlDays = 30): Promise<string | null> {
+  const supabase = ensureSupabase();
+  const tokenPair = generateAccessToken();
+  const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from('cumbre_installment_links')
+    .insert({
+      installment_id: installmentId,
+      token_hash: tokenPair.hash,
+      expires_at: expiresAt,
+    });
+  if (error) {
+    console.error('[cumbre.installments.links] insert error', error);
+    return null;
+  }
+  return tokenPair.token;
+}
+
+export async function getInstallmentByLinkToken(token: string): Promise<{
+  link: InstallmentLinkRecord;
+  installment: InstallmentRecord & { plan: PaymentPlanRecord; booking: BookingRecord };
+} | null> {
+  if (!token) return null;
+  const supabase = ensureSupabase();
+  const tokenHash = hashToken(token);
+  const { data, error } = await supabase
+    .from('cumbre_installment_links')
+    .select('id, installment_id, token_hash, expires_at, used_at, created_at, installment:cumbre_installments(*, plan:cumbre_payment_plans(*), booking:cumbre_bookings(*))')
+    .eq('token_hash', tokenHash)
+    .maybeSingle();
+  if (error) {
+    console.error('[cumbre.installments.links] lookup error', error);
+    return null;
+  }
+  if (!data?.installment) return null;
+  const link: InstallmentLinkRecord = {
+    id: data.id,
+    installment_id: data.installment_id,
+    token_hash: data.token_hash,
+    expires_at: data.expires_at ?? null,
+    used_at: data.used_at ?? null,
+    created_at: data.created_at,
+  };
+  return {
+    link,
+    installment: data.installment as InstallmentRecord & { plan: PaymentPlanRecord; booking: BookingRecord },
+  };
+}
+
+export async function markInstallmentLinksUsed(installmentId: string): Promise<void> {
+  const supabase = ensureSupabase();
+  const { error } = await supabase
+    .from('cumbre_installment_links')
+    .update({ used_at: new Date().toISOString() })
+    .eq('installment_id', installmentId)
+    .is('used_at', null);
+  if (error) {
+    console.error('[cumbre.installments.links] mark used error', error);
   }
 }
 
