@@ -77,10 +77,12 @@
       if (loading) loading.classList.add('hidden');
 
       if (session?.user) {
-        const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario';
-        const initials = userName
-          .split(' ')
-          .map((part) => part?.[0] || '')
+        const userName = String(
+          session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario',
+        );
+        const nameParts = userName.split(' ');
+        const initials = nameParts
+          .map((part) => (part ? part[0] : ''))
           .join('')
           .substring(0, 2)
           .toUpperCase();
@@ -108,7 +110,7 @@
     }
   }
 
-  if (logoutBtn) {
+  if (logoutBtn instanceof HTMLButtonElement) {
     logoutBtn.addEventListener('click', async () => {
       logoutBtn.disabled = true;
       logoutBtn.textContent = 'Saliendo...';
