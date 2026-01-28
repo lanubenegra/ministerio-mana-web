@@ -25,6 +25,13 @@
   - Validar envío de correos Supabase (SMTP SendGrid) para invitaciones y reset.
   - Confirmar `PORTAL_SUPERADMIN_EMAILS` con los superadmins activos.
 
+### 2026-01-28 (Portal fallback sin sesión Supabase)
+- Responsable: Codex
+- Cambios:
+  - Portal Maná: modo contraseña ahora muestra el dashboard aunque no haya sesión Supabase.
+  - En modo fallback, el resumen usa datos mínimos y no bloquea acceso a admin/iglesia.
+- Pruebas: N/A
+
 ### 2026-01-28
 - Responsable: Codex
 - Cambios:

@@ -151,9 +151,6 @@ async function loadAccount() {
       authMode = 'password';
     }
 
-    const { data: userData } = token ? await supabase.auth.getUser() : { data: { user: null } };
-    const user = userData?.user;
-
     const sessionRes = await fetch('/api/portal/session', { headers });
     const sessionPayload = await sessionRes.json();
     if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
@@ -163,9 +160,26 @@ async function loadAccount() {
     portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
     portalIsSuperadmin = portalProfile?.role === 'superadmin';
 
-    const res = await fetch('/api/cuenta/resumen', { headers });
-    const payload = await res.json();
-    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
+    const { data: userData } = token ? await supabase.auth.getUser() : { data: { user: null } };
+    const user = userData?.user;
+
+    let payload = {
+      ok: true,
+      user: {
+        fullName: portalProfile?.full_name || user?.user_metadata?.full_name || portalProfile?.email || '',
+        email: portalProfile?.email || user?.email || '',
+      },
+      bookings: [],
+      plans: [],
+      payments: [],
+    };
+
+    if (token) {
+      const res = await fetch('/api/cuenta/resumen', { headers });
+      const resPayload = await res.json();
+      if (!res.ok || !resPayload.ok) throw new Error(resPayload.error || 'No se pudo cargar');
+      payload = resPayload;
+    }
 
     const activeUser = payload.user || {};
     const name = activeUser.fullName || user?.user_metadata?.full_name || 'Usuario';
