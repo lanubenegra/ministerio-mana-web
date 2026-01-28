@@ -5,8 +5,8 @@ import LangSwitch from '@components/LangSwitch.astro';
 import AccountButton from '@components/AccountButton.astro';
 const locale = Astro.cookies.get('lang')?.value ?? 'es';
 ---
-<header class="sticky top-0 z-40 border-b border-[var(--mana-border-strong)] bg-[var(--mana-surface)]/80 backdrop-blur-lg supports-[backdrop-filter]:backdrop-blur-xl shadow-[var(--mana-shadow-1)] transition-colors duration-300">
-  <div class="container-tight grid grid-cols-[auto,1fr,auto] items-center gap-6 lg:gap-10 py-5 px-4 md:px-6">
+<header class="sticky top-0 z-40 border-b border-[var(--mana-border-strong)] bg-[var(--mana-surface)]/80 backdrop-blur-lg supports-[backdrop-filter]:backdrop-blur-xl shadow-[var(--mana-shadow-1)] transition-colors duration-300 overflow-hidden">
+  <div class="container-tight grid grid-cols-[auto,1fr,auto] items-center gap-4 lg:gap-6 py-4 px-4 md:px-6">
     <a href="/" class="group inline-flex items-center gap-3 shrink-0">
       <span class="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--mana-border)] bg-[var(--mana-surface)] shadow-brandInset transition-all duration-200 group-hover:border-brand-medium group-hover:shadow-brand">
         <img src="/logo.svg" alt="Ministerio Maná" class="h-7 w-auto" />
@@ -29,7 +29,7 @@ const locale = Astro.cookies.get('lang')?.value ?? 'es';
       <a href="/peregrinaciones/" class="nav-link px-2 py-1 text-sm">{t(locale,'nav_pilgrims')}</a>
     </nav>
 
-    <div class="flex items-center justify-end gap-3">
+    <div class="flex items-center justify-end gap-2 shrink-0">
       <a href="/donaciones/" class="hidden lg:inline-flex btn-primary px-5 py-2 text-sm shadow-[var(--mana-shadow-1)]">{t(locale,'nav_donate')}</a>
       <AccountButton />
       <LangSwitch />
