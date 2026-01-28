@@ -179,13 +179,36 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     scriptSrc.push("'unsafe-inline'"); // useful for rapid dev; remove when all inline scripts have nonce
   }
 
+  const connectSrc = [
+    "'self'",
+    'https://challenges.cloudflare.com',
+    'https://api.resend.com',
+    'https://checkout.stripe.com',
+    'https://checkout.wompi.co',
+    'https://js.stripe.com',
+  ];
+
+  const supabaseUrl = import.meta.env?.SUPABASE_URL
+    ?? import.meta.env?.PUBLIC_SUPABASE_URL
+    ?? process.env?.SUPABASE_URL
+    ?? process.env?.PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
+    try {
+      const supabaseOrigin = new URL(supabaseUrl).origin;
+      connectSrc.push(supabaseOrigin);
+      connectSrc.push(supabaseOrigin.replace('https://', 'wss://'));
+    } catch {
+      // ignore malformed supabase url
+    }
+  }
+
   const cspDirectives = [
     "default-src 'self'",
     `script-src ${scriptSrc.join(' ')}`,
     "style-src 'self' 'unsafe-inline' https://unpkg.com",
     "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://i.ytimg.com",
     "font-src 'self' data:",
-    "connect-src 'self' https://challenges.cloudflare.com https://api.resend.com https://checkout.stripe.com https://checkout.wompi.co https://js.stripe.com",
+    `connect-src ${connectSrc.join(' ')}`,
     `frame-src ${FRAME_SRC.join(' ')}`,
     "frame-ancestors 'self'",
     "form-action 'self' https://checkout.stripe.com https://checkout.wompi.co",
