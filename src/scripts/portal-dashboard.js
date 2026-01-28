@@ -6,6 +6,7 @@ const errorEl = document.getElementById('account-error');
 const contentEl = document.getElementById('account-content');
 const profileName = document.getElementById('profile-name');
 const profileEmail = document.getElementById('profile-email');
+const profileRole = document.getElementById('profile-role');
 const profilePhone = document.getElementById('profile-phone');
 const profileCity = document.getElementById('profile-city');
 const profileCountry = document.getElementById('profile-country');
@@ -43,6 +44,9 @@ const inviteStatus = document.getElementById('church-invite-status');
 const inviteBtn = document.getElementById('church-invite-btn');
 const inviteChurchWrapper = document.getElementById('church-invite-church-wrapper');
 const inviteChurchInput = document.getElementById('church-invite-church');
+const iglesiaNavLabel = document.getElementById('nav-iglesia-label');
+const iglesiaTitle = document.getElementById('iglesia-title');
+const iglesiaSubtitle = document.getElementById('iglesia-subtitle');
 
 // UI Helpers
 const navLinks = document.querySelectorAll('.nav-link');
@@ -152,12 +156,19 @@ async function loadAccount() {
     profileName.value = name;
     welcomeName.textContent = name.split(' ')[0];
     profileEmail.value = activeUser.email || user?.email || '';
+    if (profileRole) profileRole.value = portalProfile?.role || 'user';
     profilePhone.value = portalProfile.phone || '';
     profileCity.value = portalProfile.city || '';
     profileCountry.value = portalProfile.country || '';
     profileAffiliation.value = portalProfile.affiliation_type || '';
     profileChurchName.value = portalProfile.church_name || '';
     toggleChurchField(profileAffiliation.value);
+
+    if (portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin') {
+      if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Iglesias';
+      if (iglesiaTitle) iglesiaTitle.textContent = 'Iglesias';
+      if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general para gestión de sedes y registros físicos.';
+    }
 
     // Calculations for highlights
     let totalPaidAll = 0;
@@ -178,6 +189,7 @@ async function loadAccount() {
     renderMemberships(portalMemberships);
     await loadChurchBookings(headers);
     setupInviteAccess();
+    await loadChurchDraft();
 
     if (authMode === 'password') {
       if (onboardingModal) onboardingModal.classList.add('hidden');
@@ -311,10 +323,12 @@ async function loadChurchBookings(headers = {}) {
     bookings.forEach((item) => {
       const card = document.createElement('div');
       card.className = 'rounded-2xl border border-slate-200 bg-slate-50/70 p-4';
+      const churchLabel = item.contact_church ? `<p class="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">${item.contact_church}</p>` : '';
       card.innerHTML = `
         <div class="flex items-center justify-between gap-4">
           <div>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reserva</p>
+            ${churchLabel}
             <p class="text-sm font-bold text-[#293C74]">#${item.reference || item.id?.slice(0, 8).toUpperCase()}</p>
             <p class="text-xs text-slate-500">${item.contact_name || item.contact_email || ''}</p>
           </div>
@@ -800,4 +814,3 @@ plansList?.addEventListener('click', handlePlanAction);
 loadAccount();
 initChurchManualForm();
 initInviteForm();
-loadChurchDraft();

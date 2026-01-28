@@ -37,7 +37,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             </button>
             <button data-tab="iglesia" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group hover:bg-white/10">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white/40 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8m-8 4h8M4 6.5h16M6 3h12a1 1 0 011 1v16a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" /></svg>
-              <span class="text-sm font-medium text-white/70 group-hover:text-white transition-colors">Mi Iglesia</span>
+              <span id="nav-iglesia-label" class="text-sm font-medium text-white/70 group-hover:text-white transition-colors">Mi Iglesia</span>
             </button>
           </nav>
 
@@ -214,6 +214,10 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
                        <input type="email" id="profile-email" disabled class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-400 cursor-not-allowed">
                     </div>
+                    <div class="space-y-2">
+                       <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Rol</label>
+                       <input type="text" id="profile-role" disabled class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-400 cursor-not-allowed">
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div class="space-y-2">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Teléfono / WhatsApp</label>
@@ -257,8 +261,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             <!-- Tab: Iglesia -->
             <div id="tab-iglesia" class="tab-content hidden space-y-10">
               <header>
-                <h1 class="text-3xl lg:text-4xl font-display font-bold text-[#293C74] mb-2">Mi Iglesia</h1>
-                <p class="text-slate-500">Panel interno para líderes y encargados de sedes.</p>
+                <h1 id="iglesia-title" class="text-3xl lg:text-4xl font-display font-bold text-[#293C74] mb-2">Mi Iglesia</h1>
+                <p id="iglesia-subtitle" class="text-slate-500">Panel interno para líderes y encargados de sedes.</p>
               </header>
 
               <div class="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-8">

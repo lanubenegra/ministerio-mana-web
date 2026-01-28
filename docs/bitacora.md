@@ -26,6 +26,18 @@
 - Pruebas: N/A
 - Pendientes: Validar flujo de registro post‑pago con bookingId + token reales.
 
+### 2026-01-28 (Portal activación + control post‑pago)
+- Responsable: Codex
+- Cambios:
+  - Portal: se agrega rol visible en perfil y se ajusta etiqueta de “Iglesia” para admins.
+  - Portal Login: se habilita scroll suave (sin bloquear overflow) y link de regreso a la Cumbre.
+  - Activación: guard para evitar activar sin enlace (requiere sesión), y toggle de contraseña en confirmación.
+  - Registro Cumbre: gating por activación (CTA de enlace) + autosave continúa activo.
+  - Estado Cumbre: CTA de activación y botón “Completar datos” solo si hay sesión.
+- Pruebas: N/A
+- Pendientes:
+  - Configurar `PUBLIC_SUPABASE_ANON_KEY` en Preview/Prod para habilitar auth en frontend.
+
 ### 2026-01-25/26 (Branding Corporativo & Sistema de Cuentas)
 - Responsable: Antigravity
 - Cambios:
