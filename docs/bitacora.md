@@ -140,6 +140,51 @@
   - Ejecutar SQL actualizado `docs/sql/portal_iglesias.sql`.
   - Verificar envio de email OTP (SMTP en Supabase).
 
+### 2026-01-28 (Portal Login Fix - Revertir ?url imports)
+- Responsable: Antigravity
+- Problema detectado por Delta:
+  - El cambio de `Astro.resolve()` a imports `?url` (commit anterior) rompió completamente el portal
+  - Errores en consola del navegador:
+    - `Failed to resolve module specifier "@lib/supabaseBrowser"`
+    - `Failed to resolve module specifier "gsap"`
+    - `Failed to resolve module specifier "@studio-freight/lenis"`
+    - `Uncaught SyntaxError: Unexpected identifier 'as'` en portal-login.js
+  - Build failures en Vercel por sintaxis TypeScript en archivos `.js`
+- Causa raíz (IMPORTANTE - Delta, lee esto):
+  - **El problema con `?url` imports**: Cuando usas `import script from './script.js?url'`, le dices a Vite/Astro que trate el archivo como un **asset estático** (como una imagen), NO como código JavaScript que debe ser procesado.
+  - **Consecuencia**: El navegador recibe el archivo `.js` SIN procesar, con:
+    - Path aliases sin resolver (`@lib/supabaseBrowser` queda literal)
+    - Imports de node_modules sin resolver (`gsap`, `lenis` quedan literales)
+    - El navegador no entiende estos especificadores y arroja "Failed to resolve module specifier"
+  - **Por qué `Astro.resolve()` funcionaba**: En Astro 4, `Astro.resolve()` le decía a Astro "procesa este archivo y dame la URL final", pero seguía siendo procesado por Vite.
+  - **Solución correcta en Astro 5**: Usar `<script src="ruta/relativa.js">` directamente. Astro 5 automáticamente procesa, bundlea y resuelve dependencias.
+- Cambios realizados:
+  - **Revertir imports `?url` a script tags estándar**:
+    - `src/pages/portal/ingresar.astro`: `<script src="../../scripts/portal-login.js">`
+    - `src/pages/portal/index.astro`: `<script src="../../scripts/portal-dashboard.js">`
+    - `src/layouts/BaseLayout.astro`: `<script src="../scripts/lenis.js">` y `home-animations.js`
+    - `src/components/AccountButton.astro`: `<script src="../scripts/account-button.js">`
+  - **Remover imports en frontmatter**: Eliminadas todas las líneas `import scriptName from '...?url'`
+  - **Fix CSS global**: Cambiar `import globalStyles from '../styles/global.css?url'` a `import '../styles/global.css'` (import directo)
+  - **Remover sintaxis TypeScript de archivos .js**:
+    - `src/scripts/portal-login.js`: Eliminadas anotaciones `as HTMLFormElement | null`, etc.
+    - Razón: Los archivos `.js` no pueden tener sintaxis TypeScript, solo JavaScript puro
+- Commits:
+  - `736433d`: "fix(portal): revert script loading to standard Astro imports"
+  - `2333cc1`: "fix(portal): remove TypeScript syntax from .js files"
+- Pruebas:
+  - ✅ Build completa exitosamente en Vercel
+  - ✅ Scripts se cargan sin errores de módulos
+  - ⏳ Login OTP pendiente (Supabase Auth en mantenimiento programado hasta Feb 2)
+- Lección clave para Delta:
+  - **NUNCA uses `?url` para scripts que necesitan bundling**. Solo úsalo para assets verdaderamente estáticos (PDFs, imágenes, etc.)
+  - **En Astro 5**: Para scripts client-side, usa `<script src="ruta">` directamente, Astro se encarga del resto
+  - **Archivos `.js` = JavaScript puro**: Si necesitas TypeScript, usa `.ts` y déjalo que Astro lo compile
+- Pendientes:
+  - Esperar a que termine mantenimiento de Supabase (Auth service)
+  - Validar login OTP funcional post-mantenimiento
+
+
 ### 2026-01-28 (Hotfix: Internal Server Error en Preview)
 - Responsable: Delta (Codex)
 - Cambios:
