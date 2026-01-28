@@ -1,7 +1,7 @@
+@import "./theme.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "./theme.css";
 
 /* Intro font family – place font files under /public/fonts/intro/ */
 @font-face {

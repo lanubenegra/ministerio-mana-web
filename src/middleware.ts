@@ -229,6 +229,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     }
   }
 
+  const frameSrc = [...FRAME_SRC];
+  if (IS_VERCEL_PREVIEW) {
+    frameSrc.push('https://vercel.live');
+  }
+
   const cspDirectives = [
     "default-src 'self'",
     `script-src ${scriptSrc.join(' ')}`,
@@ -236,7 +241,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://i.ytimg.com",
     "font-src 'self' data:",
     `connect-src ${connectSrc.join(' ')}`,
-    `frame-src ${FRAME_SRC.join(' ')}`,
+    `frame-src ${frameSrc.join(' ')}`,
     "frame-ancestors 'self'",
     "form-action 'self' https://checkout.stripe.com https://checkout.wompi.co",
     "base-uri 'self'",
