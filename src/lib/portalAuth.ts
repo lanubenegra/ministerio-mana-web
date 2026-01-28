@@ -15,6 +15,7 @@ export type UserProfile = {
   affiliation_type?: string | null;
   church_name?: string | null;
   church_id?: string | null;
+  portal_church_id?: string | null;
   created_at?: string;
   updated_at?: string;
 };

@@ -32,9 +32,14 @@ const paymentsEmpty = document.getElementById('payments-empty');
 const churchMembershipsEmpty = document.getElementById('church-memberships-empty');
 const churchMembershipsList = document.getElementById('church-memberships-list');
 const churchForm = document.getElementById('church-manual-form');
+const churchFormToggle = document.getElementById('church-form-toggle');
 const churchFormStatus = document.getElementById('church-form-status');
 const churchBookingsEmpty = document.getElementById('church-bookings-empty');
 const churchBookingsList = document.getElementById('church-bookings-list');
+const churchBookingsSearch = document.getElementById('church-bookings-search');
+const churchBookingsStatus = document.getElementById('church-bookings-status');
+const churchExportBtn = document.getElementById('church-export-btn');
+const churchExportStatus = document.getElementById('church-export-status');
 const participantsList = document.getElementById('participants-list');
 const addParticipantBtn = document.getElementById('btn-add-participant');
 const inviteCard = document.getElementById('church-invite-card');
@@ -49,6 +54,11 @@ const iglesiaTitle = document.getElementById('iglesia-title');
 const iglesiaSubtitle = document.getElementById('iglesia-subtitle');
 const churchMembersEmpty = document.getElementById('church-members-empty');
 const churchMembersList = document.getElementById('church-members-list');
+const churchMembersSearch = document.getElementById('church-members-search');
+const churchMembersRole = document.getElementById('church-members-role');
+const churchSelector = document.getElementById('church-selector');
+const churchSelectorInput = document.getElementById('church-selector-input');
+const churchSelectorStatus = document.getElementById('church-selector-status');
 const adminUsersCard = document.getElementById('admin-users-card');
 const adminInviteEmail = document.getElementById('admin-invite-email');
 const adminInviteName = document.getElementById('admin-invite-name');
@@ -84,6 +94,9 @@ let churchParticipantsCount = 0;
 let portalAuthHeaders = {};
 let portalIsAdmin = false;
 let portalIsSuperadmin = false;
+let portalSelectedChurchId = null;
+let churchBookingsData = [];
+let churchMembersData = [];
 
 function formatCurrency(value, currency) {
   if (!currency) return value;
@@ -222,6 +235,7 @@ async function loadAccount() {
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
     if (hasChurchAccess) {
+      await loadChurchSelector(headers);
       await loadChurchBookings(headers);
       await loadChurchMembers(headers);
     }
@@ -344,86 +358,239 @@ function collectParticipants() {
   return participants.filter((p) => p.fullName);
 }
 
+async function loadChurchSelector(headers = {}) {
+  if (!churchSelector || !churchSelectorInput) return;
+  churchSelectorStatus.textContent = 'Cargando iglesias...';
+  try {
+    const res = await fetch('/api/portal/iglesia/selection', { headers });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar iglesias');
+
+    const churches = payload.churches || [];
+    const isAdmin = Boolean(payload.isAdmin);
+    churchSelectorInput.innerHTML = '<option value="">Selecciona una iglesia</option>';
+    churches.forEach((church) => {
+      const option = document.createElement('option');
+      option.value = church.id;
+      option.textContent = church?.city ? `${church.name} · ${church.city}` : church.name;
+      churchSelectorInput.appendChild(option);
+    });
+
+    portalSelectedChurchId = payload.selectedChurchId || '';
+    if (portalSelectedChurchId) {
+      churchSelectorInput.value = portalSelectedChurchId;
+    } else if (churches.length === 1) {
+      portalSelectedChurchId = churches[0].id;
+      churchSelectorInput.value = portalSelectedChurchId;
+      await saveChurchSelection(portalSelectedChurchId, headers);
+    }
+
+    if (isAdmin) {
+      churchSelector.classList.remove('hidden');
+    } else {
+      churchSelector.classList.add('hidden');
+    }
+
+    churchSelectorStatus.textContent = churches.length ? 'Selecciona una iglesia para ver los registros.' : 'No hay iglesias disponibles.';
+  } catch (err) {
+    console.error(err);
+    churchSelectorStatus.textContent = 'No se pudo cargar iglesias.';
+  }
+}
+
+async function saveChurchSelection(churchId, headers = {}) {
+  if (!churchSelectorStatus) return;
+  churchSelectorStatus.textContent = 'Guardando selección...';
+  try {
+    const res = await fetch('/api/portal/iglesia/selection', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify({ churchId }),
+    });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo guardar');
+    portalSelectedChurchId = payload.churchId || '';
+    churchSelectorStatus.textContent = 'Iglesia seleccionada.';
+  } catch (err) {
+    console.error(err);
+    churchSelectorStatus.textContent = err?.message || 'Error guardando selección.';
+  }
+}
+
+function filterChurchBookings(list) {
+  const query = churchBookingsSearch?.value?.trim().toLowerCase() || '';
+  const status = churchBookingsStatus?.value || '';
+  return (list || []).filter((item) => {
+    const searchable = [
+      item.contact_name,
+      item.contact_email,
+      item.contact_church,
+      item.reference,
+      item.id,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    if (query && !searchable.includes(query)) return false;
+    if (status && item.status !== status) return false;
+    return true;
+  });
+}
+
+function renderChurchBookings(list) {
+  if (!churchBookingsList || !churchBookingsEmpty) return;
+  churchBookingsList.innerHTML = '';
+  if (!list.length) {
+    churchBookingsEmpty.classList.remove('hidden');
+    churchBookingsList.classList.add('hidden');
+    return;
+  }
+  churchBookingsEmpty.classList.add('hidden');
+  churchBookingsList.classList.remove('hidden');
+  list.forEach((item) => {
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-slate-200 bg-slate-50/70 p-4';
+    const churchLabel = item.contact_church ? `<p class="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">${item.contact_church}</p>` : '';
+    card.innerHTML = `
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reserva</p>
+          ${churchLabel}
+          <p class="text-sm font-bold text-[#293C74]">#${(item.reference || item.id)?.slice(0, 8).toUpperCase()}</p>
+          <p class="text-xs text-slate-500">${item.contact_name || item.contact_email || ''}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pagado</p>
+          <p class="text-sm font-bold text-[#293C74]">${formatCurrency(item.total_paid, item.currency)}</p>
+          <p class="text-xs text-slate-500">Total ${formatCurrency(item.total_amount, item.currency)}</p>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+        <span>${item.participant_count || 0} participantes</span>
+        <span>${item.status || 'PENDING'}</span>
+      </div>
+    `;
+    churchBookingsList.appendChild(card);
+  });
+}
+
 async function loadChurchBookings(headers = {}) {
   if (!churchBookingsList || !churchBookingsEmpty) return;
+  if (portalIsAdmin && !portalSelectedChurchId) {
+    churchBookingsEmpty.textContent = 'Selecciona una iglesia para ver los registros.';
+    churchBookingsEmpty.classList.remove('hidden');
+    churchBookingsList.classList.add('hidden');
+    return;
+  }
   try {
-    const res = await fetch('/api/portal/iglesia/bookings', { headers });
+    const url = new URL('/api/portal/iglesia/bookings', window.location.origin);
+    if (portalSelectedChurchId) {
+      url.searchParams.set('churchId', portalSelectedChurchId);
+    }
+    const res = await fetch(url.toString(), { headers });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
-    const bookings = payload.bookings || [];
-    if (!bookings.length) {
-      churchBookingsEmpty.classList.remove('hidden');
-      churchBookingsList.classList.add('hidden');
-      return;
-    }
-    churchBookingsEmpty.classList.add('hidden');
-    churchBookingsList.classList.remove('hidden');
-    churchBookingsList.innerHTML = '';
-    bookings.forEach((item) => {
-      const card = document.createElement('div');
-      card.className = 'rounded-2xl border border-slate-200 bg-slate-50/70 p-4';
-      const churchLabel = item.contact_church ? `<p class="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">${item.contact_church}</p>` : '';
-      card.innerHTML = `
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reserva</p>
-            ${churchLabel}
-            <p class="text-sm font-bold text-[#293C74]">#${item.reference || item.id?.slice(0, 8).toUpperCase()}</p>
-            <p class="text-xs text-slate-500">${item.contact_name || item.contact_email || ''}</p>
-          </div>
-          <div class="text-right">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pagado</p>
-            <p class="text-sm font-bold text-[#293C74]">${formatCurrency(item.total_paid, item.currency)}</p>
-            <p class="text-xs text-slate-500">Total ${formatCurrency(item.total_amount, item.currency)}</p>
-          </div>
-        </div>
-        <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
-          <span>${item.participant_count || 0} participantes</span>
-          <span>${item.status || 'PENDING'}</span>
-        </div>
-      `;
-      churchBookingsList.appendChild(card);
-    });
+    churchBookingsData = payload.bookings || [];
+    const filtered = filterChurchBookings(churchBookingsData);
+    renderChurchBookings(filtered);
   } catch (err) {
     console.error(err);
   }
 }
 
+function filterChurchMembers(list) {
+  const query = churchMembersSearch?.value?.trim().toLowerCase() || '';
+  const role = churchMembersRole?.value || '';
+  return (list || []).filter((member) => {
+    const profile = member.profile || {};
+    const searchable = [profile.full_name, profile.email].filter(Boolean).join(' ').toLowerCase();
+    if (query && !searchable.includes(query)) return false;
+    if (role && member.role !== role) return false;
+    return true;
+  });
+}
+
+function renderChurchMembers(list) {
+  if (!churchMembersList || !churchMembersEmpty) return;
+  if (!list.length) {
+    churchMembersEmpty.classList.remove('hidden');
+    churchMembersList.classList.add('hidden');
+    return;
+  }
+  churchMembersEmpty.classList.add('hidden');
+  churchMembersList.classList.remove('hidden');
+  churchMembersList.innerHTML = '';
+  list.forEach((member) => {
+    const card = document.createElement('div');
+    const profile = member.profile || {};
+    card.className = 'rounded-2xl border border-slate-200 bg-white px-4 py-3';
+    card.innerHTML = `
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-bold text-[#293C74]">${profile.full_name || profile.email || 'Usuario'}</p>
+          <p class="text-xs text-slate-500">${profile.email || ''}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">${member.role}</p>
+          <p class="text-[10px] text-slate-400">${member.status}</p>
+        </div>
+      </div>
+    `;
+    churchMembersList.appendChild(card);
+  });
+}
+
 async function loadChurchMembers(headers = {}) {
   if (!churchMembersList || !churchMembersEmpty) return;
+  if (portalIsAdmin && !portalSelectedChurchId) {
+    churchMembersEmpty.textContent = 'Selecciona una iglesia para ver el equipo.';
+    churchMembersEmpty.classList.remove('hidden');
+    churchMembersList.classList.add('hidden');
+    return;
+  }
   try {
-    const res = await fetch('/api/portal/iglesia/members', { headers });
+    const url = new URL('/api/portal/iglesia/members', window.location.origin);
+    if (portalSelectedChurchId) {
+      url.searchParams.set('churchId', portalSelectedChurchId);
+    }
+    const res = await fetch(url.toString(), { headers });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
-    const members = payload.members || [];
-    if (!members.length) {
-      churchMembersEmpty.classList.remove('hidden');
-      churchMembersList.classList.add('hidden');
-      return;
-    }
-    churchMembersEmpty.classList.add('hidden');
-    churchMembersList.classList.remove('hidden');
-    churchMembersList.innerHTML = '';
-    members.forEach((member) => {
-      const card = document.createElement('div');
-      const profile = member.profile || {};
-      card.className = 'rounded-2xl border border-slate-200 bg-white px-4 py-3';
-      card.innerHTML = `
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="text-sm font-bold text-[#293C74]">${profile.full_name || profile.email || 'Usuario'}</p>
-            <p class="text-xs text-slate-500">${profile.email || ''}</p>
-          </div>
-          <div class="text-right">
-            <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">${member.role}</p>
-            <p class="text-[10px] text-slate-400">${member.status}</p>
-          </div>
-        </div>
-      `;
-      churchMembersList.appendChild(card);
-    });
+    churchMembersData = payload.members || [];
+    const filtered = filterChurchMembers(churchMembersData);
+    renderChurchMembers(filtered);
   } catch (err) {
     console.error(err);
+  }
+}
+
+async function exportChurchBookings() {
+  if (!churchExportBtn || !churchExportStatus) return;
+  if (!portalSelectedChurchId) {
+    churchExportStatus.textContent = 'Selecciona una iglesia antes de exportar.';
+    return;
+  }
+  churchExportStatus.textContent = 'Preparando export...';
+  try {
+    const url = new URL('/api/portal/iglesia/export', window.location.origin);
+    url.searchParams.set('churchId', portalSelectedChurchId);
+    const res = await fetch(url.toString(), { headers: portalAuthHeaders });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => null);
+      throw new Error(payload?.error || 'No se pudo exportar');
+    }
+    const blob = await res.blob();
+    const filename = res.headers.get('content-disposition')?.split('filename=')?.[1]?.replace(/"/g, '') || 'portal-iglesia.csv';
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    churchExportStatus.textContent = 'Export listo.';
+  } catch (err) {
+    console.error(err);
+    churchExportStatus.textContent = err?.message || 'No se pudo exportar.';
   }
 }
 
@@ -971,6 +1138,43 @@ adminUsersList?.addEventListener('click', async (event) => {
     target.textContent = 'Reset contraseña';
     target.removeAttribute('disabled');
     alert(err.message || 'No se pudo enviar.');
+  }
+});
+
+churchSelectorInput?.addEventListener('change', async (event) => {
+  const value = event.target.value || '';
+  await saveChurchSelection(value, portalAuthHeaders);
+  await loadChurchBookings(portalAuthHeaders);
+  await loadChurchMembers(portalAuthHeaders);
+});
+
+churchBookingsSearch?.addEventListener('input', () => {
+  renderChurchBookings(filterChurchBookings(churchBookingsData));
+});
+churchBookingsStatus?.addEventListener('change', () => {
+  renderChurchBookings(filterChurchBookings(churchBookingsData));
+});
+churchMembersSearch?.addEventListener('input', () => {
+  renderChurchMembers(filterChurchMembers(churchMembersData));
+});
+churchMembersRole?.addEventListener('change', () => {
+  renderChurchMembers(filterChurchMembers(churchMembersData));
+});
+churchExportBtn?.addEventListener('click', () => {
+  void exportChurchBookings();
+});
+
+churchFormToggle?.addEventListener('click', () => {
+  if (!churchForm) return;
+  const isCollapsed = churchForm.classList.contains('hidden');
+  if (isCollapsed) {
+    churchForm.classList.remove('hidden');
+    churchForm.dataset.collapsed = 'false';
+    churchFormToggle.textContent = 'Cerrar formulario';
+  } else {
+    churchForm.classList.add('hidden');
+    churchForm.dataset.collapsed = 'true';
+    churchFormToggle.textContent = 'Abrir formulario';
   }
 });
 

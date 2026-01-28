@@ -46,6 +46,17 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
+  const url = new URL(request.url);
+  const requestedChurch = url.searchParams.get('churchId');
+  const targetChurch = isAdmin ? (requestedChurch || churchId) : churchId;
+
+  if (isAdmin && !targetChurch) {
+    return new Response(JSON.stringify({ ok: true, bookings: [] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
   const query = supabaseAdmin
     .from('cumbre_bookings')
     .select('id, contact_name, contact_email, total_amount, total_paid, currency, status, created_at, church_id, contact_church')
@@ -53,8 +64,8 @@ export const GET: APIRoute = async ({ request }) => {
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (churchId && !isAdmin) {
-    query.eq('church_id', churchId);
+  if (targetChurch) {
+    query.eq('church_id', targetChurch);
   }
 
   const { data: bookings, error } = await query;

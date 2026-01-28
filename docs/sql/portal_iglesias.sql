@@ -39,6 +39,9 @@ alter table public.user_profiles
 alter table public.user_profiles
   add column if not exists church_id uuid references public.churches(id);
 
+alter table public.user_profiles
+  add column if not exists portal_church_id uuid references public.churches(id);
+
 create table if not exists public.church_memberships (
   id uuid primary key default gen_random_uuid(),
   church_id uuid not null references public.churches(id) on delete cascade,
@@ -54,6 +57,13 @@ create unique index if not exists church_memberships_unique
 
 create index if not exists church_memberships_user_idx
   on public.church_memberships(user_id);
+
+-- Preferencias de admin (selección de iglesia)
+create table if not exists public.portal_admin_selections (
+  email text primary key,
+  church_id uuid references public.churches(id),
+  updated_at timestamptz default now()
+);
 
 -- Link de reservas manuales con portal iglesias
 alter table cumbre_bookings

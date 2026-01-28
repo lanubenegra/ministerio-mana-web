@@ -260,9 +260,20 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
             <!-- Tab: Iglesia -->
             <div id="tab-iglesia" class="tab-content hidden space-y-10">
-              <header>
-                <h1 id="iglesia-title" class="text-3xl lg:text-4xl font-display font-bold text-[#293C74] mb-2">Mi Iglesia</h1>
-                <p id="iglesia-subtitle" class="text-slate-600">Panel interno para líderes y encargados de sedes.</p>
+              <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h1 id="iglesia-title" class="text-3xl lg:text-4xl font-display font-bold text-[#293C74] mb-2">Mi Iglesia</h1>
+                  <p id="iglesia-subtitle" class="text-slate-600">Panel interno para líderes y encargados de sedes.</p>
+                </div>
+                <div id="church-selector" class="hidden bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-sm">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Iglesia activa</p>
+                  <div class="flex flex-col gap-2">
+                    <select id="church-selector-input" class="w-full min-w-[220px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+                      <option value="">Selecciona una iglesia</option>
+                    </select>
+                    <p id="church-selector-status" class="text-[11px] text-slate-500"></p>
+                  </div>
+                </div>
               </header>
 
               <div class="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-8">
@@ -275,9 +286,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                       <h3 class="text-lg font-bold text-[#293C74]">Inscripción manual (Iglesias)</h3>
                       <p class="text-sm text-slate-600">Registra personas que pagaron en sede y lleva el control de abonos sin pasarela.</p>
                     </div>
+                    <div class="ml-auto">
+                      <button type="button" id="church-form-toggle" class="px-4 py-2 rounded-xl border border-[#293C74]/20 text-[#293C74] text-xs font-bold uppercase tracking-widest hover:bg-[#293C74]/5 transition">
+                        Abrir formulario
+                      </button>
+                    </div>
                   </div>
 
-                  <form id="church-manual-form" class="space-y-8">
+                  <form id="church-manual-form" class="space-y-8 hidden" data-collapsed="true">
                     <!-- Row 1: Contact Info -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div class="space-y-3">
@@ -393,8 +409,25 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
                 <div class="space-y-6">
                 <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-4">
-                  <h3 class="text-lg font-bold text-[#293C74]">Inscritos de mi iglesia</h3>
-                  <p class="text-sm text-slate-600">Seguimiento por abonos y estado de registro.</p>
+                  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 class="text-lg font-bold text-[#293C74]">Inscritos de mi iglesia</h3>
+                      <p class="text-sm text-slate-600">Seguimiento por abonos y estado de registro.</p>
+                    </div>
+                    <button id="church-export-btn" type="button" class="px-4 py-2 rounded-xl bg-[#293C74] text-white text-xs font-bold uppercase tracking-widest hover:shadow-md transition">
+                      Exportar Excel
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input id="church-bookings-search" type="search" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all text-sm" placeholder="Buscar por nombre, correo o referencia">
+                    <select id="church-bookings-status" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all text-sm">
+                      <option value="">Todos los estados</option>
+                      <option value="PAID">Pagado</option>
+                      <option value="DEPOSIT_OK">Abono</option>
+                      <option value="PENDING">Pendiente</option>
+                    </select>
+                  </div>
+                  <p id="church-export-status" class="text-xs text-slate-500"></p>
                   <div id="church-bookings-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-sm text-slate-600">
                     No hay registros todavía.
                   </div>
@@ -404,6 +437,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-4">
                   <h3 class="text-lg font-bold text-[#293C74]">Equipo de mi iglesia</h3>
                   <p class="text-sm text-slate-600">Personas con acceso para registrar y dar seguimiento.</p>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input id="church-members-search" type="search" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all text-sm" placeholder="Buscar por nombre o correo">
+                    <select id="church-members-role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all text-sm">
+                      <option value="">Todos los roles</option>
+                      <option value="church_admin">Líder</option>
+                      <option value="church_member">Delegado</option>
+                    </select>
+                  </div>
                   <div id="church-members-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-sm text-slate-600">
                     No hay colaboradores registrados.
                   </div>
