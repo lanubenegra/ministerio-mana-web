@@ -20,7 +20,7 @@ const {
   <head>
     <SEO {title} {description} {image} {type} {structuredData} {noindex} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/src/styles/global.css" />
+    <link rel="stylesheet" href={Astro.resolve('../styles/global.css')} />
     <!-- Turnstile: script global (NO inline) -->
     <script
       src="https://challenges.cloudflare.com/turnstile/v0/api.js"
@@ -35,7 +35,7 @@ const {
     {!hideFooter && <Footer />}
     
     <!-- Smooth Scroll & Parallax Animations -->
-    <script src="/src/scripts/lenis.ts" type="module"></script>
-    <script src="/src/scripts/home-animations.ts" type="module"></script>
+    <script src={Astro.resolve('../scripts/lenis.ts')} type="module"></script>
+    <script src={Astro.resolve('../scripts/home-animations.ts')} type="module"></script>
   </body>
 </html>
