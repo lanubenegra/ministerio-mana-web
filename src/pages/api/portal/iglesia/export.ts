@@ -66,7 +66,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   const { data: churches, error: churchesError } = await supabaseAdmin
     .from('churches')
-    .select('id, name, city, country')
+    .select('id, code, name, city, country')
     .in('id', [targetChurch]);
 
   if (churchesError) {
@@ -115,6 +115,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   const headers = [
     'church_id',
+    'church_code',
     'church_name',
     'booking_id',
     'contact_name',
@@ -145,6 +146,7 @@ export const GET: APIRoute = async ({ request }) => {
     if (!paymentRows.length) {
       rows.push([
         booking.church_id,
+        churchInfo?.code || '',
         churchInfo?.name || booking.contact_church || '',
         booking.id,
         booking.contact_name,
@@ -175,6 +177,7 @@ export const GET: APIRoute = async ({ request }) => {
       const method = (rawEvent as any)?.method || (rawEvent as any)?.payment_method || '';
       rows.push([
         booking.church_id,
+        churchInfo?.code || '',
         churchInfo?.name || booking.contact_church || '',
         booking.id,
         booking.contact_name,

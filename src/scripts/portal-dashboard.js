@@ -97,6 +97,7 @@ let portalIsAdmin = false;
 let portalIsSuperadmin = false;
 let portalSelectedChurchId = null;
 let portalChurchesCatalog = [];
+let portalIsCustomChurch = false;
 let churchBookingsData = [];
 let churchMembersData = [];
 
@@ -391,7 +392,13 @@ async function loadChurchSelector(headers = {}) {
       churchSelectorInput.appendChild(option);
     });
 
+    const customOption = document.createElement('option');
+    customOption.value = '__custom__';
+    customOption.textContent = 'Otra iglesia (manual)';
+    churchSelectorInput.appendChild(customOption);
+
     portalSelectedChurchId = payload.selectedChurchId || '';
+    portalIsCustomChurch = false;
     if (portalSelectedChurchId) {
       churchSelectorInput.value = portalSelectedChurchId;
     } else if (churches.length === 1) {
@@ -514,12 +521,12 @@ function renderChurchBookings(list) {
 
 async function loadChurchBookings(headers = {}) {
   if (!churchBookingsList || !churchBookingsEmpty) return;
-  if (portalIsAdmin && !portalSelectedChurchId) {
-    churchBookingsEmpty.textContent = 'Selecciona una iglesia para ver los registros.';
-    churchBookingsEmpty.classList.remove('hidden');
-    churchBookingsList.classList.add('hidden');
-    return;
-  }
+    if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
+      churchBookingsEmpty.textContent = 'Selecciona una iglesia para ver los registros.';
+      churchBookingsEmpty.classList.remove('hidden');
+      churchBookingsList.classList.add('hidden');
+      return;
+    }
   try {
     const url = new URL('/api/portal/iglesia/bookings', window.location.origin);
     if (portalSelectedChurchId) {
@@ -580,7 +587,7 @@ function renderChurchMembers(list) {
 
 async function loadChurchMembers(headers = {}) {
   if (!churchMembersList || !churchMembersEmpty) return;
-  if (portalIsAdmin && !portalSelectedChurchId) {
+  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
     churchMembersEmpty.textContent = 'Selecciona una iglesia para ver el equipo.';
     churchMembersEmpty.classList.remove('hidden');
     churchMembersList.classList.add('hidden');
@@ -814,7 +821,7 @@ async function saveChurchDraft() {
 
 function initChurchManualForm() {
   if (!churchForm || !participantsList || !addParticipantBtn) return;
-  if (portalIsAdmin && !portalSelectedChurchId) {
+  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
     if (churchFormStatus) {
       churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior antes de registrar.';
     }
@@ -839,8 +846,12 @@ function initChurchManualForm() {
   churchForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!churchFormStatus) return;
-    if (portalIsAdmin && !portalSelectedChurchId) {
+    if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
       churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
+      return;
+    }
+    if (portalIsAdmin && portalIsCustomChurch && !churchNameInput?.value?.trim()) {
+      churchFormStatus.textContent = 'Escribe el nombre de la iglesia.';
       return;
     }
     churchFormStatus.textContent = 'Guardando...';
@@ -863,19 +874,19 @@ function initChurchManualForm() {
       participants: collectParticipants(),
     };
 
-    try {
-      const res = await fetch('/api/portal/iglesia/submit', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
-      churchFormStatus.textContent = 'Inscripción registrada.';
-      await loadChurchBookings();
-      churchForm.reset();
-      participantsList.innerHTML = '';
-      participantsList.appendChild(buildParticipantRow());
+  try {
+    const res = await fetch('/api/portal/iglesia/submit', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
+    churchFormStatus.textContent = 'Inscripción registrada.';
+    await loadChurchBookings();
+    churchForm.reset();
+    participantsList.innerHTML = '';
+    participantsList.appendChild(buildParticipantRow());
       await fetch('/api/portal/iglesia/draft', { method: 'DELETE', headers: portalAuthHeaders });
     } catch (error) {
       console.error(error);
@@ -1202,6 +1213,20 @@ adminUsersList?.addEventListener('click', async (event) => {
 
 churchSelectorInput?.addEventListener('change', async (event) => {
   const value = event.target.value || '';
+  if (value === '__custom__') {
+    portalIsCustomChurch = true;
+    portalSelectedChurchId = null;
+    if (churchSelectorStatus) {
+      churchSelectorStatus.textContent = 'Modo manual activo. Escribe el nombre de la iglesia.';
+    }
+    if (churchNameInput) {
+      churchNameInput.removeAttribute('readonly');
+      churchNameInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+      churchNameInput.focus();
+    }
+    return;
+  }
+  portalIsCustomChurch = false;
   await saveChurchSelection(value, portalAuthHeaders);
   await loadChurchBookings(portalAuthHeaders);
   await loadChurchMembers(portalAuthHeaders);
@@ -1225,7 +1250,7 @@ churchExportBtn?.addEventListener('click', () => {
 
 churchFormToggle?.addEventListener('click', () => {
   if (!churchForm) return;
-  if (portalIsAdmin && !portalSelectedChurchId) {
+  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
     if (churchFormStatus) {
       churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
     }
