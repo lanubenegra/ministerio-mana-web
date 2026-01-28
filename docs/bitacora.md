@@ -222,6 +222,9 @@
   - `2c6efec`: "fix(ui): style donate button with solid teal color and white text"
   - `08caa39`: "fix(ui): update donate button hover color to azul maná (navy)"
   - `70c25d6`: "fix(ux): tune lenis scroll physics for natural feel"
+  - `bfe9086`: "fix(portal): update magic link icon to sparkles for better clarity"
+  - `3d81cc0`: "feat(portal): add password visibility toggle and sync login logic"
+  - `7748207`: "fix(portal): restore stars effect and normalize login UI labels"
 
 
 ### 2026-01-28 (Hotfix: Internal Server Error en Preview)
