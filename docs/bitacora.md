@@ -14,6 +14,14 @@
 
 ## Entradas
 
+### 2026-01-28 (Portal logout fiable)
+- Responsable: Codex
+- Cambios:
+  - Portal Maná: cierre de sesión ahora limpia siempre la sesión local de Supabase (scope local), incluso en modo contraseña.
+  - Mantiene limpieza del cookie de fallback en `/api/portal/password-logout`.
+- Pruebas: N/A
+- Pendientes: Verificar en Preview que al cerrar sesión siempre redirija a `/portal/ingresar`.
+
 ### 2026-01-28 (Portal Admin y equipos por iglesia)
 - Responsable: Codex
 - Cambios:

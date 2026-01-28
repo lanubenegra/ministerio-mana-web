@@ -971,10 +971,14 @@ adminUsersList?.addEventListener('click', async (event) => {
 logoutBtn?.addEventListener('click', async () => {
   logoutBtn.disabled = true;
   logoutBtn.textContent = 'Saliendo...';
+  try {
+    // Always clear any local Supabase session (even in password fallback).
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch (err) {
+    console.warn('No se pudo cerrar sesión Supabase en el cliente.', err);
+  }
   if (authMode === 'password') {
     await fetch('/api/portal/password-logout', { method: 'POST' });
-  } else {
-    await supabase.auth.signOut();
   }
   window.location.href = '/portal/ingresar';
 });
