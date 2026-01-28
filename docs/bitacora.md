@@ -184,6 +184,36 @@
   - Esperar a que termine mantenimiento de Supabase (Auth service)
   - Validar login OTP funcional post-mantenimiento
 
+### 2026-01-28 (Refinamiento UI/UX - Header, Scroll y Scripts)
+- Responsable: Antigravity
+- Cambios:
+  - **Optimización de Scripts (Astro 5 Bundling)**:
+    - Se migraron los scripts de `BaseLayout.astro`, `AccountButton.astro` y `portal-login.astro` a tags `<script>` inline con `import`.
+    - Esto resuelve permanentemente los errores de resolución de módulos (`gsap`, `lenis`, `@lib/supabaseBrowser`) al permitir que Astro/Vite bundlee las dependencias correctamente en tiempo de compilación.
+  - **Mejoras en el Header**:
+    - Se eliminó `overflow-hidden` que cortaba sombras y dropdowns.
+    - Se ajustaron márgenes laterales (padding) y gaps entre elementos para evitar desbordamientos en laptops.
+    - Se añadió `shrink-0` a los contenedores de acciones para asegurar visibilidad de botones críticos (Donar, Idioma).
+  - **Tuning de Scroll (Lenis)**:
+    - Se ajustaron los parámetros físicos para un tacto más natural.
+    - `duration`: reducido de 1.2s a 0.5s para eliminar el "lag" de arranque.
+    - `wheelMultiplier`: restablecido a 1.0 para una respuesta 1:1 dependiente de la fuerza del usuario.
+  - **Branding - Botón Donaciones**:
+    - Rediseño visual: Color sólido **Teal Maná** (`#28A6BD`) con texto blanco.
+    - Hover interactivo: Cambia a **Navy Maná** (`#293C74`) para un feedback premium.
+    - Se usaron clases de utilidad directas para asegurar consistencia visual ignorando colisiones de CSS global.
+- Pruebas:
+  - ✅ Scripts inyectados correctamente y funcionando (Lenis activo).
+  - ✅ Header alineado y con todos los elementos visibles.
+  - ✅ Botón de donar con contraste alto en light mode.
+- Commits:
+  - `51e36de`: "fix: use absolute paths for script loading" (Intento inicial)
+  - `89ebc84`: "fix: convert all scripts to inline for proper module bundling"
+  - `179d2c8`: "fix: adjust header layout and scroll behavior"
+  - `2c6efec`: "fix(ui): style donate button with solid teal color and white text"
+  - `08caa39`: "fix(ui): update donate button hover color to azul maná (navy)"
+  - `70c25d6`: "fix(ux): tune lenis scroll physics for natural feel"
+
 
 ### 2026-01-28 (Hotfix: Internal Server Error en Preview)
 - Responsable: Delta (Codex)
