@@ -1,5 +1,4 @@
 import type { MiddlewareHandler } from 'astro';
-import { randomBytes } from 'node:crypto';
 
 type GeoCookie = {
   country: string;
@@ -34,6 +33,29 @@ const ENGLISH_COUNTRIES = new Set([
   'US', 'GB', 'UK', 'AU', 'NZ', 'CA', 'IE',
   'TT', 'JM', 'BZ', 'BB', 'LC', 'GD',
 ]);
+
+function bytesToBase64(bytes: Uint8Array): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(bytes).toString('base64');
+  }
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function createNonce(): string {
+  const bytes = new Uint8Array(16);
+  if (globalThis.crypto?.getRandomValues) {
+    globalThis.crypto.getRandomValues(bytes);
+    return bytesToBase64(bytes);
+  }
+  for (let i = 0; i < bytes.length; i += 1) {
+    bytes[i] = Math.floor(Math.random() * 256);
+  }
+  return bytesToBase64(bytes);
+}
 
 function parseGeoCookie(value: string | undefined): GeoCookie | undefined {
   if (!value) return undefined;
@@ -113,7 +135,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     (import.meta.env?.PUBLIC_CUMBRE_ONLY ?? process.env?.PUBLIC_CUMBRE_ONLY) === 'true';
   const isSecure = isSecureRequest(request);
 
-  const nonce = randomBytes(16).toString('base64');
+  const nonce = createNonce();
 
   if (cumbreOnly && url.pathname === '/') {
     return Response.redirect(`${url.origin}/eventos/cumbre-mundial-2026`, 302);
