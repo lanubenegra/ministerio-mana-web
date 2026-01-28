@@ -17,6 +17,7 @@ import { createPaymentPlan, recordPayment, recomputeBookingTotals, applyManualPa
 import { normalizeCityName, normalizeChurchName } from '@lib/normalization';
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
 import { buildDonationReference, createDonation } from '@lib/donationsStore';
+import { resolveBaseUrl } from '@lib/url';
 
 export const prerender = false;
 
@@ -57,7 +58,9 @@ export const POST: APIRoute = async ({ request }) => {
 
   let userId: string | null = null;
   let churchId: string | null = null;
+  let churchNameFromRole: string | null = null;
   let isAllowed = false;
+  let isAdmin = false;
 
   const user = await getUserFromRequest(request);
   if (!user?.email) {
@@ -76,8 +79,11 @@ export const POST: APIRoute = async ({ request }) => {
     const hasChurchRole = memberships.some((m: any) =>
       ['church_admin', 'church_member'].includes(m?.role) && m?.status !== 'pending',
     );
-    isAllowed = Boolean(profile && (isAdminRole(profile.role) || hasChurchRole));
-    churchId = memberships.find((m: any) => m?.church?.id)?.church?.id || profile?.church_id || null;
+    isAdmin = Boolean(profile && isAdminRole(profile.role));
+    isAllowed = Boolean(profile && (isAdmin || hasChurchRole));
+    const membership = memberships.find((m: any) => m?.church?.id);
+    churchId = membership?.church?.id || profile?.church_id || null;
+    churchNameFromRole = membership?.church?.name || null;
   }
 
   if (!isAllowed) {
@@ -96,7 +102,7 @@ export const POST: APIRoute = async ({ request }) => {
     const countryGroup = normalizeCountryGroup(payload.countryGroup ?? 'CO');
     const contactCountry = sanitizePlainText(payload.country ?? '', 40);
     const contactCity = normalizeCityName(payload.city ?? '');
-    const contactChurch = normalizeChurchName(payload.church ?? '');
+    const contactChurchRaw = normalizeChurchName(payload.church ?? '');
     const paymentOption = (payload.paymentOption ?? 'FULL').toString().toUpperCase();
     const paymentMethod = sanitizePlainText(payload.paymentMethod ?? '', 40);
     const paymentAmount = Number(payload.paymentAmount ?? 0);
@@ -150,6 +156,35 @@ export const POST: APIRoute = async ({ request }) => {
     const threshold = depositThreshold(totalAmount);
     const tokenPair = generateAccessToken();
 
+    let resolvedChurchId = churchId;
+    let resolvedChurchName = churchNameFromRole || contactChurchRaw;
+    if (isAdmin && !resolvedChurchId && contactChurchRaw) {
+      const { data: existing } = await supabaseAdmin
+        .from('churches')
+        .select('id, name')
+        .ilike('name', contactChurchRaw)
+        .maybeSingle();
+      if (existing?.id) {
+        resolvedChurchId = existing.id;
+        resolvedChurchName = existing.name || contactChurchRaw;
+      } else {
+        const { data: created } = await supabaseAdmin
+          .from('churches')
+          .insert({
+            name: contactChurchRaw,
+            city: contactCity || null,
+            country: contactCountry || null,
+            created_by: isUuid(userId) ? userId : null,
+          })
+          .select('id, name')
+          .single();
+        if (created?.id) {
+          resolvedChurchId = created.id;
+          resolvedChurchName = created.name || contactChurchRaw;
+        }
+      }
+    }
+
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('cumbre_bookings')
       .insert({
@@ -160,7 +195,7 @@ export const POST: APIRoute = async ({ request }) => {
         contact_document_number: documentNumber || null,
         contact_country: contactCountry || null,
         contact_city: contactCity || null,
-        contact_church: contactChurch || null,
+        contact_church: resolvedChurchName || null,
         country_group: countryGroup,
         currency,
         total_amount: totalAmount,
@@ -169,7 +204,7 @@ export const POST: APIRoute = async ({ request }) => {
         deposit_threshold: threshold,
         token_hash: tokenPair.hash,
         source: 'portal-iglesia',
-        church_id: churchId || null,
+        church_id: resolvedChurchId || null,
         created_by: isUuid(userId) ? userId : null,
       })
       .select('id')
@@ -203,6 +238,17 @@ export const POST: APIRoute = async ({ request }) => {
         status: 500,
         headers: { 'content-type': 'application/json' },
       });
+    }
+
+    try {
+      const baseUrl = resolveBaseUrl(request);
+      const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent('/portal')}`;
+      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+      if (!existingUser?.user) {
+        await supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo });
+      }
+    } catch (inviteError) {
+      console.error('[portal.iglesia.submit] invite error', inviteError);
     }
 
     let planId: string | null = null;
@@ -264,8 +310,8 @@ export const POST: APIRoute = async ({ request }) => {
         donation_type: 'evento',
         project_name: 'Cumbre Mundial 2026',
         event_name: 'Cumbre Mundial 2026',
-        campus: contactChurch,
-        church: contactChurch,
+        campus: resolvedChurchName || contactChurchRaw,
+        church: resolvedChurchName || contactChurchRaw,
         church_city: contactCity,
         donor_name: contactName,
         donor_email: email,

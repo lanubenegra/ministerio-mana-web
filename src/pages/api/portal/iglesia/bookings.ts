@@ -15,6 +15,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   let isAllowed = false;
+  let isAdmin = false;
   let churchId: string | null = null;
 
   const user = await getUserFromRequest(request);
@@ -33,7 +34,8 @@ export const GET: APIRoute = async ({ request }) => {
     const hasChurchRole = memberships.some((m: any) =>
       ['church_admin', 'church_member'].includes(m?.role) && m?.status !== 'pending',
     );
-    isAllowed = Boolean(profile && (isAdminRole(profile.role) || hasChurchRole));
+    isAdmin = Boolean(profile && isAdminRole(profile.role));
+    isAllowed = Boolean(profile && (isAdmin || hasChurchRole));
     churchId = memberships.find((m: any) => m?.church?.id)?.church?.id || profile?.church_id || null;
   }
 
@@ -51,7 +53,7 @@ export const GET: APIRoute = async ({ request }) => {
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (churchId) {
+  if (churchId && !isAdmin) {
     query.eq('church_id', churchId);
   }
 

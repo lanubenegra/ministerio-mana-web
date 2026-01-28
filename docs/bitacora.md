@@ -20,6 +20,7 @@
   - Portal Maná: agregado botón "Volver al inicio" en el dashboard.
   - Portal Iglesias: formulario manual + listado por iglesia (backend + frontend).
   - Registro Cumbre: se ajusta RegistroFlow para leer booking/participants del endpoint real.
+  - Auth Portal: login por contraseña usa Supabase (mismo rol que magic link) y página de activación de cuenta.
 - Pruebas: N/A
 - Pendientes: Validar flujo de registro post‑pago con bookingId + token reales.
 

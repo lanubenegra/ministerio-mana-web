@@ -53,7 +53,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
           </div>
 
           <div class="space-y-2 text-left">
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Contraseña (solo superadmins)</label>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Contraseña</label>
             <div class="relative group">
               <input 
                 type="password" 
@@ -71,6 +71,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 </svg>
               </button>
             </div>
+            <p class="text-[11px] text-slate-400">Si no tienes contraseña, usa el enlace mágico para activarla.</p>
           </div>
 
           <div class="space-y-3">
@@ -211,15 +212,9 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         
         if (password && action === 'password') {
           statusEl.textContent = 'Validando acceso...';
-          const res = await fetch('/api/portal/password-login', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-          });
-          const payload = await res.json();
-          if (!res.ok || !payload.ok) {
-            throw new Error(payload?.error || 'Credenciales invalidas');
-          }
+          const supabase = getSupabaseBrowserClient();
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
           statusIcon.classList.replace('bg-brand-teal', 'bg-green-400');
           statusIcon.classList.remove('animate-ping');
           statusEl.textContent = 'Acceso concedido. Entrando...';

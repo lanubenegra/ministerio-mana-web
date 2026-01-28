@@ -73,15 +73,9 @@ form?.addEventListener('submit', async (event) => {
     const action = event.submitter?.dataset?.action || lastAction;
     if (password && action === 'password') {
       statusEl.textContent = 'Validando acceso...';
-      const res = await fetch('/api/portal/password-login', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const payload = await res.json();
-      if (!res.ok || !payload.ok) {
-        throw new Error(payload?.error || 'Credenciales invalidas');
-      }
+      const supabase = getSupabaseBrowserClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       statusIcon.classList.replace('bg-brand-teal', 'bg-green-400');
       statusIcon.classList.remove('animate-ping');
       statusEl.textContent = 'Acceso concedido. Entrando...';
