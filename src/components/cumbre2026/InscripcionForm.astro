@@ -134,15 +134,24 @@ const formatTestAmount = (value, currency) =>
             </p>
             <div class="grid md:grid-cols-2 gap-4">
                <div class="space-y-1">
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</label>
-                  <input type="text" name="leader_id" required placeholder="Cédula o Pasaporte"
-                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo de documento</label>
+                  <select name="leader_document_type" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all">
+                     <option value="CC">Cédula de ciudadanía</option>
+                     <option value="TI">Tarjeta de identidad</option>
+                     <option value="CE">Cédula de extranjería</option>
+                     <option value="PASSPORT">Pasaporte</option>
+                  </select>
                </div>
                <div class="space-y-1">
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre Completo</label>
-                  <input type="text" name="leader_name" required placeholder="Como aparece en el documento"
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Número de documento</label>
+                  <input type="text" name="leader_id" required placeholder="Documento"
                      class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
                </div>
+            </div>
+            <div class="space-y-1">
+               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre Completo</label>
+               <input type="text" name="leader_name" required placeholder="Como aparece en el documento"
+                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
             </div>
 
             <div class="space-y-1">
@@ -287,19 +296,21 @@ const formatTestAmount = (value, currency) =>
                   </div>
                </label>
 
-               <!-- Installments (Only Colombia) -->
-               {isColombia && (
-                  <label class="cursor-pointer">
-                     <input type="radio" name="payment_option" value="INSTALLMENTS" class="peer sr-only">
-                     <div class="flex items-center gap-4 p-4 rounded-xl border border-white/10 bg-brand-navy/40 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
-                        <span class="text-2xl">📅</span>
-                        <div class="flex-1">
-                           <span class="block font-bold text-white">Plan de Cuotas</span>
-                           <span class="block text-xs text-white/60">Paga mes a mes hasta Mayo 2026.</span>
-                        </div>
+               <!-- Installments -->
+               <label class="cursor-pointer">
+                  <input type="radio" name="payment_option" value="INSTALLMENTS" class="peer sr-only">
+                  <div class="flex items-center gap-4 p-4 rounded-xl border border-white/10 bg-brand-navy/40 hover:bg-white/5 peer-checked:border-brand-teal peer-checked:bg-brand-teal/10 transition-all">
+                     <span class="text-2xl">📅</span>
+                     <div class="flex-1">
+                        <span class="block font-bold text-white">
+                          Plan de Cuotas{isColombia ? '' : ' (USD)'}
+                        </span>
+                        <span class="block text-xs text-white/60">
+                          {isColombia ? 'Paga mes a mes hasta Mayo 2026.' : 'Paga mes a mes con cobro automático en Stripe.'}
+                        </span>
                      </div>
-                  </label>
-               )}
+                  </div>
+               </label>
             </div>
 
             {testModeEnabled && (
@@ -563,7 +574,7 @@ const formatTestAmount = (value, currency) =>
 
     validateStep1() {
        const fd = new FormData(this.dom.form);
-       if(!fd.get('leader_name') || !fd.get('leader_email') || !fd.get('leader_phone') || !fd.get('leader_package')) {
+       if(!fd.get('leader_document_type') || !fd.get('leader_id') || !fd.get('leader_name') || !fd.get('leader_email') || !fd.get('leader_phone') || !fd.get('leader_package')) {
           alert('Por favor completa los datos del responsable');
           return false;
        }
@@ -942,9 +953,14 @@ const formatTestAmount = (value, currency) =>
     async handleSubmit(e) {
        e.preventDefault();
        const fd = new FormData(this.dom.form);
+       const leaderDocType = fd.get('leader_document_type');
+       const leaderDocNumber = fd.get('leader_id');
        const participantsPayload = this.participants.map((participant) => ({
           fullName: participant.name,
           packageType: participant.packageType,
+          ...(participant.isLeader
+             ? { documentType: leaderDocType, documentNumber: leaderDocNumber }
+             : {}),
        }));
        const testMode = this.testModeEnabled && this.testMode;
        const data = {

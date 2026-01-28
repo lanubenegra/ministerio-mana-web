@@ -127,6 +127,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const baseUrl = resolveBaseUrl(request);
     const tokenParam = payload.token ? `&token=${encodeURIComponent(payload.token)}` : '';
     const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}${tokenParam}`;
+    const registerUrl = `${baseUrl}/eventos/cumbre-mundial-2026/registro?bookingId=${bookingId}${tokenParam}`;
 
     if (provider === 'stripe') {
       const interval = frequency === 'BIWEEKLY' ? 'week' : 'month';
@@ -138,7 +139,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         description: 'Cumbre Mundial 2026 - Cuotas',
         interval,
         intervalCount,
-        successUrl: statusUrl,
+        successUrl: registerUrl,
         cancelUrl: statusUrl,
         cancelAt: Math.floor(cancelAt),
         metadata: {
@@ -182,7 +183,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       amountInCents: Math.round(firstInstallment.amount * 100),
       currency: 'COP',
       description: 'Cumbre Mundial 2026 - Cuota 1',
-      redirectUrl: statusUrl,
+      redirectUrl: registerUrl,
       reference,
       email: booking.contact_email || undefined,
     });

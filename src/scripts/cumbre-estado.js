@@ -1,5 +1,3 @@
-import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
-
 const activationCta = document.getElementById('activation-cta');
 const activationStatus = document.getElementById('activation-status');
 const activateBtn = document.getElementById('btn-activar-cuenta');
@@ -8,6 +6,7 @@ const completeBtn = document.getElementById('btn-completar-registro');
 const params = new URLSearchParams(window.location.search);
 const bookingId = params.get('bookingId');
 const token = params.get('token');
+const hasBookingLink = Boolean(bookingId && token);
 
 const registroUrl = bookingId && token
   ? `/eventos/cumbre-mundial-2026/registro?bookingId=${encodeURIComponent(bookingId)}&token=${encodeURIComponent(token)}`
@@ -17,7 +16,17 @@ if (completeBtn) {
   completeBtn.href = registroUrl;
 }
 
-const supabase = getSupabaseBrowserClient();
+let supabase = null;
+if (hasBookingLink) {
+  try {
+    // Lazy init to avoid hard failure when env vars are missing.
+    // eslint-disable-next-line import/no-unresolved
+    const { getSupabaseBrowserClient } = await import('@lib/supabaseBrowser');
+    supabase = getSupabaseBrowserClient();
+  } catch (err) {
+    console.error('Supabase client not available:', err);
+  }
+}
 let bookingEmail = '';
 
 async function fetchBookingEmail() {
@@ -34,27 +43,30 @@ async function fetchBookingEmail() {
   }
 }
 
-function showActivation() {
-  activationCta?.classList.remove('hidden');
-  completeBtn?.classList.add('hidden');
+function showActivation(show = true) {
+  if (!activationCta) return;
+  activationCta.classList.toggle('hidden', !show);
 }
 
-function showComplete() {
-  activationCta?.classList.add('hidden');
-  completeBtn?.classList.remove('hidden');
+function showComplete(show = true) {
+  if (!completeBtn) return;
+  completeBtn.classList.toggle('hidden', !show);
 }
 
 async function checkSession() {
   try {
+    if (!supabase) return false;
     const { data } = await supabase.auth.getSession();
     if (data?.session) {
-      showComplete();
+      showComplete(true);
+      showActivation(false);
       return true;
     }
   } catch (err) {
     console.error(err);
   }
-  showActivation();
+  showComplete(true);
+  showActivation(true);
   return false;
 }
 
@@ -90,15 +102,21 @@ activateBtn?.addEventListener('click', () => {
   void sendMagicLink();
 });
 
-if (!bookingId || !token) {
-  showActivation();
+if (!hasBookingLink) {
+  showActivation(true);
+  showComplete(false);
 } else {
+  showComplete(true);
+  showActivation(!supabase);
   void fetchBookingEmail();
   void checkSession();
 }
 
-supabase.auth.onAuthStateChange((_event, session) => {
-  if (session) {
-    showComplete();
-  }
-});
+if (supabase) {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) {
+      showComplete(true);
+      showActivation(false);
+    }
+  });
+}

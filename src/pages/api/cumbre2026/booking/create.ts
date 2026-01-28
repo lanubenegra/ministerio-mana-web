@@ -144,6 +144,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         fullName: entry?.fullName ?? entry?.name ?? '',
         packageType: entry?.packageType ?? entry?.type,
         relationship: entry?.relationship ?? '',
+        documentType: entry?.documentType ?? entry?.document_type ?? entry?.docType ?? '',
+        documentNumber: entry?.documentNumber ?? entry?.document_number ?? entry?.docNumber ?? '',
       }))
       .filter(Boolean) as ReturnType<typeof sanitizeParticipant>[];
 
@@ -203,6 +205,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       full_name: participant.fullName,
       package_type: participant.packageType,
       relationship: participant.relationship,
+      document_type: participant.documentType,
+      document_number: participant.documentNumber,
     }));
 
     const { data: participantData, error: participantsError } = await supabaseAdmin
@@ -234,7 +238,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     try {
       const baseUrl = resolveBaseUrl(request);
-      const nextUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${booking.id}&token=${encodeURIComponent(token.token)}`;
+      const nextUrl = `${baseUrl}/eventos/cumbre-mundial-2026/registro?bookingId=${booking.id}&token=${encodeURIComponent(token.token)}`;
       const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent(nextUrl)}`;
       const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
       if (!existingUser?.user) {
