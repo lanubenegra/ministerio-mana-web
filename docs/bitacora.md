@@ -113,6 +113,15 @@
   - Se agregaron envs `CUMBRE_TEST_MODE` y `PUBLIC_CUMBRE_TEST_MODE`.
 - Pruebas: N/A
 
+### 2026-01-27 (Portal Iglesias - base)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se agrego SQL base para portal iglesias (roles, iglesias, memberships).
+  - Se agrego perfil de usuario y endpoint `/api/portal/session`.
+  - Se agrego `PORTAL_SUPERADMIN_EMAILS` para superadmin.
+  - Se creo `docs/portal-iglesias.md` con guia inicial.
+- Pruebas: N/A
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:
