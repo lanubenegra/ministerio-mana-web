@@ -9,6 +9,12 @@ export type UserProfile = {
   email: string;
   full_name: string | null;
   role: PortalRole;
+  phone?: string | null;
+  city?: string | null;
+  country?: string | null;
+  affiliation_type?: string | null;
+  church_name?: string | null;
+  church_id?: string | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -40,18 +46,43 @@ export async function ensureUserProfile(user: User): Promise<UserProfile | null>
 
   const desiredRole: PortalRole = isSuperadminEmail(email) ? 'superadmin' : 'user';
 
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (existingError) {
+    console.error('[portal.profile] fetch error', existingError);
+    return null;
+  }
+
+  if (existing) {
+    if (existing.role !== desiredRole) {
+      const { data, error } = await supabaseAdmin
+        .from('user_profiles')
+        .update({ role: desiredRole, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .select('*')
+        .single();
+      if (error) {
+        console.error('[portal.profile] role update error', error);
+        return null;
+      }
+      return data as UserProfile;
+    }
+    return existing as UserProfile;
+  }
+
   const { data, error } = await supabaseAdmin
     .from('user_profiles')
-    .upsert(
-      {
-        user_id: user.id,
-        email,
-        full_name: (user.user_metadata as any)?.full_name ?? null,
-        role: desiredRole,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' },
-    )
+    .insert({
+      user_id: user.id,
+      email,
+      full_name: (user.user_metadata as any)?.full_name ?? null,
+      role: desiredRole,
+      updated_at: new Date().toISOString(),
+    })
     .select('*')
     .single();
 

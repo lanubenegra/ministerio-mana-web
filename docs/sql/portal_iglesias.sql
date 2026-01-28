@@ -6,6 +6,12 @@ create table if not exists public.user_profiles (
   email text not null,
   full_name text,
   role text not null default 'user',
+  phone text,
+  city text,
+  country text,
+  affiliation_type text,
+  church_name text,
+  church_id uuid,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -19,6 +25,19 @@ create table if not exists public.churches (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+alter table public.user_profiles
+  add column if not exists phone text;
+alter table public.user_profiles
+  add column if not exists city text;
+alter table public.user_profiles
+  add column if not exists country text;
+alter table public.user_profiles
+  add column if not exists affiliation_type text;
+alter table public.user_profiles
+  add column if not exists church_name text;
+alter table public.user_profiles
+  add column if not exists church_id uuid references public.churches(id);
 
 create table if not exists public.church_memberships (
   id uuid primary key default gen_random_uuid(),
