@@ -429,34 +429,56 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                   </div>
                 </div>
 
-                <div id="admin-users-card" class="hidden bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-5">
-                  <h3 class="text-lg font-bold text-[#293C74]">Usuarios y roles (Admin)</h3>
+                <div id="admin-users-card" class="hidden bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-6">
+                  <h3 class="text-lg font-bold text-[#293C74]">Usuarios y roles [Admin]</h3>
                   <p class="text-sm text-slate-600">Crea usuarios, asigna roles y gestiona accesos globales.</p>
-                  <div class="space-y-3">
-                    <input id="admin-invite-email" type="email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all placeholder-slate-500" placeholder="correo@ejemplo.com">
-                    <input id="admin-invite-name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all placeholder-slate-500" placeholder="Nombre completo (opcional)">
-                    <select id="admin-invite-role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all">
-                      <option value="user">Usuario</option>
-                      <option value="admin">Admin</option>
-                      <option value="superadmin">Superadmin</option>
-                    </select>
-                    <select id="admin-invite-church-role" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all">
-                      <option value="">Sin rol de iglesia</option>
-                      <option value="church_admin">Líder de iglesia</option>
-                      <option value="church_member">Delegado de iglesia</option>
-                    </select>
-                    <input id="admin-invite-church" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all placeholder-slate-500" placeholder="Iglesia / sede (si aplica)">
-                    <p id="admin-invite-status" class="text-xs text-slate-600"></p>
-                    <button type="button" id="admin-invite-btn" class="w-full bg-[#293C74] text-white px-4 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 transition-all">
+                  
+                  <div class="space-y-4 bg-slate-50/50 p-6 rounded-2xl border border-slate-200/50">
+                    <div class="space-y-3">
+                      <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Correo Electrónico</label>
+                      <input id="admin-invite-email" type="email" class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium placeholder-slate-400" placeholder="correo@ejemplo.com">
+                    </div>
+                    <div class="space-y-3">
+                      <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Nombre (Opcional)</label>
+                      <input id="admin-invite-name" type="text" class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium placeholder-slate-400" placeholder="Nombre completo">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div class="space-y-3">
+                        <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Rol Global</label>
+                        <select id="admin-invite-role" class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+                          <option value="user">Usuario</option>
+                          <option value="admin">Admin</option>
+                          <option value="superadmin">Superadmin</option>
+                        </select>
+                      </div>
+                      <div class="space-y-3">
+                        <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Rol de Iglesia</label>
+                        <select id="admin-invite-church-role" class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+                          <option value="">Sin rol de iglesia</option>
+                          <option value="church_admin">Líder de iglesia</option>
+                          <option value="church_member">Delegado de iglesia</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                      <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Sede Asignada</label>
+                      <input id="admin-invite-church" type="text" class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium placeholder-slate-400" placeholder="Iglesia / sede (si aplica)">
+                    </div>
+
+                    <p id="admin-invite-status" class="text-xs text-slate-600 font-medium min-h-[1rem]"></p>
+                    <button type="button" id="admin-invite-btn" class="w-full bg-[#293C74] text-white px-6 py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 transform active:scale-95 transition-all">
                       Crear / Invitar usuario
                     </button>
                   </div>
-                  <div class="pt-4 border-t border-slate-100 space-y-3">
+
+                  <div class="pt-6 border-t border-slate-100 space-y-4">
                     <h4 class="text-sm font-bold text-[#293C74]">Usuarios registrados</h4>
-                    <div id="admin-users-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4 text-xs text-slate-600">
+                    <div id="admin-users-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-sm text-center text-slate-600">
                       No hay usuarios para mostrar.
                     </div>
-                    <div id="admin-users-list" class="hidden space-y-3"></div>
+                    <div id="admin-users-list" class="hidden space-y-4"></div>
                   </div>
                 </div>
 

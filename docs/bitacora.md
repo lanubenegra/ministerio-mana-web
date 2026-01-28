@@ -266,6 +266,8 @@
   - `bfe9086`: "fix(portal): update magic link icon to sparkles for better clarity"
   - `3d81cc0`: "feat(portal): add password visibility toggle and sync login logic"
   - `7748207`: "fix(portal): restore stars effect and normalize login UI labels"
+  - `5f778ce`: "style(portal): high contrast text updates for dashboard and login"
+  - `bb80c82`: "style(portal): fix layout and spacing in church manual registration form"
 
 
 ### 2026-01-28 (Hotfix: Internal Server Error en Preview)
