@@ -1,6 +1,7 @@
 ---
 // This component detects if user has an active session
 // Shows "Iniciar sesión" for guests or account dropdown for logged users
+import accountButtonScript from '../scripts/account-button.ts?url';
 ---
 
 <div id="account-button-container" class="relative">
@@ -49,4 +50,4 @@
   </details>
 </div>
 
-<script src="../scripts/account-button.ts"></script>
+<script type="module" src={accountButtonScript}></script>

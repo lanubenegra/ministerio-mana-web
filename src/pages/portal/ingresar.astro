@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import portalLoginScript from '../../scripts/portal-login.ts?url';
 ---
 
 <BaseLayout title="Accede al Portal Maná | Ministerio Maná" description="Ingresa al Portal Maná para ver tus aportes y gestionar tu inscripción.">
@@ -80,5 +81,5 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   </main>
 
 
-  <script type="module" src={Astro.resolve('../scripts/portal-login.ts')}></script>
+  <script type="module" src={portalLoginScript}></script>
 </BaseLayout>
