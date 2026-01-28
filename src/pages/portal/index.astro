@@ -79,8 +79,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Portal Maná</p>
                 <h1 class="text-2xl font-display font-bold text-[#293C74]">Panel General</h1>
               </div>
-              <a href="/" class="inline-flex items-center gap-2 rounded-full border border-[#293C74]/20 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#293C74] hover:border-[#293C74]/60 hover:bg-[#293C74]/5 transition">
-                Volver al inicio
+              <a href="/eventos/cumbre-mundial-2026" class="inline-flex items-center gap-2 rounded-full border border-[#293C74]/20 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#293C74] hover:border-[#293C74]/60 hover:bg-[#293C74]/5 transition">
+                Volver a la Cumbre
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7" />
                 </svg>
@@ -261,25 +261,139 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 <p class="text-slate-500">Panel interno para líderes y encargados de sedes.</p>
               </header>
 
-              <div class="bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-10 shadow-lg shadow-slate-200/50 space-y-6">
-                <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 rounded-2xl bg-brand-teal/10 text-brand-teal flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v12m-6-6h12" /></svg>
+              <div class="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-8">
+                <div class="bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-10 shadow-lg shadow-slate-200/50 space-y-8">
+                  <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-brand-teal/10 text-brand-teal flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v12m-6-6h12" /></svg>
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-bold text-[#293C74]">Inscripción manual (Iglesias)</h3>
+                      <p class="text-sm text-slate-500">Registra personas que pagaron en sede y lleva el control de abonos sin pasarela.</p>
+                    </div>
                   </div>
-                  <div>
+
+                  <form id="church-manual-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nombre responsable</label>
+                        <input id="church-contact-name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Nombre completo">
+                      </div>
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Correo electrónico</label>
+                        <input id="church-contact-email" type="email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="correo@ejemplo.com">
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Teléfono / WhatsApp</label>
+                        <input id="church-contact-phone" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="+57 300 000 0000">
+                      </div>
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Documento</label>
+                        <div class="grid grid-cols-[110px_1fr] gap-3">
+                          <select id="church-document-type" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+                            <option value="CC">CC</option>
+                            <option value="TI">TI</option>
+                            <option value="CE">CE</option>
+                            <option value="PASSPORT">Pasaporte</option>
+                          </select>
+                          <input id="church-document-number" type="text" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Número">
+                        </div>
+                      </div>
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">País / Moneda</label>
+                        <select id="church-country-group" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+                          <option value="CO">Colombia (COP)</option>
+                          <option value="INT">Internacional (USD)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">País</label>
+                        <input id="church-country" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Colombia">
+                      </div>
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ciudad</label>
+                        <input id="church-city" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Ciudad">
+                      </div>
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Iglesia / Sede</label>
+                        <input id="church-name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Ej: Maná Medellín">
+                      </div>
+                    </div>
+
+                    <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-6 space-y-4">
+                      <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-bold text-[#293C74]">Participantes</h4>
+                        <button type="button" id="btn-add-participant" class="inline-flex items-center gap-2 text-xs font-bold text-brand-teal hover:underline">
+                          + Agregar persona
+                        </button>
+                      </div>
+                      <div id="participants-list" class="space-y-4"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Forma de pago</label>
+                        <select id="church-payment-option" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+                          <option value="FULL">Pago total</option>
+                          <option value="DEPOSIT">Abono (50%)</option>
+                          <option value="INSTALLMENTS">Plan de cuotas</option>
+                        </select>
+                      </div>
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Monto recibido</label>
+                        <input id="church-payment-amount" type="number" min="0" step="0.01" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="0">
+                      </div>
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Frecuencia cuotas</label>
+                        <select id="church-payment-frequency" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium">
+                          <option value="MONTHLY">Mensual</option>
+                          <option value="BIWEEKLY">Quincenal</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Método de pago (físico)</label>
+                        <input id="church-payment-method" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Efectivo, Nequi, PSE, etc.">
+                      </div>
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Notas internas</label>
+                        <input id="church-notes" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all font-medium" placeholder="Observaciones">
+                      </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2">
+                      <p id="church-form-status" class="text-sm text-slate-500"></p>
+                      <button type="submit" class="bg-[#293C74] text-white px-10 py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 hover:-translate-y-0.5 transition-all">
+                        Registrar inscripción
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div class="space-y-6">
+                  <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-4">
+                    <h3 class="text-lg font-bold text-[#293C74]">Inscritos de mi iglesia</h3>
+                    <p class="text-sm text-slate-500">Seguimiento por abonos y estado de registro.</p>
+                    <div id="church-bookings-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-sm text-slate-500">
+                      No hay registros todavía.
+                    </div>
+                    <div id="church-bookings-list" class="hidden space-y-4"></div>
+                  </div>
+
+                  <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-slate-200/50 space-y-3">
                     <h3 class="text-lg font-bold text-[#293C74]">Acceso por rol</h3>
-                    <p class="text-sm text-slate-500">Si eres pastor o encargado, solicita acceso y podrás ver los inscritos de tu iglesia, su estado y el progreso de abonos.</p>
+                    <p class="text-sm text-slate-500">Si eres pastor o encargado, solicita acceso y podrás ver los inscritos de tu iglesia.</p>
+                    <a href="https://wa.me/573148297534" class="inline-flex items-center gap-2 text-sm font-bold text-brand-teal hover:underline">
+                      Solicitar acceso como líder de iglesia
+                    </a>
                   </div>
                 </div>
-
-                <div id="church-memberships-empty" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 text-sm text-slate-500">
-                  Próximamente verás aquí: listados por iglesia, estado de registro, menú elegido y avance de cuotas.
-                </div>
-                <div id="church-memberships-list" class="hidden space-y-4"></div>
-
-                <a href="https://wa.me/573148297534" class="inline-flex items-center gap-2 text-sm font-bold text-brand-teal hover:underline">
-                  Solicitar acceso como líder de iglesia
-                </a>
               </div>
             </div>
 

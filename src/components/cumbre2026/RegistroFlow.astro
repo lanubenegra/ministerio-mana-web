@@ -146,7 +146,14 @@
               // Real API call
               const res = await fetch(`/api/cumbre2026/booking/get?bookingId=${this.bookingId}&token=${this.token}`);
               if(!res.ok) throw new Error('Fetch failed');
-              this.booking = await res.json();
+              const payload = await res.json();
+              if (!payload?.ok) throw new Error(payload?.error || 'Fetch failed');
+              const booking = payload.booking || {};
+              this.booking = {
+                 reference: (booking.id || this.bookingId || '').toString().slice(0, 8).toUpperCase(),
+                 holder: booking.contact_name || booking.contact_email || 'Participante',
+                 participants: payload.participants || []
+              };
            }
 
            this.render();
@@ -162,8 +169,8 @@
         document.getElementById('main-content').classList.remove('hidden');
 
         // Header
-        document.getElementById('booking-ref').textContent = this.booking.reference;
-        document.getElementById('booking-holder').textContent = this.booking.holder;
+        document.getElementById('booking-ref').textContent = this.booking.reference || '—';
+        document.getElementById('booking-holder').textContent = this.booking.holder || '—';
 
         const container = document.getElementById('participants-container');
         const tmpl = document.getElementById('participant-card-template');
@@ -173,8 +180,8 @@
            const card = clone.querySelector('.participant-card');
            
            card.querySelector('.index-badge').textContent = idx + 1;
-           card.querySelector('.name-display').textContent = p.name;
-           card.querySelector('.type-display').textContent = this.formatType(p.type);
+           card.querySelector('.name-display').textContent = p.full_name || p.name || 'Participante';
+           card.querySelector('.type-display').textContent = this.formatType(p.package_type || p.type);
            
            // Toggle Logic
            const body = card.querySelector('.card-body');
