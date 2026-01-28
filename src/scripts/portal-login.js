@@ -35,6 +35,7 @@ window.addEventListener('load', () => {
 
 const form = document.getElementById('login-form');
 const emailInput = document.getElementById('login-email');
+const passwordInput = document.getElementById('login-password');
 const statusContainer = document.getElementById('login-status-container');
 const statusEl = document.getElementById('login-status');
 const statusIcon = document.getElementById('login-status-icon');
@@ -53,8 +54,28 @@ form?.addEventListener('submit', async (event) => {
   statusIcon.classList.replace('bg-red-400', 'bg-brand-teal');
 
   try {
-    const supabase = getSupabaseBrowserClient();
     const email = emailInput.value.trim();
+    const password = passwordInput?.value?.trim();
+
+    if (password) {
+      statusEl.textContent = 'Validando acceso...';
+      const res = await fetch('/api/portal/password-login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const payload = await res.json();
+      if (!res.ok || !payload.ok) {
+        throw new Error(payload?.error || 'Credenciales invalidas');
+      }
+      statusIcon.classList.replace('bg-brand-teal', 'bg-green-400');
+      statusIcon.classList.remove('animate-ping');
+      statusEl.textContent = 'Acceso concedido. Entrando...';
+      window.location.href = '/portal';
+      return;
+    }
+
+    const supabase = getSupabaseBrowserClient();
     const redirectTo = `${window.location.origin}/portal`;
     const { error } = await supabase.auth.signInWithOtp({
       email,

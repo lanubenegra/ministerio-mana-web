@@ -211,6 +211,21 @@
 - Pruebas:
   - Pendiente validar preview: scripts deben cargar sin CSP block ni MIME error.
 
+### 2026-01-28 (Portal: login por contraseña para superadmins)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Se agregó login temporal por contraseña para superadmins (cuando Supabase Auth está en mantenimiento).
+  - Nuevo endpoint: `/api/portal/password-login` crea cookie segura con sesión temporal.
+  - Nuevo endpoint: `/api/portal/password-session` valida cookie.
+  - Nuevo endpoint: `/api/portal/password-logout` cierra sesión.
+  - `/api/portal/session` y `/api/cuenta/resumen` aceptan sesión por cookie (solo superadmin).
+  - Portal Dashboard: fallback a modo password cuando no hay token Supabase (sin onboarding).
+  - Se añadió campo de contraseña en `/portal/ingresar`.
+  - Scripts del portal quedaron como `type="module"` con rutas `/src/scripts/*.js`.
+- Pendientes:
+  - Configurar env `PORTAL_SUPERADMIN_PASSWORD` en Vercel.
+  - (Opcional) `PORTAL_ADMIN_SESSION_SECRET` para firmar cookie con clave distinta.
+
 ### 2026-01-25 (Cumbre Mundial 2026 - backend)
 - Responsable: Delta (Codex)
 - Cambios:

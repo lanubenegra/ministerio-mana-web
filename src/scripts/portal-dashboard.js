@@ -50,6 +50,7 @@ const onboardChurchName = document.getElementById('onboard-church-name');
 const supabase = getSupabaseBrowserClient();
 let portalProfile = null;
 let portalMemberships = [];
+let authMode = 'supabase';
 
 function formatCurrency(value, currency) {
   if (!currency) return value;
@@ -98,27 +99,35 @@ function switchTab(tabId) {
 async function loadAccount() {
   try {
     const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    if (!token) {
-      window.location.href = '/portal/ingresar';
-      return;
+    let token = sessionData.session?.access_token;
+    let headers = {};
+    if (token) {
+      headers = { Authorization: `Bearer ${token}` };
+    } else {
+      const fallbackRes = await fetch('/api/portal/password-session');
+      if (!fallbackRes.ok) {
+        window.location.href = '/portal/ingresar';
+        return;
+      }
+      const fallback = await fallbackRes.json();
+      if (!fallback.ok) {
+        window.location.href = '/portal/ingresar';
+        return;
+      }
+      authMode = 'password';
     }
 
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
+    const { data: userData } = token ? await supabase.auth.getUser() : { data: { user: null } };
+    const user = userData?.user;
 
-    const sessionRes = await fetch('/api/portal/session', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const sessionRes = await fetch('/api/portal/session', { headers });
     const sessionPayload = await sessionRes.json();
     if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
 
     portalProfile = sessionPayload.profile || {};
     portalMemberships = sessionPayload.memberships || [];
 
-    const res = await fetch('/api/cuenta/resumen', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch('/api/cuenta/resumen', { headers });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
 
@@ -152,7 +161,13 @@ async function loadAccount() {
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
 
-    if (!portalProfile?.full_name || !portalProfile?.affiliation_type) {
+    if (authMode === 'password') {
+      if (onboardingModal) onboardingModal.classList.add('hidden');
+      if (saveProfileBtn) {
+        saveProfileBtn.disabled = true;
+        saveProfileBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      }
+    } else if (!portalProfile?.full_name || !portalProfile?.affiliation_type) {
       showOnboarding();
     }
 
@@ -413,7 +428,11 @@ async function handlePlanAction(event) {
 logoutBtn?.addEventListener('click', async () => {
   logoutBtn.disabled = true;
   logoutBtn.textContent = 'Saliendo...';
-  await supabase.auth.signOut();
+  if (authMode === 'password') {
+    await fetch('/api/portal/password-logout', { method: 'POST' });
+  } else {
+    await supabase.auth.signOut();
+  }
   window.location.href = '/portal/ingresar';
 });
 

@@ -49,6 +49,18 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             </div>
           </div>
 
+          <div class="space-y-2 text-left">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Contraseña (solo superadmins)</label>
+            <div class="relative group">
+              <input 
+                type="password" 
+                id="login-password"
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-400 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300" 
+                placeholder="••••••••"
+              >
+            </div>
+          </div>
+
           <button type="submit" id="btn-submit" class="w-full relative group bg-[#293C74] text-white px-6 py-4 rounded-xl font-bold overflow-hidden shadow-lg shadow-[#293C74]/20 hover:shadow-[#293C74]/40 hover:-translate-y-0.5 transition-all duration-300">
             <span class="relative z-10 flex items-center justify-center gap-2">
               Ingresar con Código
@@ -81,5 +93,5 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   </main>
 
 
-  <script src="/src/scripts/portal-login.js"></script>
+  <script type="module" src="/src/scripts/portal-login.js"></script>
 </BaseLayout>
