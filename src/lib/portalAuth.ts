@@ -113,7 +113,7 @@ export async function listUserMemberships(userId: string) {
   if (!supabaseAdmin) return [];
   const { data, error } = await supabaseAdmin
     .from('church_memberships')
-    .select('id, role, status, church:churches(id, name, city, country)')
+    .select('id, role, status, church:churches(id, code, name, city, country)')
     .eq('user_id', userId);
   if (error) {
     console.error('[portal.memberships] fetch error', error);

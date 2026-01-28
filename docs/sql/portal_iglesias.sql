@@ -18,6 +18,7 @@ create table if not exists public.user_profiles (
 
 create table if not exists public.churches (
   id uuid primary key default gen_random_uuid(),
+  code text,
   name text not null,
   city text,
   country text,
@@ -25,6 +26,12 @@ create table if not exists public.churches (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+alter table public.churches
+  add column if not exists code text;
+
+create unique index if not exists churches_code_unique
+  on public.churches(code);
 
 alter table public.user_profiles
   add column if not exists phone text;

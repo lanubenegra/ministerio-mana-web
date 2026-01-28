@@ -67,7 +67,7 @@ export const GET: APIRoute = async ({ request }) => {
   if (ctx.isAdmin) {
     const { data, error } = await supabaseAdmin
       .from('churches')
-      .select('id, name, city, country')
+      .select('id, code, name, city, country')
       .order('name', { ascending: true });
     if (error) {
       console.error('[portal.iglesia.selection] churches error', error);

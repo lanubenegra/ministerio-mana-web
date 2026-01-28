@@ -33,6 +33,7 @@ const churchMembershipsEmpty = document.getElementById('church-memberships-empty
 const churchMembershipsList = document.getElementById('church-memberships-list');
 const churchForm = document.getElementById('church-manual-form');
 const churchFormToggle = document.getElementById('church-form-toggle');
+const churchNameInput = document.getElementById('church-name');
 const churchFormStatus = document.getElementById('church-form-status');
 const churchBookingsEmpty = document.getElementById('church-bookings-empty');
 const churchBookingsList = document.getElementById('church-bookings-list');
@@ -95,6 +96,7 @@ let portalAuthHeaders = {};
 let portalIsAdmin = false;
 let portalIsSuperadmin = false;
 let portalSelectedChurchId = null;
+let portalChurchesCatalog = [];
 let churchBookingsData = [];
 let churchMembersData = [];
 
@@ -176,6 +178,15 @@ async function loadAccount() {
       (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
     );
     const hasChurchAccess = portalIsAdmin || hasChurchRole;
+    const membershipChurch = portalMemberships.find((item) => item?.church?.id)?.church || null;
+    if (!portalSelectedChurchId && membershipChurch?.id) {
+      portalSelectedChurchId = membershipChurch.id;
+    }
+    if (churchNameInput && membershipChurch?.name && !portalIsAdmin) {
+      churchNameInput.value = membershipChurch.name;
+      churchNameInput.setAttribute('readonly', 'readonly');
+      churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+    }
 
     const { data: userData } = token ? await supabase.auth.getUser() : { data: { user: null } };
     const user = userData?.user;
@@ -367,12 +378,16 @@ async function loadChurchSelector(headers = {}) {
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar iglesias');
 
     const churches = payload.churches || [];
+    portalChurchesCatalog = churches;
     const isAdmin = Boolean(payload.isAdmin);
     churchSelectorInput.innerHTML = '<option value="">Selecciona una iglesia</option>';
     churches.forEach((church) => {
       const option = document.createElement('option');
       option.value = church.id;
-      option.textContent = church?.city ? `${church.name} · ${church.city}` : church.name;
+      const label = church?.code
+        ? `${church.code} · ${church.name}${church.city ? ` · ${church.city}` : ''}`
+        : `${church.name}${church.city ? ` · ${church.city}` : ''}`;
+      option.textContent = label;
       churchSelectorInput.appendChild(option);
     });
 
@@ -383,6 +398,15 @@ async function loadChurchSelector(headers = {}) {
       portalSelectedChurchId = churches[0].id;
       churchSelectorInput.value = portalSelectedChurchId;
       await saveChurchSelection(portalSelectedChurchId, headers);
+    }
+
+    if (portalSelectedChurchId && churchNameInput) {
+      const selected = portalChurchesCatalog.find((item) => item.id === portalSelectedChurchId);
+      if (selected) {
+        churchNameInput.value = selected.name;
+        churchNameInput.setAttribute('readonly', 'readonly');
+        churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+      }
     }
 
     if (isAdmin) {
@@ -411,6 +435,20 @@ async function saveChurchSelection(churchId, headers = {}) {
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo guardar');
     portalSelectedChurchId = payload.churchId || '';
     churchSelectorStatus.textContent = 'Iglesia seleccionada.';
+
+    if (churchNameInput) {
+      if (portalSelectedChurchId) {
+        const selected = portalChurchesCatalog.find((item) => item.id === portalSelectedChurchId);
+        if (selected) {
+          churchNameInput.value = selected.name;
+          churchNameInput.setAttribute('readonly', 'readonly');
+          churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+        }
+      } else {
+        churchNameInput.removeAttribute('readonly');
+        churchNameInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+      }
+    }
   } catch (err) {
     console.error(err);
     churchSelectorStatus.textContent = err?.message || 'Error guardando selección.';
@@ -711,6 +749,12 @@ async function loadChurchDraft() {
     document.getElementById('church-country').value = draft.country || '';
     document.getElementById('church-city').value = draft.city || '';
     document.getElementById('church-name').value = draft.church || '';
+    if (draft.churchId) {
+      portalSelectedChurchId = draft.churchId;
+      if (churchSelectorInput) {
+        churchSelectorInput.value = draft.churchId;
+      }
+    }
     document.getElementById('church-payment-option').value = draft.paymentOption || 'FULL';
     document.getElementById('church-payment-amount').value = draft.paymentAmount || '';
     document.getElementById('church-payment-frequency').value = draft.frequency || 'MONTHLY';
@@ -749,6 +793,7 @@ async function saveChurchDraft() {
     country: document.getElementById('church-country')?.value || '',
     city: document.getElementById('church-city')?.value || '',
     church: document.getElementById('church-name')?.value || '',
+    churchId: portalSelectedChurchId || '',
     paymentOption: document.getElementById('church-payment-option')?.value || 'FULL',
     paymentAmount: document.getElementById('church-payment-amount')?.value || '',
     frequency: document.getElementById('church-payment-frequency')?.value || 'MONTHLY',
@@ -769,6 +814,15 @@ async function saveChurchDraft() {
 
 function initChurchManualForm() {
   if (!churchForm || !participantsList || !addParticipantBtn) return;
+  if (portalIsAdmin && !portalSelectedChurchId) {
+    if (churchFormStatus) {
+      churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior antes de registrar.';
+    }
+    churchForm.classList.add('hidden');
+    if (churchFormToggle) {
+      churchFormToggle.textContent = 'Abrir formulario';
+    }
+  }
   if (!participantsList.children.length) {
     participantsList.appendChild(buildParticipantRow());
   }
@@ -785,6 +839,10 @@ function initChurchManualForm() {
   churchForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!churchFormStatus) return;
+    if (portalIsAdmin && !portalSelectedChurchId) {
+      churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
+      return;
+    }
     churchFormStatus.textContent = 'Guardando...';
     const payload = {
       contactName: document.getElementById('church-contact-name')?.value || '',
@@ -796,6 +854,7 @@ function initChurchManualForm() {
       country: document.getElementById('church-country')?.value || '',
       city: document.getElementById('church-city')?.value || '',
       church: document.getElementById('church-name')?.value || '',
+      churchId: portalSelectedChurchId || '',
       paymentOption: document.getElementById('church-payment-option')?.value || 'FULL',
       paymentAmount: Number(document.getElementById('church-payment-amount')?.value || 0),
       frequency: document.getElementById('church-payment-frequency')?.value || 'MONTHLY',
@@ -1166,6 +1225,12 @@ churchExportBtn?.addEventListener('click', () => {
 
 churchFormToggle?.addEventListener('click', () => {
   if (!churchForm) return;
+  if (portalIsAdmin && !portalSelectedChurchId) {
+    if (churchFormStatus) {
+      churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
+    }
+    return;
+  }
   const isCollapsed = churchForm.classList.contains('hidden');
   if (isCollapsed) {
     churchForm.classList.remove('hidden');

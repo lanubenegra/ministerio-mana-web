@@ -72,6 +72,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
     isAllowed = true;
+    isAdmin = true;
   } else {
     userId = user.id;
     const profile = await ensureUserProfile(user);
@@ -103,6 +104,7 @@ export const POST: APIRoute = async ({ request }) => {
     const contactCountry = sanitizePlainText(payload.country ?? '', 40);
     const contactCity = normalizeCityName(payload.city ?? '');
     const contactChurchRaw = normalizeChurchName(payload.church ?? '');
+    const churchIdFromPayload = isUuid(payload.churchId) ? payload.churchId : null;
     const paymentOption = (payload.paymentOption ?? 'FULL').toString().toUpperCase();
     const paymentMethod = sanitizePlainText(payload.paymentMethod ?? '', 40);
     const paymentAmount = Number(payload.paymentAmount ?? 0);
@@ -158,6 +160,19 @@ export const POST: APIRoute = async ({ request }) => {
 
     let resolvedChurchId = churchId;
     let resolvedChurchName = churchNameFromRole || contactChurchRaw;
+
+    if (isAdmin && churchIdFromPayload) {
+      const { data: selectedChurch } = await supabaseAdmin
+        .from('churches')
+        .select('id, name')
+        .eq('id', churchIdFromPayload)
+        .maybeSingle();
+      if (selectedChurch?.id) {
+        resolvedChurchId = selectedChurch.id;
+        resolvedChurchName = selectedChurch.name || resolvedChurchName;
+      }
+    }
+
     if (isAdmin && !resolvedChurchId && contactChurchRaw) {
       const { data: existing } = await supabaseAdmin
         .from('churches')

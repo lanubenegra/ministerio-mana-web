@@ -28,6 +28,7 @@ export const GET: APIRoute = async ({ request }) => {
       });
     }
     isAllowed = true;
+    isAdmin = true;
   } else {
     const profile = await ensureUserProfile(user);
     const memberships = await listUserMemberships(user.id);
