@@ -46,12 +46,12 @@ const {
       
       if (!prefersReducedMotion) {
         lenis = new Lenis({
-          duration: 1.2,
+          duration: 0.8, // Reduced from 1.2 for snappier feel
           easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
           orientation: 'vertical',
           gestureOrientation: 'vertical',
           smoothWheel: true,
-          wheelMultiplier: 1,
+          wheelMultiplier: 1.2, // Slightly increased responsiveness
           smoothTouch: false,
           touchMultiplier: 2,
           infinite: false,
