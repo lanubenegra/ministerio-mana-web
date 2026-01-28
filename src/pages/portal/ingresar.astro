@@ -30,8 +30,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             <img src="/images/cumbre/logo-ministerio-mana-teal.svg" alt="Ministerio Maná" class="h-20 w-auto object-contain">
           </div>
           <h1 class="text-3xl font-display font-bold text-[#293C74] mb-2">Portal Maná</h1>
-          <p class="text-slate-500 text-sm leading-relaxed">Bienvenido al portal de usuarios del Ministerio Maná.</p>
-          <a href="/eventos/cumbre-mundial-2026" class="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#293C74]/70 hover:text-[#293C74]">
+          <p class="text-slate-600 text-sm leading-relaxed">Bienvenido al portal de usuarios del Ministerio Maná.</p>
+          <a href="/eventos/cumbre-mundial-2026" class="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#293C74]/80 hover:text-[#293C74]">
             Volver a la Cumbre
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7" />
@@ -41,13 +41,13 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
         <form id="login-form" class="relative space-y-6">
           <div class="space-y-2 text-left">
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
+            <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Correo Electrónico</label>
             <div class="relative group">
               <input 
                 type="email" 
                 id="login-email" 
                 required 
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-400 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300" 
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-500 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300" 
                 placeholder="nombre@email.com"
               >
               <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -59,12 +59,12 @@ import BaseLayout from '@layouts/BaseLayout.astro';
           </div>
 
           <div class="space-y-2 text-left">
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Contraseña</label>
+            <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Contraseña</label>
             <div class="relative group">
               <input 
                 type="password" 
                 id="login-password"
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-400 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300 pr-12" 
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-500 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300 pr-12" 
                 placeholder="••••••••"
               >
               <button type="button" id="toggle-password" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#293C74] transition-colors focus:outline-none">
@@ -77,7 +77,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 </svg>
               </button>
             </div>
-            <p class="text-[11px] text-slate-400">Si no tienes contraseña, usa el enlace mágico para activarla.</p>
+            <p class="text-[11px] text-slate-600">Si no tienes contraseña, usa el enlace mágico para activarla.</p>
           </div>
 
           <div class="space-y-3">
@@ -109,7 +109,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         </div>
 
         <footer class="mt-10 pt-6 border-t border-slate-100 text-center">
-          <a href="https://wa.me/573148297534" class="inline-flex items-center gap-2 text-slate-500 hover:text-[#293C74] transition-colors text-xs font-bold">
+          <a href="https://wa.me/573148297534" class="inline-flex items-center gap-2 text-slate-600 hover:text-[#293C74] transition-colors text-xs font-bold">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.855-1.246L3 20l1.246-4.855A9.863 9.863 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
@@ -118,7 +118,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         </footer>
       </div>
       
-      <p class="text-center text-[#293C74]/40 text-xs mt-8">Create by Ministerio Maná · © 2026</p>
+      <p class="text-center text-[#293C74]/60 text-xs mt-8">Create by Ministerio Maná · © 2026</p>
     </div>
   </main>
 
