@@ -121,9 +121,19 @@
 </template>
 
 <script type="module">
-  import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
+  let supabase = null;
 
-  const supabase = getSupabaseBrowserClient();
+  async function getSupabase() {
+    if (supabase) return supabase;
+    try {
+      const { getSupabaseBrowserClient } = await import('@lib/supabaseBrowser');
+      supabase = getSupabaseBrowserClient();
+    } catch (err) {
+      console.warn('[registro] Supabase no disponible', err);
+      supabase = null;
+    }
+    return supabase;
+  }
 
   const REGISTRO = {
      booking: null,
@@ -186,8 +196,10 @@
      
      async ensureAuth() {
         if (this.isMock) return true;
+        const client = await getSupabase();
+        if (!client) return true; // allow access with token when Supabase env is missing
         try {
-          const { data } = await supabase.auth.getSession();
+          const { data } = await client.auth.getSession();
           if (data?.session) return true;
         } catch (err) {
           console.error(err);
@@ -287,6 +299,11 @@
         const status = document.getElementById('auth-status');
         cta?.addEventListener('click', async () => {
           if (!status) return;
+          const client = await getSupabase();
+          if (!client) {
+            status.textContent = 'No pudimos iniciar sesión aquí. Escribe a soporte y te ayudamos.';
+            return;
+          }
           if (!this.bookingEmail) {
             status.textContent = 'No encontramos tu correo. Escríbenos por WhatsApp.'; 
             return;
@@ -296,7 +313,7 @@
           cta.classList.add('opacity-70');
           try {
             const redirectTo = `${window.location.origin}/portal/activar?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-            const { error } = await supabase.auth.signInWithOtp({
+            const { error } = await client.auth.signInWithOtp({
               email: this.bookingEmail,
               options: { emailRedirectTo: redirectTo },
             });

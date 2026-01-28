@@ -174,6 +174,11 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         });
       } catch (stripeError: any) {
         console.error('[cumbre.installments] stripe subscription error', stripeError);
+        const allowFallback =
+          (env('CUMBRE_STRIPE_SUBSCRIPTION_FALLBACK') ?? env('PUBLIC_CUMBRE_STRIPE_SUBSCRIPTION_FALLBACK')) === 'true';
+        if (!allowFallback) {
+          throw stripeError;
+        }
 
         const firstInstallment = schedule.installments[0];
         const reference = buildInstallmentReference({
