@@ -133,6 +133,7 @@
   - Se agrego tab “Mi Iglesia” con memberships (placeholder si no hay).
   - Se corrigio logo teal/blanco en portal.
   - Se permitio Supabase en CSP (connect-src) y se corrigieron rutas de scripts del portal.
+  - Se corrigio carga de assets globales (global.css, lenis, home-animations) con Astro.resolve.
 - Pruebas: Pendiente (login OTP + onboarding en preview)
 - Pendientes:
   - Configurar `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` en Preview.
