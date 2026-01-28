@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva cuenta vinculada</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #F5EFEB;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            background-color: #ffffff;
+            padding: 40px 20px 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 20px 40px 60px;
+            text-align: center;
+            color: #0B1120;
+        }
+
+        .footer {
+            padding: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #888888;
+            background-color: #F5EFEB;
+        }
+
+        h2 {
+            color: #293C74;
+            margin-bottom: 24px;
+            font-size: 24px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            color: #4A5568;
+        }
+
+        .divider {
+            height: 4px;
+            width: 60px;
+            background-color: #F2C94C;
+            margin: 0 auto 30px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="background-color: #F5EFEB; padding: 40px 10px; min-height: 100vh;">
+        <div class="container">
+            <div class="header">
+                <img src="{{ .SiteURL }}/logo.svg" alt="Ministerio Maná" height="50"
+                    style="height: 50px; width: auto; display: block; margin: 0 auto;">
+            </div>
+            <div class="content">
+                <div class="divider"></div>
+                <h2>Nueva Cuenta Vinculada</h2>
+                <p>
+                    Hola,<br>
+                    Se ha vinculado una nueva cuenta externa (Google, Facebook, etc.) a tu perfil de Ministerio Maná.
+                </p>
+                <p style="font-size: 13px; margin-top: 40px; color: #999;">
+                    Si no reconoces esta acción, por favor revisa la configuración de seguridad de tu cuenta.
+                </p>
+            </div>
+        </div>
+        <div class="footer">
+            <p style="margin: 0;">&copy; 2026 Ministerio Maná</p>
+            <p style="margin: 5px 0 0;">Rionegro, Colombia</p>
+        </div>
+    </div>
+</body>
+
+</html>

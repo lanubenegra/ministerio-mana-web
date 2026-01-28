@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import portalDashboardScript from '../../scripts/portal-dashboard.js?url';
+
 ---
 
 <BaseLayout title="Portal Maná | Ministerio Maná" description="Gestiona tus aportes y eventos en el Portal Maná." hideHeader hideFooter>
@@ -352,5 +352,5 @@ import portalDashboardScript from '../../scripts/portal-dashboard.js?url';
     }
   </style>
 
-  <script type="module" src={portalDashboardScript}></script>
+  <script src="../../scripts/portal-dashboard.js"></script>
 </BaseLayout>

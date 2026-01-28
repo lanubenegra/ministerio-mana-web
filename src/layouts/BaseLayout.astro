@@ -3,9 +3,7 @@
 import SEO from '@components/SEO.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import globalStyles from '../styles/global.css?url';
-import lenisScript from '../scripts/lenis.js?url';
-import homeAnimationsScript from '../scripts/home-animations.js?url';
+import '../styles/global.css';
 
 const {
   title,
@@ -23,7 +21,6 @@ const {
   <head>
     <SEO {title} {description} {image} {type} {structuredData} {noindex} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href={globalStyles} />
     <!-- Turnstile: script global (NO inline) -->
     <script
       src="https://challenges.cloudflare.com/turnstile/v0/api.js"
@@ -38,7 +35,7 @@ const {
     {!hideFooter && <Footer />}
     
     <!-- Smooth Scroll & Parallax Animations -->
-    <script src={lenisScript} type="module"></script>
-    <script src={homeAnimationsScript} type="module"></script>
+    <script src="../scripts/lenis.js"></script>
+    <script src="../scripts/home-animations.js"></script>
   </body>
 </html>
