@@ -18,6 +18,8 @@ import { normalizeCityName, normalizeChurchName } from '@lib/normalization';
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
 import { buildDonationReference, createDonation } from '@lib/donationsStore';
 import { resolveBaseUrl } from '@lib/url';
+import { sendAuthLink } from '@lib/authMailer';
+import { findAuthUserByEmail } from '@lib/supabaseAdminUsers';
 
 export const prerender = false;
 
@@ -258,9 +260,12 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       const baseUrl = resolveBaseUrl(request);
       const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent('/portal')}`;
-      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
-      if (!existingUser?.user) {
-        await supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo });
+      const existingUser = await findAuthUserByEmail(email);
+      if (!existingUser) {
+        const result = await sendAuthLink({ kind: 'invite', email, redirectTo });
+        if (!result.ok) {
+          console.warn('[portal.iglesia.submit] invite email failed', result.error);
+        }
       }
     } catch (inviteError) {
       console.error('[portal.iglesia.submit] invite error', inviteError);

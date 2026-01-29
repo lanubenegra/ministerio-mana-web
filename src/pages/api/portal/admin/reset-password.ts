@@ -4,6 +4,7 @@ import { getUserFromRequest } from '@lib/supabaseAuth';
 import { ensureUserProfile, isAdminRole } from '@lib/portalAuth';
 import { readPasswordSession } from '@lib/portalPasswordSession';
 import { resolveBaseUrl } from '@lib/url';
+import { sendAuthLink } from '@lib/authMailer';
 
 export const prerender = false;
 
@@ -52,9 +53,9 @@ export const POST: APIRoute = async ({ request }) => {
   const baseUrl = resolveBaseUrl(request);
   const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent('/portal')}`;
 
-  const { error } = await supabaseAdmin.auth.admin.resetPasswordForEmail(email, { redirectTo });
-  if (error) {
-    console.error('[portal.admin.reset] error', error);
+  const result = await sendAuthLink({ kind: 'recovery', email, redirectTo });
+  if (!result.ok) {
+    console.error('[portal.admin.reset] error', result.error);
     return new Response(JSON.stringify({ ok: false, error: 'No se pudo enviar' }), {
       status: 500,
       headers: { 'content-type': 'application/json' },

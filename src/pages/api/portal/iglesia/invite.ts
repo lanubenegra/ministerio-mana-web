@@ -5,6 +5,8 @@ import { ensureUserProfile, listUserMemberships, isAdminRole } from '@lib/portal
 import { resolveBaseUrl } from '@lib/url';
 import { normalizeChurchName, normalizeCityName } from '@lib/normalization';
 import { sanitizePlainText } from '@lib/validation';
+import { sendAuthLink } from '@lib/authMailer';
+import { findAuthUserByEmail } from '@lib/supabaseAdminUsers';
 
 export const prerender = false;
 
@@ -106,20 +108,20 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
-  const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email);
-  let targetUserId = existingUser?.user?.id || null;
+  const existingUser = await findAuthUserByEmail(email);
+  let targetUserId = existingUser?.id || null;
 
   if (!targetUserId) {
     const baseUrl = resolveBaseUrl(request);
     const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent('/portal')}`;
-    const { data: invited, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo });
-    if (inviteError) {
+    const result = await sendAuthLink({ kind: 'invite', email, redirectTo });
+    if (!result.ok) {
       return new Response(JSON.stringify({ ok: false, error: 'No se pudo enviar invitación' }), {
         status: 500,
         headers: { 'content-type': 'application/json' },
       });
     }
-    targetUserId = invited?.user?.id || null;
+    targetUserId = result.userId || null;
   }
 
   if (!targetUserId) {

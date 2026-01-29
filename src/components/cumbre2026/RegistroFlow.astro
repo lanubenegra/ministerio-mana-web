@@ -366,11 +366,6 @@ const cspNonce = Astro.locals?.cspNonce;
         const status = document.getElementById('auth-status');
         cta?.addEventListener('click', async () => {
           if (!status) return;
-          const client = await getSupabase();
-          if (!client) {
-            status.textContent = 'No pudimos iniciar sesión aquí. Escribe a soporte y te ayudamos.';
-            return;
-          }
           if (!this.bookingEmail) {
             status.textContent = 'No encontramos tu correo. Escríbenos por WhatsApp.'; 
             return;
@@ -380,11 +375,15 @@ const cspNonce = Astro.locals?.cspNonce;
           cta.classList.add('opacity-70');
           try {
             const redirectTo = `${window.location.origin}/portal/activar?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-            const { error } = await client.auth.signInWithOtp({
-              email: this.bookingEmail,
-              options: { emailRedirectTo: redirectTo },
+            const res = await fetch('/api/auth/send-link', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ email: this.bookingEmail, kind: 'magiclink', redirectTo }),
             });
-            if (error) throw error;
+            const payload = await res.json();
+            if (!res.ok || !payload?.ok) {
+              throw new Error(payload?.error || 'No se pudo enviar el enlace.');
+            }
             status.textContent = 'Enlace enviado. Revisa tu correo para activar tu cuenta.';
           } catch (err) {
             console.error(err);

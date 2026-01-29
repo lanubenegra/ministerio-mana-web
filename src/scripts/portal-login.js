@@ -83,14 +83,16 @@ form?.addEventListener('submit', async (event) => {
       return;
     }
 
-    const supabase = getSupabaseBrowserClient();
-    const redirectTo = `${window.location.origin}/portal`;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
+    const redirectTo = `${window.location.origin}/portal/activar?next=${encodeURIComponent('/portal')}`;
+    const res = await fetch('/api/auth/send-link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, kind: 'magiclink', redirectTo }),
     });
-
-    if (error) throw error;
+    const payload = await res.json();
+    if (!res.ok || !payload?.ok) {
+      throw new Error(payload?.error || 'No se pudo enviar el enlace.');
+    }
 
     statusIcon.classList.replace('bg-brand-teal', 'bg-green-400');
     statusIcon.classList.remove('animate-ping');

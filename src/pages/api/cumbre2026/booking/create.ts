@@ -14,6 +14,8 @@ import {
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 import { resolveBaseUrl } from '@lib/url';
+import { sendAuthLink } from '@lib/authMailer';
+import { findAuthUserByEmail } from '@lib/supabaseAdminUsers';
 
 export const prerender = false;
 
@@ -240,20 +242,12 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       const baseUrl = resolveBaseUrl(request);
       const nextUrl = `${baseUrl}/eventos/cumbre-mundial-2026/registro?bookingId=${booking.id}&token=${encodeURIComponent(token.token)}`;
       const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent(nextUrl)}`;
-      let shouldInvite = true;
-      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
-        page: 1,
-        perPage: 1000,
-      });
-      if (listError) {
-        console.warn('[cumbre.booking] listUsers error', listError);
-      } else {
-        const normalizedEmail = email.toLowerCase();
-        const existingUser = listData?.users?.find((user) => user.email?.toLowerCase() === normalizedEmail);
-        shouldInvite = !existingUser;
-      }
-      if (shouldInvite) {
-        await supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo });
+      const existingUser = await findAuthUserByEmail(email);
+      if (!existingUser) {
+        const result = await sendAuthLink({ kind: 'invite', email, redirectTo });
+        if (!result.ok) {
+          console.warn('[cumbre.booking] invite email failed', result.error);
+        }
       }
     } catch (inviteError) {
       console.error('[cumbre.booking] invite error', inviteError);

@@ -83,11 +83,15 @@ async function sendMagicLink() {
   activateBtn?.classList.add('opacity-60');
   try {
     const redirectTo = `${window.location.origin}/portal/activar?next=${encodeURIComponent(registroUrl)}`;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
+    const res = await fetch('/api/auth/send-link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, kind: 'magiclink', redirectTo }),
     });
-    if (error) throw error;
+    const payload = await res.json();
+    if (!res.ok || !payload?.ok) {
+      throw new Error(payload?.error || 'No se pudo enviar el enlace.');
+    }
     activationStatus.textContent = 'Enlace enviado. Revisa tu correo para activar tu cuenta.';
   } catch (err) {
     console.error(err);
