@@ -59,7 +59,7 @@ if (token) {
       subtitle = 'No se pudo preparar el cobro. Contacta al equipo de soporte.';
     } else {
       const description = `Cumbre Mundial 2026 - Cuota ${installment.installment_index}/${plan.installment_count}`;
-      const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${encodeURIComponent(booking.id)}`;
+      const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${encodeURIComponent(booking.id)}&source=payment`;
 
       let reference = installment.provider_reference || null;
       if (!reference) {
