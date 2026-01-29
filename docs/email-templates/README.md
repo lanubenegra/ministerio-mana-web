@@ -82,6 +82,13 @@ Plantillas recomendadas (dynamic templates):
 | Pago completo | `sendgrid/cumbre_paid.html` | `SENDGRID_TEMPLATE_CUMBRE_PAID` |
 | Pago fallido | `sendgrid/cumbre_payment_failed.html` | `SENDGRID_TEMPLATE_CUMBRE_PAYMENT_FAILED` |
 | Recordatorio cuota | `sendgrid/cumbre_installment_reminder.html` | `SENDGRID_TEMPLATE_CUMBRE_INSTALLMENT_REMINDER` |
+| Registro completo | `sendgrid/cumbre_registration_complete.html` | `SENDGRID_TEMPLATE_CUMBRE_REG_COMPLETE` |
+| Registro incompleto | `sendgrid/cumbre_registration_incomplete.html` | `SENDGRID_TEMPLATE_CUMBRE_REG_INCOMPLETE` |
+| Plan de cuotas creado | `sendgrid/cumbre_plan_created.html` | `SENDGRID_TEMPLATE_CUMBRE_PLAN_CREATED` |
+| Cuota vencida | `sendgrid/cumbre_installment_overdue.html` | `SENDGRID_TEMPLATE_CUMBRE_INSTALLMENT_OVERDUE` |
+| Pago final pendiente | `sendgrid/cumbre_final_payment_due.html` | `SENDGRID_TEMPLATE_CUMBRE_FINAL_DUE` |
+| Link de pago listo | `sendgrid/cumbre_payment_link_generated.html` | `SENDGRID_TEMPLATE_CUMBRE_LINK_READY` |
+| Link de pago expirado | `sendgrid/cumbre_payment_link_expired.html` | `SENDGRID_TEMPLATE_CUMBRE_LINK_EXPIRED` |
 
 Variables dinámicas usadas:
 
@@ -97,6 +104,12 @@ Variables dinámicas usadas:
 - `installment_index`
 - `installment_count`
 - `payment_link`
+- `installments_count`
+- `installment_frequency`
+- `next_due_date`
+- `missing_fields`
+- `cta_url`
+- `cta_label`
 - `support_email`
 - `support_whatsapp`
 
