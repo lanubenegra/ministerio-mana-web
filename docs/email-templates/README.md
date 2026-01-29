@@ -176,6 +176,9 @@ Plantillas recomendadas:
 | --- | --- | --- |
 | Anuncio iglesia | `sendgrid/church_announcement.html` | `SENDGRID_TEMPLATE_CHURCH_ANNOUNCEMENT` |
 | Actualización misiones | `sendgrid/mission_update.html` | `SENDGRID_TEMPLATE_MISSION_UPDATE` |
+| Evento creado | `sendgrid/church_event_created.html` | `SENDGRID_TEMPLATE_CHURCH_EVENT_CREATED` |
+| Evento recordatorio | `sendgrid/church_event_reminder.html` | `SENDGRID_TEMPLATE_CHURCH_EVENT_REMINDER` |
+| Evento cancelado | `sendgrid/church_event_canceled.html` | `SENDGRID_TEMPLATE_CHURCH_EVENT_CANCELED` |
 
 Variables dinámicas usadas:
 
@@ -187,6 +190,11 @@ Variables dinámicas usadas:
 - `cta_url`
 - `cta_label`
 - `campus`
+- `event_title`
+- `event_description`
+- `event_date`
+- `event_time`
+- `calendar_url`
 
 ### SendGrid · Portal (Roles y Accesos)
 
