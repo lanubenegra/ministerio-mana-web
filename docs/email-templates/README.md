@@ -125,6 +125,10 @@ Plantillas recomendadas (dynamic templates):
 | Iglesia local | `sendgrid/donation_thanks_church.html` | `SENDGRID_TEMPLATE_CHURCH_DONATION_THANKS` |
 | Misiones/Campus | `sendgrid/donation_thanks_mission.html` | `SENDGRID_TEMPLATE_MISSION_DONATION_THANKS` |
 | Donación fallida | `sendgrid/donation_failed.html` | `SENDGRID_TEMPLATE_DONATION_FAILED` |
+| Donación recurrente creada | `sendgrid/donation_recurring_created.html` | `SENDGRID_TEMPLATE_DONATION_RECURRING_CREATED` |
+| Donación recurrente fallida | `sendgrid/donation_recurring_failed.html` | `SENDGRID_TEMPLATE_DONATION_RECURRING_FAILED` |
+| Donación recurrente cancelada | `sendgrid/donation_recurring_canceled.html` | `SENDGRID_TEMPLATE_DONATION_RECURRING_CANCELED` |
+| Recibo de donación | `sendgrid/donation_receipt.html` | `SENDGRID_TEMPLATE_DONATION_RECEIPT` |
 
 Variables dinámicas usadas:
 
@@ -141,6 +145,11 @@ Variables dinámicas usadas:
 - `payment_link`
 - `support_email`
 - `support_whatsapp`
+- `frequency`
+- `next_charge_date`
+- `manage_url`
+- `update_payment_url`
+- `receipt_url`
 
 ### SendGrid · Newsletter
 
