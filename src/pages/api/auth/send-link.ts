@@ -34,13 +34,34 @@ export const POST: APIRoute = async ({ request }) => {
     redirectTo = baseUrl;
   }
 
-  const result = await sendAuthLink({
-    kind: kind as 'invite' | 'magiclink' | 'recovery',
-    email,
-    redirectTo,
-  });
+  let result;
+  try {
+    result = await sendAuthLink({
+      kind: kind as 'invite' | 'magiclink' | 'recovery',
+      email,
+      redirectTo,
+    });
+  } catch (error: any) {
+    console.error('[auth.send-link] unexpected error', {
+      email,
+      kind,
+      redirectTo,
+      message: error?.message || String(error),
+    });
+    return new Response(JSON.stringify({ ok: false, error: 'Error interno' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
 
   if (!result.ok) {
+    console.error('[auth.send-link] failed', {
+      email,
+      kind,
+      redirectTo,
+      method: result.method,
+      error: result.error,
+    });
     return new Response(JSON.stringify({ ok: false, error: result.error || 'No se pudo enviar' }), {
       status: 500,
       headers: { 'content-type': 'application/json' },
