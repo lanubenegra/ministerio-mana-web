@@ -99,3 +99,69 @@ Variables dinámicas usadas:
 - `payment_link`
 - `support_email`
 - `support_whatsapp`
+
+### SendGrid · Donaciones (general + diezmos + iglesias + misiones)
+
+Plantillas recomendadas (dynamic templates):
+
+| Tipo | Archivo | Env esperado |
+| --- | --- | --- |
+| Donación general | `sendgrid/donation_thanks_general.html` | `SENDGRID_TEMPLATE_DONATION_THANKS` |
+| Diezmos | `sendgrid/donation_thanks_tithe.html` | `SENDGRID_TEMPLATE_TITHE_THANKS` |
+| Cumbre (donación) | `sendgrid/donation_thanks_cumbre.html` | `SENDGRID_TEMPLATE_CUMBRE_DONATION_THANKS` |
+| Iglesia local | `sendgrid/donation_thanks_church.html` | `SENDGRID_TEMPLATE_CHURCH_DONATION_THANKS` |
+| Misiones/Campus | `sendgrid/donation_thanks_mission.html` | `SENDGRID_TEMPLATE_MISSION_DONATION_THANKS` |
+| Donación fallida | `sendgrid/donation_failed.html` | `SENDGRID_TEMPLATE_DONATION_FAILED` |
+
+Variables dinámicas usadas:
+
+- `subject`
+- `app_name`
+- `full_name`
+- `amount`
+- `currency`
+- `reference`
+- `donation_type`
+- `church_name`
+- `church_city`
+- `campus`
+- `payment_link`
+- `support_email`
+- `support_whatsapp`
+
+### SendGrid · Newsletter
+
+Plantillas recomendadas:
+
+| Tipo | Archivo | Env esperado |
+| --- | --- | --- |
+| Confirmar suscripción | `sendgrid/newsletter_confirm.html` | `SENDGRID_TEMPLATE_NEWSLETTER_CONFIRM` |
+| Bienvenida | `sendgrid/newsletter_welcome.html` | `SENDGRID_TEMPLATE_NEWSLETTER_WELCOME` |
+
+Variables dinámicas usadas:
+
+- `subject`
+- `app_name`
+- `confirm_url`
+- `manage_url`
+- `support_email`
+
+### SendGrid · Comunicaciones Iglesias / Misiones
+
+Plantillas recomendadas:
+
+| Tipo | Archivo | Env esperado |
+| --- | --- | --- |
+| Anuncio iglesia | `sendgrid/church_announcement.html` | `SENDGRID_TEMPLATE_CHURCH_ANNOUNCEMENT` |
+| Actualización misiones | `sendgrid/mission_update.html` | `SENDGRID_TEMPLATE_MISSION_UPDATE` |
+
+Variables dinámicas usadas:
+
+- `subject`
+- `church_name`
+- `message_body`
+- `event_date`
+- `event_location`
+- `cta_url`
+- `cta_label`
+- `campus`
