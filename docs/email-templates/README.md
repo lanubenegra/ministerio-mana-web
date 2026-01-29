@@ -51,3 +51,51 @@ El proyecto ahora puede enviar correos de autenticación vía **SendGrid API**. 
   - `subject`
   - `app_name`
   - `support_email`
+
+### SendGrid · Auth (Portal Maná)
+
+Plantillas recomendadas (dynamic templates):
+
+| Tipo | Archivo | Env esperado |
+| --- | --- | --- |
+| Invite | `sendgrid/auth_invite.html` | `SENDGRID_TEMPLATE_INVITE` |
+| Magic Link | `sendgrid/auth_magiclink.html` | `SENDGRID_TEMPLATE_MAGICLINK` |
+| Recovery | `sendgrid/auth_recovery.html` | `SENDGRID_TEMPLATE_RECOVERY` |
+
+Variables dinámicas usadas:
+
+- `subject`
+- `app_name`
+- `action_url`
+- `cta_label`
+- `support_email`
+
+### SendGrid · Cumbre Mundial 2026
+
+Plantillas recomendadas (dynamic templates):
+
+| Tipo | Archivo | Env esperado |
+| --- | --- | --- |
+| Booking recibido | `sendgrid/cumbre_booking_received.html` | `SENDGRID_TEMPLATE_CUMBRE_BOOKING` |
+| Pago recibido | `sendgrid/cumbre_payment_received.html` | `SENDGRID_TEMPLATE_CUMBRE_PAYMENT_RECEIVED` |
+| Depósito >= 50% | `sendgrid/cumbre_deposit_ok.html` | `SENDGRID_TEMPLATE_CUMBRE_DEPOSIT_OK` |
+| Pago completo | `sendgrid/cumbre_paid.html` | `SENDGRID_TEMPLATE_CUMBRE_PAID` |
+| Pago fallido | `sendgrid/cumbre_payment_failed.html` | `SENDGRID_TEMPLATE_CUMBRE_PAYMENT_FAILED` |
+| Recordatorio cuota | `sendgrid/cumbre_installment_reminder.html` | `SENDGRID_TEMPLATE_CUMBRE_INSTALLMENT_REMINDER` |
+
+Variables dinámicas usadas:
+
+- `subject`
+- `app_name`
+- `full_name`
+- `booking_id`
+- `amount` (formateado)
+- `total_amount` (formateado)
+- `total_paid` (formateado)
+- `currency`
+- `due_date` (formateado)
+- `installment_index`
+- `installment_count`
+- `payment_link`
+- `support_email`
+- `support_whatsapp`

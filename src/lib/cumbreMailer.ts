@@ -1,3 +1,5 @@
+import { isSendgridEnabled, sendSendgridEmail } from './sendgrid';
+
 type CumbreEmailKind =
   | 'booking_received'
   | 'payment_received'
@@ -23,6 +25,19 @@ interface CumbreEmailPayload {
 function env(key: string): string | undefined {
   return import.meta.env?.[key] ?? process.env?.[key];
 }
+
+const APP_NAME = env('CUMBRE_EMAIL_APP_NAME') || 'Cumbre Mundial 2026';
+const SUPPORT_EMAIL = env('CUMBRE_EMAIL_SUPPORT') || 'info@ministeriomana.org';
+const SUPPORT_WHATSAPP = env('CUMBRE_SUPPORT_WHATSAPP') || '+57 314 829 7534';
+
+const TEMPLATE_IDS: Record<CumbreEmailKind, string | undefined> = {
+  booking_received: env('SENDGRID_TEMPLATE_CUMBRE_BOOKING'),
+  payment_received: env('SENDGRID_TEMPLATE_CUMBRE_PAYMENT_RECEIVED'),
+  deposit_ok: env('SENDGRID_TEMPLATE_CUMBRE_DEPOSIT_OK'),
+  paid: env('SENDGRID_TEMPLATE_CUMBRE_PAID'),
+  payment_failed: env('SENDGRID_TEMPLATE_CUMBRE_PAYMENT_FAILED'),
+  installment_reminder: env('SENDGRID_TEMPLATE_CUMBRE_INSTALLMENT_REMINDER'),
+};
 
 function getFromEmail(): string {
   return env('CUMBRE_EMAIL_FROM') || 'info@ministeriomana.org';
@@ -52,6 +67,34 @@ function buildSubject(kind: CumbreEmailKind): string {
     default:
       return 'Cumbre Mundial 2026';
   }
+}
+
+function buildTemplateData(kind: CumbreEmailKind, payload: CumbreEmailPayload, subject: string): Record<string, unknown> {
+  const total = payload.totalAmount != null ? formatAmount(payload.totalAmount, payload.currency) : '';
+  const paid = payload.totalPaid != null ? formatAmount(payload.totalPaid, payload.currency) : '';
+  const amount = payload.amount != null ? formatAmount(payload.amount, payload.currency) : '';
+  const dueDate = payload.dueDate ? new Date(`${payload.dueDate}T00:00:00-05:00`) : null;
+  const dueLabel = dueDate
+    ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'America/Bogota' }).format(dueDate)
+    : '';
+
+  return {
+    subject,
+    app_name: APP_NAME,
+    kind,
+    full_name: payload.fullName ?? '',
+    booking_id: payload.bookingId,
+    amount,
+    total_amount: total,
+    total_paid: paid,
+    currency: payload.currency ?? '',
+    due_date: dueLabel,
+    installment_index: payload.installmentIndex ?? '',
+    installment_count: payload.installmentCount ?? '',
+    payment_link: payload.paymentLink ?? '',
+    support_email: SUPPORT_EMAIL,
+    support_whatsapp: SUPPORT_WHATSAPP,
+  };
 }
 
 function buildHtml(kind: CumbreEmailKind, payload: CumbreEmailPayload): string {
@@ -108,40 +151,23 @@ function buildHtml(kind: CumbreEmailKind, payload: CumbreEmailPayload): string {
 
   return `
   <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
-    <h2 style="margin:0 0 8px;">Cumbre Mundial 2026</h2>
+    <h2 style="margin:0 0 8px;">${APP_NAME}</h2>
     <p style="margin:0 0 12px;">${greeting}</p>
     <p style="margin:0 0 12px;">${body}</p>
     ${installmentInfo}
     ${totals}
     ${action}
     <p style="margin:16px 0 0;">
-      Si necesitas ayuda, escribe por WhatsApp al +57 314 829 7534.
+      Si necesitas ayuda, escribe por WhatsApp al ${SUPPORT_WHATSAPP}.
+    </p>
+    <p style="margin:8px 0 0; font-size: 12px; color: #6b7280;">
+      O escríbenos a ${SUPPORT_EMAIL}.
     </p>
     <p style="margin:16px 0 0; font-size: 12px; color: #6b7280;">
       Booking ID: ${payload.bookingId}
     </p>
   </div>
   `;
-}
-
-async function sendWithSendgrid(to: string, subject: string, html: string): Promise<boolean> {
-  const apiKey = env('SENDGRID_API_KEY');
-  if (!apiKey) return false;
-  const from = getFromEmail();
-  const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      personalizations: [{ to: [{ email: to }] }],
-      from: { email: from },
-      subject,
-      content: [{ type: 'text/html', value: html }],
-    }),
-  });
-  return res.ok;
 }
 
 async function sendWithResend(to: string, subject: string, html: string): Promise<boolean> {
@@ -168,10 +194,19 @@ export async function sendCumbreEmail(kind: CumbreEmailKind, payload: CumbreEmai
   if (!payload.to) return;
   const subject = buildSubject(kind);
   const html = buildHtml(kind, payload);
+  const templateId = TEMPLATE_IDS[kind];
   let ok = false;
 
   try {
-    ok = await sendWithSendgrid(payload.to, subject, html);
+    if (isSendgridEnabled()) {
+      ok = await sendSendgridEmail({
+        to: payload.to,
+        subject,
+        html: templateId ? undefined : html,
+        templateId,
+        dynamicTemplateData: templateId ? buildTemplateData(kind, payload, subject) : undefined,
+      });
+    }
   } catch (err) {
     console.error('[cumbre.email] sendgrid failed', err);
   }
