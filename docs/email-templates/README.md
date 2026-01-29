@@ -165,3 +165,30 @@ Variables dinámicas usadas:
 - `cta_url`
 - `cta_label`
 - `campus`
+
+### SendGrid · Portal (Roles y Accesos)
+
+Plantillas recomendadas:
+
+| Tipo | Archivo | Env esperado |
+| --- | --- | --- |
+| Solicitud recibida | `sendgrid/portal_role_request_received.html` | `SENDGRID_TEMPLATE_PORTAL_ROLE_REQUEST` |
+| Solicitud aprobada | `sendgrid/portal_role_request_approved.html` | `SENDGRID_TEMPLATE_PORTAL_ROLE_APPROVED` |
+| Solicitud rechazada | `sendgrid/portal_role_request_rejected.html` | `SENDGRID_TEMPLATE_PORTAL_ROLE_REJECTED` |
+| Rol actualizado | `sendgrid/portal_role_changed.html` | `SENDGRID_TEMPLATE_PORTAL_ROLE_CHANGED` |
+| Iglesia asignada | `sendgrid/portal_church_assigned.html` | `SENDGRID_TEMPLATE_PORTAL_CHURCH_ASSIGNED` |
+| Invitación iglesia | `sendgrid/portal_church_invite.html` | `SENDGRID_TEMPLATE_PORTAL_CHURCH_INVITE` |
+| Acceso revocado | `sendgrid/portal_access_revoked.html` | `SENDGRID_TEMPLATE_PORTAL_ACCESS_REVOKED` |
+
+Variables dinámicas usadas:
+
+- `subject`
+- `app_name`
+- `full_name`
+- `role`
+- `church_name`
+- `church_city`
+- `cta_url`
+- `cta_label`
+- `support_email`
+- `support_whatsapp`
