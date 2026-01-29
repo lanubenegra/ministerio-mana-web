@@ -27,6 +27,8 @@ const bookingsList = document.getElementById('bookings-list');
 const bookingsEmpty = document.getElementById('bookings-empty');
 const plansList = document.getElementById('plans-list');
 const plansEmpty = document.getElementById('plans-empty');
+const installmentsList = document.getElementById('installments-list');
+const installmentsEmpty = document.getElementById('installments-empty');
 const paymentsTable = document.getElementById('payments-table');
 const paymentsEmpty = document.getElementById('payments-empty');
 const churchMembershipsEmpty = document.getElementById('church-memberships-empty');
@@ -48,6 +50,11 @@ const churchPaymentsFrom = document.getElementById('church-payments-from');
 const churchPaymentsTo = document.getElementById('church-payments-to');
 const churchExportBtn = document.getElementById('church-export-btn');
 const churchExportStatus = document.getElementById('church-export-status');
+const churchInstallmentsEmpty = document.getElementById('church-installments-empty');
+const churchInstallmentsList = document.getElementById('church-installments-list');
+const churchInstallmentsSearch = document.getElementById('church-installments-search');
+const churchInstallmentsStatusFilter = document.getElementById('church-installments-status');
+const churchInstallmentsStatusMsg = document.getElementById('church-installments-status-msg');
 const participantsList = document.getElementById('participants-list');
 const addParticipantBtn = document.getElementById('btn-add-participant');
 const inviteCard = document.getElementById('church-invite-card');
@@ -108,6 +115,7 @@ let portalIsCustomChurch = false;
 let churchBookingsData = [];
 let churchMembersData = [];
 let churchPaymentsData = [];
+let churchInstallmentsData = [];
 
 function formatCurrency(value, currency) {
   if (!currency) return value;
@@ -121,6 +129,12 @@ function formatDate(value) {
   if (!value) return '-';
   const date = new Date(value);
   return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatDateTime(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  return date.toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 // Tabs Navigation
@@ -252,12 +266,14 @@ async function loadAccount() {
 
     renderBookings(payload.bookings || []);
     renderPlans(payload.plans || [], payload.bookings || []);
+    renderInstallments(payload.installments || [], payload.plans || [], payload.bookings || []);
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
     if (hasChurchAccess) {
       await loadChurchSelector(headers);
       await loadChurchBookings(headers);
       await loadChurchPayments(headers);
+      await loadChurchInstallments(headers);
       await loadChurchMembers(headers);
     }
     await loadAdminUsers(headers);
@@ -612,6 +628,84 @@ function renderChurchPayments(list) {
   });
 }
 
+function filterChurchInstallments(list) {
+  const query = churchInstallmentsSearch?.value?.trim().toLowerCase() || '';
+  const status = churchInstallmentsStatusFilter?.value || '';
+  return (list || []).filter((item) => {
+    const booking = item.booking || {};
+    const searchable = [
+      booking.contact_name,
+      booking.contact_email,
+      booking.contact_phone,
+      booking.contact_church,
+      item.provider_reference,
+      item.booking_id,
+      item.id,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    if (query && !searchable.includes(query)) return false;
+    if (status && item.status !== status) return false;
+    return true;
+  });
+}
+
+function renderChurchInstallments(list) {
+  if (!churchInstallmentsList || !churchInstallmentsEmpty) return;
+  churchInstallmentsList.innerHTML = '';
+  if (!list.length) {
+    churchInstallmentsEmpty.classList.remove('hidden');
+    churchInstallmentsList.classList.add('hidden');
+    return;
+  }
+  churchInstallmentsEmpty.classList.add('hidden');
+  churchInstallmentsList.classList.remove('hidden');
+
+  list.forEach((item) => {
+    const booking = item.booking || {};
+    const plan = item.plan || {};
+    const statusLabel = item.status || 'PENDING';
+    const statusClass = statusLabel === 'PAID'
+      ? 'bg-green-100 text-green-700'
+      : statusLabel === 'FAILED'
+        ? 'bg-red-100 text-red-700'
+        : 'bg-yellow-100 text-yellow-700';
+    const amountLabel = formatCurrency(item.amount, item.currency || plan.currency);
+    const dueLabel = formatDate(item.due_date);
+    const reminderLabel = item.last_reminder?.sent_at ? formatDateTime(item.last_reminder.sent_at) : '—';
+    const linkLabel = item.last_link?.created_at ? formatDateTime(item.last_link.created_at) : '—';
+
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-slate-200 bg-white px-4 py-4';
+    card.innerHTML = `
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cuota</p>
+          <p class="text-sm font-bold text-[#293C74]">${amountLabel}</p>
+          <p class="text-xs text-slate-500">Vence: ${dueLabel}</p>
+          <p class="text-xs text-slate-500">${booking.contact_name || booking.contact_email || 'Sin nombre'}</p>
+          <p class="text-[11px] text-slate-400">Ref: ${(item.provider_reference || item.id).toString().slice(0, 12).toUpperCase()}</p>
+        </div>
+        <div class="text-right space-y-2">
+          <span class="inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${statusClass}">${statusLabel}</span>
+          <div class="text-[11px] text-slate-400">Último link: ${linkLabel}</div>
+          <div class="text-[11px] text-slate-400">Último recordatorio: ${reminderLabel}</div>
+        </div>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button class="church-installment-action px-3 py-2 rounded-xl bg-[#293C74] text-white text-xs font-bold hover:shadow-md transition" data-action="copy-link" data-installment="${item.id}">
+          Copiar link
+        </button>
+        <button class="church-installment-action px-3 py-2 rounded-xl bg-white border border-slate-200 text-[#293C74] text-xs font-bold hover:bg-slate-50 transition" data-action="send-reminder" data-installment="${item.id}">
+          Enviar recordatorio
+        </button>
+      </div>
+    `;
+    churchInstallmentsList.appendChild(card);
+  });
+}
+
 async function loadChurchBookings(headers = {}) {
   if (!churchBookingsList || !churchBookingsEmpty) return;
     if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
@@ -633,6 +727,38 @@ async function loadChurchBookings(headers = {}) {
     renderChurchBookings(filtered);
   } catch (err) {
     console.error(err);
+  }
+}
+
+async function loadChurchInstallments(headers = {}) {
+  if (!churchInstallmentsList || !churchInstallmentsEmpty) return;
+  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
+    churchInstallmentsEmpty.textContent = 'Selecciona una iglesia para ver las cuotas.';
+    churchInstallmentsEmpty.classList.remove('hidden');
+    churchInstallmentsList.classList.add('hidden');
+    return;
+  }
+  try {
+    if (churchInstallmentsStatusMsg) {
+      churchInstallmentsStatusMsg.textContent = 'Cargando cuotas...';
+    }
+    const url = new URL('/api/portal/iglesia/installments', window.location.origin);
+    if (portalSelectedChurchId) {
+      url.searchParams.set('churchId', portalSelectedChurchId);
+    }
+    const res = await fetch(url.toString(), { headers });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
+    churchInstallmentsData = payload.installments || [];
+    renderChurchInstallments(filterChurchInstallments(churchInstallmentsData));
+    if (churchInstallmentsStatusMsg) {
+      churchInstallmentsStatusMsg.textContent = '';
+    }
+  } catch (err) {
+    console.error(err);
+    if (churchInstallmentsStatusMsg) {
+      churchInstallmentsStatusMsg.textContent = err?.message || 'No se pudo cargar.';
+    }
   }
 }
 
@@ -1128,6 +1254,47 @@ function renderPlans(plans, bookings) {
   });
 }
 
+function renderInstallments(installments, plans, bookings) {
+  if (!installmentsList || !installmentsEmpty) return;
+  const pending = (installments || []).filter((item) => ['PENDING', 'FAILED'].includes(item.status));
+  installmentsList.innerHTML = '';
+  if (!pending.length) {
+    installmentsEmpty.classList.remove('hidden');
+    return;
+  }
+  installmentsEmpty.classList.add('hidden');
+  pending.forEach((installment) => {
+    const plan = plans.find((item) => item.id === installment.plan_id) || {};
+    const booking = bookings.find((item) => item.id === installment.booking_id) || {};
+    const statusLabel = installment.status === 'FAILED' ? 'Fallido' : 'Pendiente';
+    const statusClass = installment.status === 'FAILED' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700';
+    const installmentLabel = plan.installment_count
+      ? `Cuota ${installment.installment_index}/${plan.installment_count}`
+      : `Cuota ${installment.installment_index}`;
+    const currency = plan.currency || installment.currency;
+    const amountLabel = formatCurrency(installment.amount, currency);
+    const dueLabel = formatDate(installment.due_date);
+
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between';
+    card.innerHTML = `
+      <div>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">${installmentLabel}</p>
+        <p class="text-sm font-bold text-[#293C74]">${amountLabel}</p>
+        <p class="text-xs text-slate-500">Vence: ${dueLabel}</p>
+        <p class="text-[11px] text-slate-400 mt-1">${booking.contact_name || booking.contact_email || ''}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${statusClass}">${statusLabel}</span>
+        <button class="installment-pay px-4 py-2 rounded-xl bg-[#293C74] text-white text-xs font-bold hover:shadow-md transition" data-installment="${installment.id}">
+          Pagar ahora
+        </button>
+      </div>
+    `;
+    installmentsList.appendChild(card);
+  });
+}
+
 function renderPayments(payments) {
   paymentsTable.innerHTML = '';
   if (!payments.length) {
@@ -1284,6 +1451,40 @@ async function handlePlanAction(event) {
   }
 }
 
+async function handleInstallmentPay(event) {
+  const target = event.target.closest('.installment-pay');
+  if (!target) return;
+  const installmentId = target.dataset.installment;
+  if (!installmentId) return;
+
+  const originalText = target.textContent;
+  target.textContent = 'Generando...';
+  target.disabled = true;
+
+  try {
+    const res = await fetch('/api/cuenta/installments/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+      body: JSON.stringify({ installmentId }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo generar el link');
+    if (data.url) {
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    }
+    target.textContent = 'Link generado';
+  } catch (err) {
+    console.error(err);
+    target.textContent = originalText;
+    alert(err.message || 'No se pudo generar el link.');
+  } finally {
+    setTimeout(() => {
+      target.disabled = false;
+      target.textContent = originalText;
+    }, 2500);
+  }
+}
+
 adminUsersList?.addEventListener('change', async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLSelectElement)) return;
@@ -1329,6 +1530,57 @@ adminUsersList?.addEventListener('click', async (event) => {
   }
 });
 
+churchInstallmentsList?.addEventListener('click', async (event) => {
+  const target = event.target.closest('.church-installment-action');
+  if (!target) return;
+  const action = target.dataset.action;
+  const installmentId = target.dataset.installment;
+  if (!action || !installmentId) return;
+
+  const original = target.textContent;
+  target.textContent = '...';
+  target.setAttribute('disabled', 'disabled');
+
+  try {
+    if (action === 'copy-link') {
+      const res = await fetch('/api/portal/iglesia/installments/link', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify({ installmentId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo generar el link');
+      if (data.url) {
+        try {
+          await navigator.clipboard.writeText(data.url);
+        } catch (err) {
+          window.prompt('Copia el link de pago:', data.url);
+        }
+      }
+      target.textContent = 'Link copiado';
+    } else if (action === 'send-reminder') {
+      const res = await fetch('/api/portal/iglesia/installments/remind', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify({ installmentId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo enviar');
+      target.textContent = 'Recordatorio enviado';
+      await loadChurchInstallments(portalAuthHeaders);
+    }
+  } catch (err) {
+    console.error(err);
+    target.textContent = original;
+    alert(err.message || 'No se pudo completar la acción.');
+  } finally {
+    setTimeout(() => {
+      target.removeAttribute('disabled');
+      target.textContent = original;
+    }, 2500);
+  }
+});
+
 churchSelectorInput?.addEventListener('change', async (event) => {
   const value = event.target.value || '';
   if (value === '__custom__') {
@@ -1348,6 +1600,7 @@ churchSelectorInput?.addEventListener('change', async (event) => {
   await saveChurchSelection(value, portalAuthHeaders);
   await loadChurchBookings(portalAuthHeaders);
   await loadChurchPayments(portalAuthHeaders);
+  await loadChurchInstallments(portalAuthHeaders);
   await loadChurchMembers(portalAuthHeaders);
 });
 
@@ -1371,6 +1624,12 @@ churchPaymentsFrom?.addEventListener('change', () => {
 });
 churchPaymentsTo?.addEventListener('change', () => {
   renderChurchPayments(filterChurchPayments(churchPaymentsData));
+});
+churchInstallmentsSearch?.addEventListener('input', () => {
+  renderChurchInstallments(filterChurchInstallments(churchInstallmentsData));
+});
+churchInstallmentsStatusFilter?.addEventListener('change', () => {
+  renderChurchInstallments(filterChurchInstallments(churchInstallmentsData));
 });
 churchMembersSearch?.addEventListener('input', () => {
   renderChurchMembers(filterChurchMembers(churchMembersData));
@@ -1400,6 +1659,10 @@ churchFormToggle?.addEventListener('click', () => {
     churchForm.dataset.collapsed = 'true';
     churchFormToggle.textContent = 'Abrir formulario';
   }
+});
+
+installmentsList?.addEventListener('click', (event) => {
+  void handleInstallmentPay(event);
 });
 
 logoutBtn?.addEventListener('click', async () => {
