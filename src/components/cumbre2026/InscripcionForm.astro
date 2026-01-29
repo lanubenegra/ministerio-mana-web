@@ -159,6 +159,19 @@ const formatTestAmount = (value, currency) =>
                <input type="email" name="leader_email" required placeholder="Para enviar la confirmación"
                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
             </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+               <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                     <p class="text-[10px] font-bold text-brand-navy uppercase tracking-widest">Cuenta del responsable</p>
+                     <p class="text-xs text-slate-500">Crea tu acceso antes del pago para gestionar tu reserva.</p>
+                  </div>
+                  <button type="button" id="leader-auth-btn" class="px-4 py-2 rounded-full bg-brand-navy text-white text-xs font-bold hover:brightness-110 transition-all">
+                     Enviar enlace de acceso
+                  </button>
+               </div>
+               <p id="leader-auth-status" class="text-xs text-slate-500 mt-3"></p>
+            </div>
              
              <div class="space-y-1">
                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Celular / WhatsApp</label>
@@ -428,7 +441,21 @@ const formatTestAmount = (value, currency) =>
 
 </div>
 
-<script>
+<script type="module">
+  import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
+
+  let supabaseClient = null;
+  function getSupabaseSafe() {
+    if (supabaseClient) return supabaseClient;
+    try {
+      supabaseClient = getSupabaseBrowserClient();
+    } catch (err) {
+      console.warn('[cumbre.inscripcion] Supabase no configurado', err);
+      supabaseClient = null;
+    }
+    return supabaseClient;
+  }
+
   // Simple Vanilla JS Logic
   const APP = {
     step: 1,
@@ -477,6 +504,9 @@ const formatTestAmount = (value, currency) =>
           indicators: document.querySelectorAll('.step-btn'),
           countryInput: document.getElementById('country-group'),
           leaderName: document.querySelector('input[name="leader_name"]'),
+          leaderEmail: document.querySelector('input[name="leader_email"]'),
+          leaderAuthBtn: document.getElementById('leader-auth-btn'),
+          leaderAuthStatus: document.getElementById('leader-auth-status'),
           leaderPackage: document.getElementById('leader-package'),
           groupModeInputs: document.querySelectorAll('input[name="groupMode"]'),
           btnAddPerson: document.getElementById('btn-add-person'),
@@ -524,6 +554,10 @@ const formatTestAmount = (value, currency) =>
           this.dom.leaderPackage.addEventListener('change', () => this.updateLeaderPackage());
        }
 
+       if (this.dom.leaderAuthBtn) {
+          this.dom.leaderAuthBtn.addEventListener('click', () => this.sendLeaderAuthLink());
+       }
+
        if (this.dom.groupModeInputs?.length) {
           this.dom.groupModeInputs.forEach(input => {
              input.addEventListener('change', () => this.updateGroupMode());
@@ -547,6 +581,43 @@ const formatTestAmount = (value, currency) =>
           this.dom.installmentFrequencyInputs.forEach(input => {
              input.addEventListener('change', () => this.updateInstallmentPreview());
           });
+       }
+    },
+
+    async sendLeaderAuthLink() {
+       const status = this.dom.leaderAuthStatus;
+       const btn = this.dom.leaderAuthBtn;
+       const email = this.dom.leaderEmail?.value?.trim();
+       if (!email) {
+         if (status) status.textContent = 'Ingresa tu correo para enviar el enlace.';
+         return;
+       }
+       const supabase = getSupabaseSafe();
+       if (!supabase) {
+         if (status) status.textContent = 'No pudimos enviar el enlace en este entorno.';
+         return;
+       }
+       if (btn) {
+         btn.disabled = true;
+         btn.textContent = 'Enviando...';
+       }
+       if (status) status.textContent = 'Enviando enlace de acceso...';
+       try {
+         const redirectTo = `${window.location.origin}/portal/activar?next=${encodeURIComponent('/eventos/cumbre-mundial-2026/inscripcion')}`;
+         const { error } = await supabase.auth.signInWithOtp({
+           email,
+           options: { emailRedirectTo: redirectTo },
+         });
+         if (error) throw error;
+         if (status) status.textContent = 'Listo. Revisa tu correo para activar tu cuenta.';
+       } catch (err) {
+         console.error(err);
+         if (status) status.textContent = err?.message || 'No se pudo enviar el enlace.';
+       } finally {
+         if (btn) {
+           btn.disabled = false;
+           btn.textContent = 'Enviar enlace de acceso';
+         }
        }
     },
 
