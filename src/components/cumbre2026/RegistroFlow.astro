@@ -344,6 +344,24 @@ const cspNonce = Astro.locals?.cspNonce;
         this.attachAutosave();
      },
 
+     initCalendars() {
+        if (calendarReady) return;
+        const inputs = document.querySelectorAll('.js-date');
+        inputs.forEach((input) => {
+          if (input.dataset.fpApplied) return;
+          flatpickr(input, {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd / m / Y',
+            allowInput: true,
+            maxDate: 'today',
+            disableMobile: true,
+          });
+          input.dataset.fpApplied = 'true';
+        });
+        calendarReady = true;
+     },
+
      formatType(type) {
         const labels = {
            lodging: 'Asistencia + alimentación + alojamiento',
@@ -508,20 +526,3 @@ const cspNonce = Astro.locals?.cspNonce;
 
   window.addEventListener('DOMContentLoaded', () => REGISTRO.init());
 </script>
-     initCalendars() {
-        if (calendarReady) return;
-        const inputs = document.querySelectorAll('.js-date');
-        inputs.forEach((input) => {
-          if (input.dataset.fpApplied) return;
-          flatpickr(input, {
-            dateFormat: 'Y-m-d',
-            altInput: true,
-            altFormat: 'd / m / Y',
-            allowInput: true,
-            maxDate: 'today',
-            disableMobile: true,
-          });
-          input.dataset.fpApplied = 'true';
-        });
-        calendarReady = true;
-     },
