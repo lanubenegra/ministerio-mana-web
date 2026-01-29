@@ -1,49 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Has sido invitado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invitación a Portal Maná</title>
   <style>
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F5EFEB; margin: 0; padding: 0; }
-    .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-    .header { background-color: #ffffff; padding: 40px 20px 20px; text-align: center; }
-    .content { padding: 20px 40px 60px; text-align: center; color: #0B1120; }
-    .button { display: inline-block; background-color: #293C74; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; margin-top: 20px; transition: background-color 0.2s; box-shadow: 0 4px 12px rgba(41, 60, 116, 0.2); }
-    .button:hover { background-color: #1a264a; }
-    .footer { padding: 30px; text-align: center; font-size: 12px; color: #888888; background-color: #F5EFEB; }
-    h2 { color: #293C74; margin-bottom: 24px; font-size: 24px; }
-    p { font-size: 16px; line-height: 1.6; margin-bottom: 24px; color: #4A5568; }
-    .divider { height: 4px; width: 60px; background-color: #F2C94C; margin: 0 auto 30px; border-radius: 2px; }
+    body { margin: 0; padding: 0; background: #f8fafc; font-family: "Helvetica Neue", Arial, sans-serif; }
+    .wrapper { width: 100%; background: #f8fafc; padding: 32px 12px; }
+    .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; }
+    .header { text-align: center; padding: 32px 32px 12px; }
+    .content { padding: 0 32px 24px; color: #0f172a; }
+    .title { font-size: 22px; margin: 8px 0 12px; color: #0f172a; }
+    .text { font-size: 15px; line-height: 1.6; color: #475569; margin: 0 0 12px; }
+    .btn { display: inline-block; background: #293C74; color: #ffffff !important; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-weight: 700; margin-top: 8px; }
+    .small { font-size: 12px; color: #64748b; margin-top: 12px; word-break: break-all; }
+    .footer { text-align: center; font-size: 12px; color: #94a3b8; padding: 18px 12px 32px; }
   </style>
 </head>
 <body>
-  <div style="background-color: #F5EFEB; padding: 40px 10px; min-height: 100vh;">
-    <div class="container">
+  <span style="display:none;max-height:0;max-width:0;opacity:0;overflow:hidden;">Activa tu cuenta en Portal Maná.</span>
+  <div class="wrapper">
+    <div class="card">
       <div class="header">
-        <!-- REPLACE WITH YOUR LOGO URL IF IT DOESN'T LOAD -->
-        <img src="{{ .SiteURL }}/logo.svg" alt="Ministerio Maná" height="50" style="height: 50px; width: auto; display: block; margin: 0 auto;">
+        <img src="{{ .SiteURL }}/logo.svg" alt="Ministerio Maná" height="42" style="height:42px;width:auto;display:block;margin:0 auto;">
       </div>
       <div class="content">
-        <div class="divider"></div>
-        <h2>Has sido invitado</h2>
-        <p>
-          Hola,<br>
-          Has sido invitado a formar parte de la plataforma digital de <strong>Ministerio Maná</strong>.
-        </p>
-        <p>
-          Para configurar tu cuenta y comenzar, por favor haz clic en el siguiente enlace:
-        </p>
-        <a href="{{ .ConfirmationURL }}" class="button">Aceptar Invitación</a>
-        <p style="font-size: 13px; margin-top: 40px; color: #999;">
-          Esta invitación expira en 24 horas. Si no esperabas este correo, puedes ignorarlo.
-        </p>
+        <h1 class="title">Has sido invitado</h1>
+        <p class="text">Hola, te invitamos a crear tu cuenta en <strong>Portal Maná</strong>.</p>
+        <p class="text">Haz clic en el botón para activar tu acceso:</p>
+        <a class="btn" href="{{ .ConfirmationURL }}">Aceptar invitación</a>
+        <p class="small">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+        <p class="small">{{ .ConfirmationURL }}</p>
+        <p class="small">Si no esperabas este correo, puedes ignorarlo.</p>
       </div>
     </div>
-    <div class="footer">
-      <p style="margin: 0;">&copy; 2026 Ministerio Maná</p>
-      <p style="margin: 5px 0 0;">Rionegro, Colombia</p>
-    </div>
+    <div class="footer">© 2026 Ministerio Maná · Rionegro, Colombia</div>
   </div>
 </body>
 </html>

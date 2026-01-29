@@ -38,3 +38,16 @@ Estos correos se envían automáticamente cuando ocurren cambios en la cuenta. A
 *   **Logo**: Las plantillas asumen que tu logo está disponible en `{{ .SiteURL }}/logo.svg`. Asegúrate de que `Site URL` en Supabase (Authentication > URL Configuration) apunte a tu dominio principal (ej. `https://ministeriomana.com` o `http://localhost:4321` para pruebas).
 *   **Variables**: Se utilizan las variables estándar de Go template que soporta Supabase (`{{ .ConfirmationURL }}`, `{{ .Token }}`, etc.).
 *   **Compatibilidad**: El diseño utiliza HTML/CSS en línea y tablas/divs simples para asegurar compatibilidad con la mayoría de clientes de correo (Gmail, Outlook, Apple Mail).
+
+## Si usas SendGrid (API propia)
+
+El proyecto ahora puede enviar correos de autenticación vía **SendGrid API**. En ese caso:
+
+- Los templates de Supabase quedan como **fallback** (o para uso manual).
+- Puedes usar estos HTML como base en SendGrid.
+- Variables sugeridas en SendGrid (dynamic templates):
+  - `action_url`
+  - `cta_label`
+  - `subject`
+  - `app_name`
+  - `support_email`
