@@ -222,3 +222,25 @@ Variables dinámicas usadas:
 - `cta_label`
 - `support_email`
 - `support_whatsapp`
+
+### SendGrid · Alertas internas (Admin)
+
+Plantillas recomendadas:
+
+| Tipo | Archivo | Env esperado |
+| --- | --- | --- |
+| Webhook falló | `sendgrid/admin_alert_webhook_failed.html` | `SENDGRID_TEMPLATE_ADMIN_WEBHOOK_FAILED` |
+| Pago con problema | `sendgrid/admin_alert_payment_issue.html` | `SENDGRID_TEMPLATE_ADMIN_PAYMENT_ISSUE` |
+| Error del sistema | `sendgrid/admin_alert_system_error.html` | `SENDGRID_TEMPLATE_ADMIN_SYSTEM_ERROR` |
+
+Variables dinámicas usadas:
+
+- `subject`
+- `app_name`
+- `alert_message`
+- `reference`
+- `amount`
+- `source`
+- `occurred_at`
+- `context`
+- `action_url`
