@@ -267,6 +267,7 @@ export const POST: APIRoute = async ({ request }) => {
           `Tu cuota ${installment.installment_index}/${plan.installment_count} vence el ${dueDateLabel}. ` +
           `Valor: ${amountLabel}. ` +
           `Paga aqui: ${paymentLink} ` +
+          `Medios: tarjeta, PSE, Nequi o cuenta de ahorros. ` +
           `Si ya realizaste el pago, puedes ignorar este mensaje.`;
         try {
           const ok = await sendWhatsappMessage({

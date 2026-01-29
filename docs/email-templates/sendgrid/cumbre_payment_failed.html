@@ -21,6 +21,10 @@
                 <p style="margin:0 0 14px;font-size:15px;color:#334155;">
                   {{#if full_name}}Hola {{full_name}},{{else}}Hola,{{/if}} no pudimos confirmar tu pago. Puedes intentar de nuevo.
                 </p>
+                <p style="margin:0 0 14px;font-size:13px;color:#64748b;">
+                  Si intentaste pagar con PSE, Nequi o cuenta de ahorros, la confirmacion puede tardar unos minutos. Si ya pagaste,
+                  ignora este mensaje.
+                </p>
                 {{#if payment_link}}
                 <p style="margin:0 0 18px;">
                   <a href="{{payment_link}}" style="display:inline-block;background:#f97316;color:#0f172a;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700;">Reintentar pago</a>

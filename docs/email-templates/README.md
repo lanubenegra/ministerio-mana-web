@@ -81,6 +81,7 @@ Plantillas recomendadas (dynamic templates):
 | Depósito >= 50% | `sendgrid/cumbre_deposit_ok.html` | `SENDGRID_TEMPLATE_CUMBRE_DEPOSIT_OK` |
 | Pago completo | `sendgrid/cumbre_paid.html` | `SENDGRID_TEMPLATE_CUMBRE_PAID` |
 | Pago fallido | `sendgrid/cumbre_payment_failed.html` | `SENDGRID_TEMPLATE_CUMBRE_PAYMENT_FAILED` |
+| Pago en verificación (PSE/Nequi) | `sendgrid/cumbre_payment_pending.html` | `SENDGRID_TEMPLATE_CUMBRE_PAYMENT_PENDING` |
 | Recordatorio cuota | `sendgrid/cumbre_installment_reminder.html` | `SENDGRID_TEMPLATE_CUMBRE_INSTALLMENT_REMINDER` |
 | Registro completo | `sendgrid/cumbre_registration_complete.html` | `SENDGRID_TEMPLATE_CUMBRE_REG_COMPLETE` |
 | Registro incompleto | `sendgrid/cumbre_registration_incomplete.html` | `SENDGRID_TEMPLATE_CUMBRE_REG_INCOMPLETE` |
