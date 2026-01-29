@@ -46,6 +46,7 @@ Programacion sugerida:
 Este cron envia recordatorios 3 dias antes, 2 dias antes y el mismo dia del vencimiento.
 Solo aplica para planes sin auto-debito (sin payment_source_id).
 Requiere un proveedor de email (SendGrid o Resend) y/o un webhook de WhatsApp si deseas ese canal.
+Los recordatorios incluyen un link interno tipo `/cumbre2026/pagar/<token>` que genera el cobro al abrirse.
 
 ### Autodebito Wompi (tarjeta)
 
@@ -116,3 +117,5 @@ El formulario crea reservas manuales y permite registrar abonos.
 
 - Ejecuta `docs/sql/cumbre_bookings_extra.sql` para campos adicionales de reservas manuales.
 - Ejecuta `docs/sql/cumbre_installment_reminders.sql` para recordatorios de cuotas.
+- Ejecuta `docs/sql/cumbre_installment_links.sql` para links de pago por cuota.
+  - Nota: la tabla de links tiene RLS habilitado y sin policies públicas.

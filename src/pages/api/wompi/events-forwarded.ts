@@ -15,6 +15,7 @@ import {
   addPlanPayment,
   updatePaymentPlan,
   refreshPlanNextDueDate,
+  markInstallmentLinksUsed,
 } from '@lib/cumbreStore';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 
@@ -168,6 +169,9 @@ export const POST: APIRoute = async ({ request }) => {
         if (normalizedStatus === 'APPROVED') {
           await addPlanPayment(planId, amount);
           await refreshPlanNextDueDate(planId);
+          if (installmentId) {
+            await markInstallmentLinksUsed(installmentId);
+          }
         }
       }
 

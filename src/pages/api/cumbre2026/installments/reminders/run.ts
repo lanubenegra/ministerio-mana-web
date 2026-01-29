@@ -1,13 +1,10 @@
 import type { APIRoute } from 'astro';
-import { buildInstallmentReference } from '@lib/cumbre2026';
 import { resolveBaseUrl } from '@lib/url';
-import { createStripeDonationSession } from '@lib/stripe';
-import { buildWompiCheckoutUrl } from '@lib/wompi';
 import { logSecurityEvent } from '@lib/securityEvents';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 import {
+  createInstallmentLinkToken,
   listInstallmentsByDueDates,
-  updateInstallment,
   hasInstallmentReminder,
   recordInstallmentReminder,
 } from '@lib/cumbreStore';
@@ -161,53 +158,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     processed += 1;
 
-    const baseUrl = resolveBaseUrl(request);
-    const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${encodeURIComponent(booking.id)}`;
-    const description = `Cumbre Mundial 2026 - Cuota ${installment.installment_index}/${plan.installment_count}`;
     let paymentLink: string | null = null;
-    let reference = installment.provider_reference || null;
 
     try {
-      if (plan.currency === 'USD') {
-        const session = await createStripeDonationSession({
-          amountUsd: amount,
-          currency: 'USD',
-          description,
-          successUrl: statusUrl,
-          cancelUrl: statusUrl,
-          customerEmail: booking.contact_email || undefined,
-          metadata: {
-            cumbre_booking_id: booking.id,
-            cumbre_plan_id: plan.id,
-            cumbre_installment_id: installment.id,
-            cumbre_reference: reference ?? undefined,
-          },
-        });
-        paymentLink = session.url || null;
-        reference = session.id;
-      } else {
-        if (!reference) {
-          reference = buildInstallmentReference({
-            bookingId: booking.id,
-            planId: plan.id,
-            installmentIndex: installment.installment_index,
-          });
-          await updateInstallment(installment.id, { provider_reference: reference });
-        }
-        const { url } = buildWompiCheckoutUrl({
-          amountInCents: Math.round(amount * 100),
-          currency: 'COP',
-          description,
-          redirectUrl: statusUrl,
-          reference,
-          email: booking.contact_email || undefined,
-          customerData: {
-            name: booking.contact_name || '',
-            phone: booking.contact_phone || '',
-          },
-        });
-        paymentLink = url;
-      }
+      const baseUrl = resolveBaseUrl(request);
+      const token = await createInstallmentLinkToken(installment.id);
+      paymentLink = token ? `${baseUrl}/cumbre2026/pagar/${token}` : null;
     } catch (error: any) {
       errors += 1;
       await recordInstallmentReminder({
