@@ -169,23 +169,35 @@ function switchTab(tabId) {
 
 async function loadAccount() {
   try {
-    // Fix Magic Link: If hash contains access_token, force refresh to process it immediately
-    let sessionData;
+    // Fix Magic Link: If hash exists, wait briefly for Supabase to process it via onAuthStateChange
     if (window.location.hash && window.location.hash.includes('access_token')) {
-      console.log('Magic Link detectado, procesando...');
-      const { data, error } = await supabase.auth.refreshSession();
-      sessionData = data;
-      if (error) {
-        console.error('Error procesando Magic Link:', error);
-        window.location.href = '/portal/ingresar';
-        return;
-      }
-      // Clear the hash after processing
+      console.log('Magic Link detectado, esperando sesión...');
+
+      await new Promise((resolve) => {
+        let resolved = false;
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && !resolved) {
+            resolved = true;
+            subscription.unsubscribe();
+            resolve();
+          }
+        });
+
+        // Fast timeout fallback (1.5s) to avoid hanging
+        setTimeout(() => {
+          if (!resolved) {
+            subscription.unsubscribe();
+            resolve();
+          }
+        }, 1500);
+      });
+
+      // Clean URL after wait
       window.history.replaceState(null, '', window.location.pathname);
-    } else {
-      const { data } = await supabase.auth.getSession();
-      sessionData = data;
     }
+
+    // Proceed to standard session check
+    const { data: sessionData } = await supabase.auth.getSession();
 
     let token = sessionData.session?.access_token;
     let headers = {};
