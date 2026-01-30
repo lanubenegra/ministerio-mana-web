@@ -1,6 +1,13 @@
 import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
 
-const supabase = getSupabaseBrowserClient();
+let supabase = null;
+try {
+  supabase = getSupabaseBrowserClient();
+  console.log('[Activar] Supabase client initialized');
+} catch (err) {
+  console.error('[Activar] Supabase client error:', err);
+}
+
 const form = document.getElementById('activate-form');
 const password = document.getElementById('password');
 const confirm = document.getElementById('password-confirm');
@@ -14,6 +21,7 @@ const eyeOffConfirm = document.getElementById('eye-off-icon-confirm');
 const guard = document.getElementById('activate-guard');
 const retryBtn = document.getElementById('activate-retry');
 let hasRecoveryContext = false;
+
 
 function setFormDisabled(disabled) {
   form?.querySelectorAll('input, button').forEach((el) => {
@@ -243,24 +251,47 @@ form?.addEventListener('submit', async (event) => {
   }
   setFormDisabled(true);
   status.textContent = 'Guardando contraseña...';
+
+  console.log('[Activar] Starting password update...');
+
   try {
     const sessionCheck = await ensureSessionReady();
+    console.log('[Activar] Session check:', sessionCheck);
+
     if (!sessionCheck.ok) {
       status.textContent = 'Sesión no válida. Reintenta la validación del enlace.';
       showRetry(true);
       setFormDisabled(false);
       return;
     }
+
+    console.log('[Activar] Calling updateUser...');
     const result = await withTimeout(supabase.auth.updateUser({ password: value }), 12000);
+    console.log('[Activar] updateUser result:', result);
+
     const { error } = result || {};
-    if (error) throw error;
+    if (error) {
+      console.error('[Activar] updateUser error:', error);
+      throw error;
+    }
+
+    console.log('[Activar] Password updated successfully, redirecting...');
+    status.textContent = '¡Contraseña guardada! Redirigiendo...';
+
   } catch (err) {
+    console.error('[Activar] Error:', err);
     status.textContent = err?.message || 'No se pudo guardar.';
     showRetry(true);
     setFormDisabled(false);
     return;
   }
+
+  // Redirect with a small delay to ensure the message is visible
   const url = new URL(window.location.href);
   const next = url.searchParams.get('next') || '/portal';
-  window.location.href = next;
+  console.log('[Activar] Redirecting to:', next);
+
+  setTimeout(() => {
+    window.location.href = next;
+  }, 500);
 });
