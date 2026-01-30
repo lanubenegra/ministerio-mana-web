@@ -103,12 +103,27 @@ const onboardChurchWrapper = document.getElementById('onboard-church-wrapper');
 const onboardChurchName = document.getElementById('onboard-church-name');
 
 let supabase = null;
+let supabaseInitError = null;
 try {
   supabase = getSupabaseBrowserClient();
 } catch (err) {
-  console.error('Supabase client not available:', err);
+  console.error('Supabase client initialization failed:', err);
+  supabaseInitError = err;
+
+  // Show user-friendly error
   if (loadingEl) loadingEl.classList.add('hidden');
-  if (errorEl) errorEl.classList.remove('hidden');
+  if (errorEl) {
+    errorEl.classList.remove('hidden');
+    const errorText = errorEl.querySelector('p');
+    if (errorText) {
+      errorText.textContent = 'Error de configuración del portal. Contacta a soporte.';
+    }
+  }
+
+  // Redirect to login after showing error
+  setTimeout(() => {
+    window.location.href = '/portal/ingresar?error=config';
+  }, 3000);
 }
 let portalProfile = null;
 let portalMemberships = [];
@@ -205,6 +220,13 @@ function switchTab(tabId) {
 // Core Dashboard Logic - Reactive Auth
 async function fetchDashboardData(session) {
   console.log('fetchDashboardData called', session);
+
+  // Early exit if Supabase failed to initialize
+  if (supabaseInitError) {
+    console.error('Cannot load dashboard - Supabase not initialized');
+    return; // Error already shown in init block
+  }
+
   try {
     const token = session?.access_token;
     if (!token) throw new Error('No access token');
@@ -1729,16 +1751,22 @@ installmentsList?.addEventListener('click', (event) => {
 logoutBtn?.addEventListener('click', async () => {
   logoutBtn.disabled = true;
   logoutBtn.textContent = 'Saliendo...';
+
   try {
-    // Always clear any local Supabase session (even in password fallback).
-    await supabase.auth.signOut({ scope: 'local' });
+    // Clear Supabase session if client is available
+    if (supabase) {
+      await supabase.auth.signOut({ scope: 'local' });
+    }
+    // Clear password-based session if applicable
+    if (authMode === 'password') {
+      await fetch('/api/portal/password-logout', { method: 'POST' });
+    }
   } catch (err) {
-    console.warn('No se pudo cerrar sesión Supabase en el cliente.', err);
+    console.error('Logout error:', err);
+  } finally {
+    // ALWAYS redirect, even if errors occurred
+    window.location.href = '/portal/ingresar';
   }
-  if (authMode === 'password') {
-    await fetch('/api/portal/password-logout', { method: 'POST' });
-  }
-  window.location.href = '/portal/ingresar';
 });
 
 saveProfileBtn?.addEventListener('click', updateProfile);
