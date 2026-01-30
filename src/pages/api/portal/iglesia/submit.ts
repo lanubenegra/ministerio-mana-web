@@ -32,8 +32,8 @@ function normalizeFrequency(raw: string | null | undefined): InstallmentFrequenc
 function packageTypeFromInput(ageRaw: unknown, lodgingRaw: unknown): PackageType {
   const age = Number(ageRaw || 0);
   const lodging = String(lodgingRaw || '').toLowerCase() === 'yes';
-  if (age <= 7) return 'child_0_7';
-  if (age <= 13) return 'child_7_13';
+  if (age <= 4) return 'child_0_7';
+  if (age <= 10) return 'child_7_13';
   return lodging ? 'lodging' : 'no_lodging';
 }
 

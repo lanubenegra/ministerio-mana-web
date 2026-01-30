@@ -150,7 +150,7 @@
 - Responsable: Delta (Codex)
 - Cambios:
   - Se actualizo copy de paquetes: evento + alimentacion + alojamiento / evento + alimentacion.
-  - Se actualizo nota de ninos 0-7 (alojamiento/comida compartidos con padres).
+  - Se actualizo nota de ninos 0-4 / 5-10 (alojamiento compartido con padres, menu infantil para 5-10).
   - Se actualizo texto de alojamiento (habitaciones tipo seminario).
   - Se actualizo seccion de condiciones: menu tradicional/vegetariano y politica de cambios.
 - Pruebas: N/A
