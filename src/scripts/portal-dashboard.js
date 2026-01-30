@@ -205,21 +205,27 @@ function switchTab(tabId) {
 
 // Core Dashboard Logic - Reactive Auth
 async function fetchDashboardData(session) {
-  console.log('[DEBUG] fetchDashboardData called with session:', session ? 'Present' : 'Null (Password Mode?)');
+  console.log('[DEBUG] fetchDashboardData called with session:', session ? 'Present' : 'Null');
 
   try {
-    const token = session?.access_token;
-    if (token) {
-      console.log('[DEBUG] Access token present:', token.substring(0, 10) + '...');
-    } else {
-      console.log('[DEBUG] No access token. Assuming password/cookie session.');
+    let token = session?.access_token;
+
+    if (!token && supabase) {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) console.warn('[DEBUG] getSession error:', error);
+      token = data?.session?.access_token || null;
     }
 
-    let headers = {};
-    if (token) {
-      headers = { Authorization: `Bearer ${token}` };
-      portalAuthHeaders = headers;
+    if (!token) {
+      console.warn('[DEBUG] No session token. Redirecting to /portal/ingresar');
+      window.location.href = '/portal/ingresar';
+      return;
     }
+
+    console.log('[DEBUG] Access token present:', token.substring(0, 10) + '...');
+
+    const headers = { Authorization: `Bearer ${token}` };
+    portalAuthHeaders = headers;
 
     // 2. Parallelized Initial Data Fetching
 
