@@ -1651,23 +1651,40 @@ churchExportBtn?.addEventListener('click', () => {
   void exportChurchBookings();
 });
 
+
+const churchFormContainer = document.getElementById('church-manual-form-container');
+const churchFormCloseBtn = document.getElementById('church-form-close');
+const inviteToggleBtn = document.getElementById('btn-toggle-invite');
+
 churchFormToggle?.addEventListener('click', () => {
-  if (!churchForm) return;
+  if (!churchFormContainer) return;
   if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
     if (churchFormStatus) {
       churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
     }
     return;
   }
-  const isCollapsed = churchForm.classList.contains('hidden');
-  if (isCollapsed) {
-    churchForm.classList.remove('hidden');
-    churchForm.dataset.collapsed = 'false';
-    churchFormToggle.textContent = 'Cerrar formulario';
+
+  churchFormContainer.classList.remove('hidden');
+  churchForm?.classList.remove('hidden');
+  // Scroll to form
+  churchFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+churchFormCloseBtn?.addEventListener('click', () => {
+  if (!churchFormContainer) return;
+  churchFormContainer.classList.add('hidden');
+});
+
+inviteToggleBtn?.addEventListener('click', () => {
+  if (!inviteCard) return;
+  const isHidden = inviteCard.classList.contains('hidden');
+  if (isHidden) {
+    inviteCard.classList.remove('hidden');
+    inviteToggleBtn.textContent = 'Cerrar Gestión';
   } else {
-    churchForm.classList.add('hidden');
-    churchForm.dataset.collapsed = 'true';
-    churchFormToggle.textContent = 'Abrir formulario';
+    inviteCard.classList.add('hidden');
+    inviteToggleBtn.textContent = 'Gestionar Equipo';
   }
 });
 
