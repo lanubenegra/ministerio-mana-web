@@ -64,9 +64,9 @@ const locale = Astro.cookies.get('lang')?.value === 'en' ? 'en' : 'es';
 <script>
   const header = document.getElementById('main-header');
   const headerBg = document.getElementById('header-bg');
-  const logoDark = document.querySelector('.logo-dark');
-  const logoLight = document.querySelector('.logo-light');
-  const brandText = document.querySelector('.brand-text');
+  const logoDark = document.querySelector<HTMLImageElement>('.logo-dark');
+  const logoLight = document.querySelector<HTMLImageElement>('.logo-light');
+  const brandText = document.querySelector<HTMLElement>('.brand-text');
 
   function updateHeader() {
     const isScrolled = window.scrollY > 20;

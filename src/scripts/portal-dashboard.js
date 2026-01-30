@@ -138,6 +138,33 @@ function formatDateTime(value) {
   return date.toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function getAuthRedirectState() {
+  const url = new URL(window.location.href);
+  const hasHashToken = Boolean(window.location.hash && window.location.hash.includes('access_token'));
+  const hasCode = url.searchParams.has('code');
+  const hasError = url.searchParams.has('error');
+  const hasType = url.searchParams.has('type');
+  return {
+    url,
+    hasHashToken,
+    hasCode,
+    hasError,
+    hasType,
+    isAuthRedirect: hasHashToken || hasCode || hasError || hasType,
+  };
+}
+
+function cleanupAuthRedirect() {
+  const url = new URL(window.location.href);
+  if (url.hash && url.hash.includes('access_token')) {
+    url.hash = '';
+  }
+  ['code', 'type', 'error', 'error_description', 'access_token', 'refresh_token', 'expires_in', 'token_type'].forEach((param) => {
+    url.searchParams.delete(param);
+  });
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
 // Tabs Navigation
 navLinks.forEach(link => {
   link.addEventListener('click', () => {
@@ -200,6 +227,7 @@ async function fetchDashboardData(session) {
       payload = resData;
     }
 
+    authMode = sessionPayload.mode || 'supabase';
     portalProfile = sessionPayload.profile || {};
     portalMemberships = sessionPayload.memberships || [];
     portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
@@ -1860,10 +1888,7 @@ function initDashboard() {
         console.log('Auth Event:', event);
         dashboardLoaded = true;
 
-        // Clean Hash if Magic Link
-        if (window.location.hash && window.location.hash.includes('access_token')) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
+        cleanupAuthRedirect();
 
         await fetchDashboardData(session);
       }
@@ -1879,28 +1904,36 @@ function initDashboard() {
       console.log('Session found immediately via getSession');
       dashboardLoaded = true;
 
-      if (window.location.hash && window.location.hash.includes('access_token')) {
-        window.history.replaceState(null, '', window.location.pathname);
-      }
+      cleanupAuthRedirect();
 
       fetchDashboardData(data.session);
     } else if (!data?.session) {
-      console.log('No session from getSession. Hash:', window.location.hash); // DEBUG
+      const authState = getAuthRedirectState();
+      console.log('No session from getSession. Auth state:', authState); // DEBUG
       // No session found immediately.
 
-      // If valid magic link hash exists, wait for listener OR poll for session.
-      const isMagicLink = window.location.hash && window.location.hash.includes('access_token');
-
-      if (!isMagicLink) {
+      if (!authState.isAuthRedirect) {
         // No hash, no session -> Redirect after grace period
         setTimeout(() => {
           if (!dashboardLoaded) window.location.href = '/portal/ingresar';
         }, 2000);
       } else {
-        // Is Magic Link, show waiting feedback
+        // Auth redirect, show waiting feedback
         if (loadingEl) {
           const p = loadingEl.querySelector('p');
-          if (p) p.textContent = 'Verificando enlace...';
+          if (p) {
+            if (authState.hasError) {
+              const description = authState.url.searchParams.get('error_description');
+              p.textContent = description ? decodeURIComponent(description.replace(/\+/g, ' ')) : 'El enlace no es válido.';
+            } else {
+              p.textContent = 'Verificando enlace...';
+            }
+          }
+        }
+
+        if (authState.hasError) {
+          setTimeout(() => window.location.href = '/portal/ingresar', 2500);
+          return;
         }
 
         // Active Polling Fallback (in case listener misses)
@@ -1916,7 +1949,7 @@ function initDashboard() {
             clearInterval(pollInterval);
             dashboardLoaded = true;
             if (window.location.hash && window.location.hash.includes('access_token')) {
-              window.history.replaceState(null, '', window.location.pathname);
+              cleanupAuthRedirect();
             }
             fetchDashboardData(pollData.session);
           }
@@ -1934,7 +1967,7 @@ function initDashboard() {
             }
             setTimeout(() => window.location.href = '/portal/ingresar', 2000);
           }
-        }, 8000);
+        }, 12000);
       }
     }
   });
@@ -1943,4 +1976,3 @@ function initDashboard() {
 initDashboard();
 initChurchManualForm();
 initInviteForm();
-

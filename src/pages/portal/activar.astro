@@ -126,6 +126,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       return { accessToken, refreshToken, type, error, errorDescription };
     }
 
+    function normalizeHash() {
+      if (window.location.hash && window.location.hash.startsWith('#/')) {
+        const cleanHash = window.location.hash.replace('#/', '#');
+        const url = new URL(window.location.href);
+        history.replaceState({}, document.title, `${url.pathname}${url.search}${cleanHash}`);
+      }
+    }
+
     async function resolveSessionFromUrl() {
       const { data } = await supabase.auth.getSession();
       if (data?.session) return true;
@@ -159,7 +167,15 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       setFormDisabled(true);
       showRetry(false);
       if (status) status.textContent = 'Validando enlace...';
-      const ok = await resolveSessionFromUrl();
+      let ok = false;
+      try {
+        ok = await withTimeout(resolveSessionFromUrl(), 10000);
+      } catch (err) {
+        setGuardMessage(err?.message || 'No se pudo validar el enlace. Intenta de nuevo.');
+        if (status) status.textContent = '';
+        showRetry(true);
+        return false;
+      }
       if (ok) {
         guard?.classList.add('hidden');
         setFormDisabled(false);
@@ -259,6 +275,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       showRetry(false);
     }
 
+    normalizeHash();
     guardSession();
 
     retryBtn?.addEventListener('click', async () => {
