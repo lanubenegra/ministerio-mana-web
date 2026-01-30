@@ -1,7 +1,7 @@
 ---
 // This component detects if user has an active session
 // Shows "Iniciar sesión" for guests or account dropdown for logged users
-
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <div id="account-button-container" class="relative">
@@ -50,7 +50,7 @@
   </details>
 </div>
 
-<script>
+<script nonce={cspNonce}>
   import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
 
   /** @type {HTMLElement | null} */

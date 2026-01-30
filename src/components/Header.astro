@@ -5,6 +5,7 @@ import LangSwitch from '@components/LangSwitch.astro';
 import AccountButton from '@components/AccountButton.astro';
 
 const locale = Astro.cookies.get('lang')?.value === 'en' ? 'en' : 'es';
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <header id="main-header" class="sticky top-0 z-40 transition-all duration-300 border-b border-transparent">
@@ -61,7 +62,7 @@ const locale = Astro.cookies.get('lang')?.value === 'en' ? 'en' : 'es';
   </div>
 </header>
 
-<script>
+<script nonce={cspNonce}>
   const header = document.getElementById('main-header');
   const headerBg = document.getElementById('header-bg');
   const logoDark = document.querySelector<HTMLImageElement>('.logo-dark');

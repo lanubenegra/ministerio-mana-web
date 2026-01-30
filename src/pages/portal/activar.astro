@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout title="Activa tu cuenta | Portal Maná" description="Configura tu contraseña para acceder al Portal Maná.">
@@ -57,7 +58,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     </div>
   </main>
 
-  <script>
+  <script nonce={cspNonce}>
     import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
 
     const supabase = getSupabaseBrowserClient();
