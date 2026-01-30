@@ -1,4 +1,3 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/astro/server';
 import type { MiddlewareHandler } from 'astro';
 
 type GeoCookie = {
@@ -20,37 +19,6 @@ const SCRIPT_SRC_BASE = [
   'https://checkout.wompi.co',
   'https://unpkg.com',
 ];
-const CLERK_SCRIPT_SRC = [
-  'https://clerk.com',
-  'https://*.clerk.com',
-  'https://clerk.accounts.dev',
-  'https://*.clerk.accounts.dev',
-];
-const CLERK_CONNECT_SRC = [
-  'https://api.clerk.com',
-  'https://clerk.com',
-  'https://*.clerk.com',
-  'https://clerk.accounts.dev',
-  'https://*.clerk.accounts.dev',
-];
-const CLERK_FRAME_SRC = [
-  'https://clerk.com',
-  'https://*.clerk.com',
-  'https://clerk.accounts.dev',
-  'https://*.clerk.accounts.dev',
-];
-const CLERK_DEV_SRC = [
-  'https://*.lcl.dev',
-  'https://*.lclstage.dev',
-  'https://*.lclclerk.com',
-  'https://*.accounts.dev',
-  'https://*.accountsstage.dev',
-];
-const CLERK_DEV_CONNECT_SRC = [
-  ...CLERK_DEV_SRC,
-  'https://api.lclclerk.com',
-  'https://api.clerkstage.dev',
-];
 
 const FRAME_SRC = [
   "'self'",
@@ -62,11 +30,6 @@ const FRAME_SRC = [
   'https://challenges.cloudflare.com',
 ];
 const HSTS_HEADER = 'max-age=31536000; includeSubDomains; preload';
-const CLERK_ENABLED = Boolean(
-  (import.meta.env?.PUBLIC_CLERK_PUBLISHABLE_KEY ?? process.env?.PUBLIC_CLERK_PUBLISHABLE_KEY)
-  && (import.meta.env?.CLERK_SECRET_KEY ?? process.env?.CLERK_SECRET_KEY),
-);
-const isProtectedRoute = createRouteMatcher(['/admin(.*)']);
 
 const ENGLISH_COUNTRIES = new Set([
   'US', 'GB', 'UK', 'AU', 'NZ', 'CA', 'IE',
@@ -167,31 +130,6 @@ function isLocalhost(request: Request): boolean {
   return host.startsWith('localhost') || host.startsWith('127.') || host.endsWith('.local');
 }
 
-function appendOrigin(target: string[], value: string | undefined): void {
-  if (!value) return;
-  try {
-    const origin = new URL(value).origin;
-    if (!target.includes(origin)) target.push(origin);
-  } catch {
-    const host = value.replace(/^https?:\/\//, '').split('/')[0];
-    if (!host) return;
-    const origin = `https://${host}`;
-    if (!target.includes(origin)) target.push(origin);
-  }
-}
-
-function appendClerkDomainOrigins(target: string[], domain: string | undefined): void {
-  if (!domain) return;
-  const host = domain.replace(/^https?:\/\//, '').split('/')[0];
-  if (!host) return;
-  const baseOrigin = `https://${host}`;
-  if (!target.includes(baseOrigin)) target.push(baseOrigin);
-  if (!host.startsWith('clerk.')) {
-    const clerkOrigin = `https://clerk.${host}`;
-    if (!target.includes(clerkOrigin)) target.push(clerkOrigin);
-  }
-}
-
 const appMiddleware: MiddlewareHandler = async (context, next) => {
   const { cookies, locals, request } = context;
   const url = new URL(request.url);
@@ -259,20 +197,13 @@ const appMiddleware: MiddlewareHandler = async (context, next) => {
   response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), interest-cohort=()');
   response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
 
-  const clerkJsUrl = import.meta.env?.PUBLIC_CLERK_JS_URL ?? process.env?.PUBLIC_CLERK_JS_URL;
-  const clerkDomain = import.meta.env?.PUBLIC_CLERK_DOMAIN ?? process.env?.PUBLIC_CLERK_DOMAIN;
-  const clerkProxyUrl = import.meta.env?.PUBLIC_CLERK_PROXY_URL ?? process.env?.PUBLIC_CLERK_PROXY_URL;
-
-  const scriptSrc = [...SCRIPT_SRC_BASE, ...CLERK_SCRIPT_SRC, `'nonce-${nonce}'`];
+  const scriptSrc = [...SCRIPT_SRC_BASE, `'nonce-${nonce}'`];
   if (IS_VERCEL_PREVIEW) {
     scriptSrc.push('https://vercel.live');
   }
   if (!IS_PROD) {
     scriptSrc.push("'unsafe-eval'");
     scriptSrc.push("'unsafe-inline'"); // useful for rapid dev; remove when all inline scripts have nonce
-  }
-  if (!IS_PROD || IS_VERCEL_PREVIEW) {
-    scriptSrc.push(...CLERK_DEV_SRC);
   }
 
   const connectSrc = [
@@ -282,28 +213,11 @@ const appMiddleware: MiddlewareHandler = async (context, next) => {
     'https://checkout.stripe.com',
     'https://checkout.wompi.co',
     'https://js.stripe.com',
-    ...CLERK_CONNECT_SRC,
   ];
-  if (!IS_PROD || IS_VERCEL_PREVIEW) {
-    connectSrc.push(...CLERK_DEV_CONNECT_SRC);
-  }
-
-  const frameSrc = [...FRAME_SRC, ...CLERK_FRAME_SRC];
+  const frameSrc = [...FRAME_SRC];
   if (IS_VERCEL_PREVIEW) {
     frameSrc.push('https://vercel.live');
   }
-  if (!IS_PROD || IS_VERCEL_PREVIEW) {
-    frameSrc.push(...CLERK_DEV_SRC);
-  }
-
-  appendOrigin(scriptSrc, clerkJsUrl);
-  appendOrigin(connectSrc, clerkJsUrl);
-  appendOrigin(scriptSrc, clerkProxyUrl);
-  appendOrigin(connectSrc, clerkProxyUrl);
-  appendOrigin(frameSrc, clerkProxyUrl);
-  appendClerkDomainOrigins(scriptSrc, clerkDomain);
-  appendClerkDomainOrigins(connectSrc, clerkDomain);
-  appendClerkDomainOrigins(frameSrc, clerkDomain);
 
   const supabaseUrl = import.meta.env?.SUPABASE_URL
     ?? import.meta.env?.PUBLIC_SUPABASE_URL
@@ -323,7 +237,7 @@ const appMiddleware: MiddlewareHandler = async (context, next) => {
     "default-src 'self'",
     `script-src ${scriptSrc.join(' ')}`,
     "style-src 'self' 'unsafe-inline' https://unpkg.com",
-    "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://i.ytimg.com https://*.clerk.com https://*.clerk.accounts.dev",
+    "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://i.ytimg.com",
     "font-src 'self' data:",
     `connect-src ${connectSrc.join(' ')}`,
     `frame-src ${frameSrc.join(' ')}`,
@@ -340,13 +254,4 @@ const appMiddleware: MiddlewareHandler = async (context, next) => {
 
   return response;
 };
-
-const clerkHandler: MiddlewareHandler = clerkMiddleware((auth, context, next) => {
-  const { isAuthenticated, redirectToSignIn } = auth();
-  if (!isAuthenticated && isProtectedRoute(context.request)) {
-    return redirectToSignIn();
-  }
-  return appMiddleware(context, next);
-});
-
-export const onRequest = CLERK_ENABLED ? clerkHandler : appMiddleware;
+export const onRequest = appMiddleware;
