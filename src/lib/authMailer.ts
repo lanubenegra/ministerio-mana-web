@@ -114,6 +114,21 @@ export async function sendAuthLink(params: {
   });
 
   if (error || !data?.action_link) {
+    console.error('[auth.generateLink] failed', {
+      kind: params.kind,
+      email: params.email,
+      redirectTo,
+      error: error
+        ? {
+            message: error?.message,
+            status: (error as any)?.status,
+            code: (error as any)?.code,
+            name: (error as any)?.name,
+            details: (error as any)?.details,
+          }
+        : undefined,
+      hasActionLink: Boolean(data?.action_link),
+    });
     return { ok: false, method: 'sendgrid', error: error?.message || 'No se pudo generar enlace' };
   }
 
