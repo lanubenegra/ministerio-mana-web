@@ -1752,21 +1752,30 @@ logoutBtn?.addEventListener('click', async () => {
   logoutBtn.disabled = true;
   logoutBtn.textContent = 'Saliendo...';
 
-  try {
-    // Clear Supabase session if client is available
-    if (supabase) {
-      await supabase.auth.signOut({ scope: 'local' });
-    }
-    // Clear password-based session if applicable
-    if (authMode === 'password') {
-      await fetch('/api/portal/password-logout', { method: 'POST' });
-    }
-  } catch (err) {
-    console.error('Logout error:', err);
-  } finally {
-    // ALWAYS redirect, even if errors occurred
+  // Guarantee redirect happens within 1 second, even if cleanup hangs
+  const redirectTimer = setTimeout(() => {
     window.location.href = '/portal/ingresar';
-  }
+  }, 1000);
+
+  // Attempt to clean up sessions (non-blocking)
+  Promise.race([
+    (async () => {
+      try {
+        if (supabase) {
+          await supabase.auth.signOut({ scope: 'local' });
+        }
+        if (authMode === 'password') {
+          await fetch('/api/portal/password-logout', { method: 'POST' });
+        }
+      } catch (err) {
+        console.error('Logout cleanup error:', err);
+      }
+    })(),
+    new Promise(resolve => setTimeout(resolve, 800)) // 800ms max for cleanup
+  ]).finally(() => {
+    clearTimeout(redirectTimer);
+    window.location.href = '/portal/ingresar';
+  });
 });
 
 saveProfileBtn?.addEventListener('click', updateProfile);
