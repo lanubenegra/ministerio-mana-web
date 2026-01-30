@@ -49,7 +49,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             </button>
           </div>
         </div>
-        <p id="activate-status" class="text-sm text-slate-500"></p>
+        
+        <div id="activate-status-container" class="hidden mt-4 text-center">
+          <div id="activate-status-wrapper" class="inline-flex items-center gap-2 px-4 py-3 rounded-full">
+            <span id="activate-status-icon" class="w-2 h-2 rounded-full animate-ping"></span>
+            <p id="activate-status" class="text-sm font-semibold"></p>
+          </div>
+        </div>
+        
         <button type="submit" class="w-full bg-[#293C74] text-white px-6 py-4 rounded-xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 hover:-translate-y-0.5 transition-all">
           Guardar contraseña
         </button>

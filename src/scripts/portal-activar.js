@@ -12,6 +12,9 @@ const form = document.getElementById('activate-form');
 const password = document.getElementById('password');
 const confirm = document.getElementById('password-confirm');
 const status = document.getElementById('activate-status');
+const statusContainer = document.getElementById('activate-status-container');
+const statusWrapper = document.getElementById('activate-status-wrapper');
+const statusIcon = document.getElementById('activate-status-icon');
 const togglePasswordBtn = document.getElementById('toggle-password');
 const eyeIcon = document.getElementById('eye-icon');
 const eyeOffIcon = document.getElementById('eye-off-icon');
@@ -21,6 +24,31 @@ const eyeOffConfirm = document.getElementById('eye-off-icon-confirm');
 const guard = document.getElementById('activate-guard');
 const retryBtn = document.getElementById('activate-retry');
 let hasRecoveryContext = false;
+
+function showStatus(msg, type = 'loading') {
+  if (!status || !statusContainer || !statusWrapper || !statusIcon) return;
+  statusContainer.classList.remove('hidden');
+  status.textContent = msg;
+
+  // Update icon
+  statusIcon.className = type === 'error'
+    ? 'w-2 h-2 rounded-full bg-red-500'
+    : type === 'success'
+      ? 'w-2 h-2 rounded-full bg-green-500'
+      : 'w-2 h-2 rounded-full bg-blue-500 animate-ping';
+
+  // Update wrapper and text styles
+  if (type === 'error') {
+    statusWrapper.className = 'inline-flex items-center gap-2 px-4 py-3 rounded-full bg-red-50 border border-red-200';
+    status.className = 'text-sm font-semibold text-red-700';
+  } else if (type === 'success') {
+    statusWrapper.className = 'inline-flex items-center gap-2 px-4 py-3 rounded-full bg-green-50 border border-green-200';
+    status.className = 'text-sm font-semibold text-green-700';
+  } else {
+    statusWrapper.className = 'inline-flex items-center gap-2 px-4 py-3 rounded-full bg-blue-50 border border-blue-200';
+    status.className = 'text-sm font-semibold text-blue-700';
+  }
+}
 
 
 function setFormDisabled(disabled) {
@@ -114,13 +142,13 @@ async function resolveSessionFromUrl() {
 async function validateRecoveryLink() {
   setFormDisabled(true);
   showRetry(false);
-  if (status) status.textContent = 'Validando enlace...';
+  showStatus('Validando enlace...', 'loading');
   let ok = false;
   try {
     ok = await withTimeout(resolveSessionFromUrl(), 10000);
   } catch (err) {
     setGuardMessage(err?.message || 'No se pudo validar el enlace. Intenta de nuevo.');
-    if (status) status.textContent = '';
+    statusContainer?.classList.add('hidden');
     showRetry(true);
     return false;
   }
@@ -128,7 +156,7 @@ async function validateRecoveryLink() {
     guard?.classList.add('hidden');
     setFormDisabled(false);
     showRetry(false);
-    if (status) status.textContent = '';
+    statusContainer?.classList.add('hidden');
     const url = new URL(window.location.href);
     if (url.hash) {
       history.replaceState({}, document.title, `${url.pathname}${url.search}`);
@@ -144,7 +172,7 @@ async function validateRecoveryLink() {
   } else {
     setGuardMessage('El enlace ya expiró o fue usado. Solicita uno nuevo desde el portal.');
   }
-  if (status) status.textContent = '';
+  statusContainer?.classList.add('hidden');
   showRetry(true);
   return false;
 }
@@ -234,23 +262,23 @@ retryBtn?.addEventListener('click', async () => {
 form?.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (!status) return;
-  status.textContent = '';
+  statusContainer?.classList.add('hidden');
   const value = password?.value?.trim();
   const confirmValue = confirm?.value?.trim();
   if (!value || value.length < 6) {
-    status.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    showStatus('La contraseña debe tener al menos 6 caracteres.', 'error');
     return;
   }
   if (value !== confirmValue) {
-    status.textContent = 'Las contraseñas no coinciden.';
+    showStatus('Las contraseñas no coinciden.', 'error');
     return;
   }
   if (!hasRecoveryContext) {
-    status.textContent = 'Debes abrir el enlace de recuperación para cambiar la contraseña.';
+    showStatus('Debes abrir el enlace de recuperación para cambiar la contraseña.', 'error');
     return;
   }
   setFormDisabled(true);
-  status.textContent = 'Guardando contraseña...';
+  showStatus('Guardando contraseña...', 'loading');
 
   console.log('[Activar] Starting password update...');
 
@@ -259,7 +287,7 @@ form?.addEventListener('submit', async (event) => {
     console.log('[Activar] Session check:', sessionCheck);
 
     if (!sessionCheck.ok) {
-      status.textContent = 'Sesión no válida. Reintenta la validación del enlace.';
+      showStatus('Sesión no válida. Reintenta la validación del enlace.', 'error');
       showRetry(true);
       setFormDisabled(false);
       return;
@@ -276,11 +304,11 @@ form?.addEventListener('submit', async (event) => {
     }
 
     console.log('[Activar] Password updated successfully, redirecting...');
-    status.textContent = '¡Contraseña guardada! Redirigiendo...';
+    showStatus('¡Contraseña guardada! Redirigiendo...', 'success');
 
   } catch (err) {
     console.error('[Activar] Error:', err);
-    status.textContent = err?.message || 'No se pudo guardar.';
+    showStatus(err?.message || 'No se pudo guardar.', 'error');
     showRetry(true);
     setFormDisabled(false);
     return;

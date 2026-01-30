@@ -30,12 +30,32 @@ const passkeyBtn = document.getElementById('btn-passkey');
 const statusContainer = document.getElementById('login-status-container');
 const statusEl = document.getElementById('login-status');
 const statusIcon = document.getElementById('login-status-icon');
+const statusWrapper = document.getElementById('login-status-wrapper');
 
 function showStatus(msg, type = 'loading') {
-  if (!statusContainer || !statusEl || !statusIcon) return;
+  if (!statusContainer || !statusEl || !statusIcon || !statusWrapper) return;
   statusContainer.classList.remove('hidden');
   statusEl.textContent = msg;
-  statusIcon.className = `w-2 h-2 rounded-full ${type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-[#293C74] animate-ping'}`;
+
+  // Update icon
+  statusIcon.className = type === 'error'
+    ? 'w-2 h-2 rounded-full bg-red-500'
+    : type === 'success'
+      ? 'w-2 h-2 rounded-full bg-green-500'
+      : 'w-2 h-2 rounded-full bg-blue-500 animate-ping';
+
+  // Update wrapper and text styles
+  if (type === 'error') {
+    statusWrapper.className = 'inline-flex items-center gap-2 px-4 py-3 rounded-full bg-red-50 border border-red-200';
+    statusEl.className = 'text-sm font-semibold text-red-700';
+  } else if (type === 'success') {
+    statusWrapper.className = 'inline-flex items-center gap-2 px-4 py-3 rounded-full bg-green-50 border border-green-200';
+    statusEl.className = 'text-sm font-semibold text-green-700';
+  } else {
+    statusWrapper.className = 'inline-flex items-center gap-2 px-4 py-3 rounded-full bg-blue-50 border border-blue-200';
+    statusEl.className = 'text-sm font-semibold text-blue-700';
+  }
+
   gsap.from(statusContainer, { scale: 0.9, duration: 0.4, ease: 'back.out' });
 }
 
