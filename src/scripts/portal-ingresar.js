@@ -141,13 +141,24 @@ passwordForm?.addEventListener('submit', async (e) => {
 
   try {
     if (!supabase) {
-      throw new Error('El portal no está configurado.');
+      // Fallback directly to API if Supabase client is missing
+      console.warn('Supabase client missing, trying API login directly.');
+      await tryApiLogin(email, password);
+      return;
     }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+
+    if (error) {
+      console.warn('Supabase login failed, trying API fallback...', error.message);
+      await tryApiLogin(email, password);
+      return;
+    }
+
     showStatus('Acceso correcto. Entrando...', 'success');
     window.location.href = '/portal';
   } catch (err) {
+    console.error(err);
     showStatus('Contraseña incorrecta o usuario no encontrado.', 'error');
     if (btn) {
       btn.disabled = false;
@@ -155,6 +166,23 @@ passwordForm?.addEventListener('submit', async (e) => {
     }
   }
 });
+
+async function tryApiLogin(email, password) {
+  const res = await fetch('/api/portal/password-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || 'Credenciales inválidas');
+  }
+
+  showStatus('Acceso administrativo correcto. Entrando...', 'success');
+  // Force reload to ensure cookie is picked up
+  setTimeout(() => window.location.href = '/portal', 500);
+}
 
 passkeyBtn?.addEventListener('click', async () => {
   showStatus('Verificando soporte de Passkeys...', 'loading');
