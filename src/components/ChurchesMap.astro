@@ -1,7 +1,5 @@
 ---
 const id = 'churches-map';
-const cspNonce = Astro.locals?.cspNonce;
-const churchesMapScript = Astro.resolve('../scripts/churches-map.js');
 ---
 
 <div
@@ -17,4 +15,7 @@ const churchesMapScript = Astro.resolve('../scripts/churches-map.js');
 </noscript>
 
 <!-- Script bundlado por Vite: inicializa Leaflet -->
-<script type="module" src={churchesMapScript} nonce={cspNonce}></script>
+<script>
+  import '@scripts/churches-map.js';
+</script>
+

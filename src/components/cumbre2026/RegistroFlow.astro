@@ -1,6 +1,4 @@
 ---
-const cspNonce = Astro.locals?.cspNonce;
-const registroFlowScript = Astro.resolve('../../scripts/registro-flow.js');
 ---
 
 <div id="registro-app" class="max-w-4xl mx-auto space-y-8">
@@ -182,8 +180,7 @@ const registroFlowScript = Astro.resolve('../../scripts/registro-flow.js');
   }
 </style>
 
-<script
-  type="module"
-  src={registroFlowScript}
-  nonce={cspNonce}
-></script>
+<script>
+  import '@scripts/registro-flow.js';
+</script>
+
