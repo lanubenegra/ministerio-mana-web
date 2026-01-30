@@ -1838,11 +1838,12 @@ registerPasskeyBtn?.addEventListener('click', async () => {
 });
 
 // Init Dashboard with Reactive Auth
+// Init Dashboard with Reactive Auth
 function initDashboard() {
   let dashboardLoaded = false;
 
-  // 1. Reactive Listener (Primary Driver)
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  // 1. Reactive Listener (Primary Driver for Async Events)
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
       if (session && !dashboardLoaded) {
         console.log('Auth Event:', event);
@@ -1855,42 +1856,51 @@ function initDashboard() {
 
         await fetchDashboardData(session);
       }
-    } else if (event === 'SIGNED_OUT') {
-      // Only redirect if we were previously calling fetchDashboardData or expected to be logged in
-      // But on initial load, SIGNED_OUT might fire if no session?
-      // Safer: Do nothing here, let the fallback check handle redirects if needed.
-      // window.location.href = '/portal/ingresar';
     }
   });
 
-  // 2. Initial State Check (Fallback/Boost)
-  // Only check manually if NOT a magic link callback (hash handles itself via listener)
-  if (!window.location.hash || !window.location.hash.includes('access_token')) {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        // Check legacy/local auth? Or just redirect
-        // We give a small grace period for listener, then redirect
+  // 2. Immediate State Check (Handle Pre-processed Sessions)
+  // Supabase might have already processed the hash before this script ran.
+  // We check getSession() immediately.
+  supabase.auth.getSession().then(({ data }) => {
+    if (data?.session && !dashboardLoaded) {
+      console.log('Session found immediately via getSession');
+      dashboardLoaded = true;
+
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+
+      fetchDashboardData(data.session);
+    } else if (!data?.session) {
+      // No session found immediately.
+
+      // If valid magic link hash exists, wait for listener (it should fire).
+      const isMagicLink = window.location.hash && window.location.hash.includes('access_token');
+
+      if (!isMagicLink) {
+        // No hash, no session -> Redirect after grace period
         setTimeout(() => {
           if (!dashboardLoaded) window.location.href = '/portal/ingresar';
-        }, 2000); // 2s grace
-      }
-    });
-  } else {
-    // We are in a magic link flow. Show feedback.
-    if (loadingEl) {
-      const p = loadingEl.querySelector('p');
-      if (p) {
-        p.textContent = 'Verificando enlace...';
-        // Add a simple timeout fallback for broken links
-        setTimeout(() => {
-          if (!dashboardLoaded) {
-            p.textContent = 'El enlace parece haber expirado. Redirigiendo...';
-            setTimeout(() => window.location.href = '/portal/ingresar', 2000);
+        }, 2000);
+      } else {
+        // Is Magic Link, show waiting feedback
+        if (loadingEl) {
+          const p = loadingEl.querySelector('p');
+          if (p) {
+            p.textContent = 'Verificando enlace...';
+            // Fallback if listener NEVER fires (e.g. invalid link processed silently)
+            setTimeout(() => {
+              if (!dashboardLoaded) {
+                p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
+                setTimeout(() => window.location.href = '/portal/ingresar', 2000);
+              }
+            }, 5000);
           }
-        }, 8000);
+        }
       }
     }
-  }
+  });
 }
 
 initDashboard();
