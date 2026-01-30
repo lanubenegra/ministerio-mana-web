@@ -205,30 +205,39 @@ function switchTab(tabId) {
 
 // Core Dashboard Logic - Reactive Auth
 async function fetchDashboardData(session) {
-  console.log('[DEBUG] fetchDashboardData called with session:', session);
-  if (!session) {
-    console.error('[DEBUG] No session provided to fetchDashboardData');
-    return;
-  }
+  console.log('[DEBUG] fetchDashboardData called with session:', session ? 'Present' : 'Null (Password Mode?)');
 
   try {
     const token = session?.access_token;
-    if (!token) throw new Error('No access token');
-    console.log('[DEBUG] Access token present:', token.substring(0, 10) + '...');
+    if (token) {
+      console.log('[DEBUG] Access token present:', token.substring(0, 10) + '...');
+    } else {
+      console.log('[DEBUG] No access token. Assuming password/cookie session.');
+    }
 
-    let headers = { Authorization: `Bearer ${token}` };
-    portalAuthHeaders = headers;
+    let headers = {};
+    if (token) {
+      headers = { Authorization: `Bearer ${token}` };
+      portalAuthHeaders = headers;
+    }
 
     // 2. Parallelized Initial Data Fetching
     if (!supabase) throw new Error('Supabase no configurado');
 
     console.log('[DEBUG] Starting Promise.all for API requests...');
-    const [sessionRes, resumenRes, { data: userData }] = await Promise.all([
+
+    const promises = [
       fetch('/api/portal/session', { headers }),
-      // Fetch resumen immediately with the token we already have
-      fetch('/api/cuenta/resumen', { headers }),
-      supabase.auth.getUser(),
-    ]);
+      fetch('/api/cuenta/resumen', { headers })
+    ];
+
+    if (token) {
+      promises.push(supabase.auth.getUser());
+    } else {
+      promises.push(Promise.resolve({ data: { user: null } })); // Mock for no-token
+    }
+
+    const [sessionRes, resumenRes, { data: userData }] = await Promise.all(promises);
     console.log('[DEBUG] Promise.all completed.');
     console.log('[DEBUG] sessionRes status:', sessionRes.status);
     console.log('[DEBUG] resumenRes status:', resumenRes.status);
