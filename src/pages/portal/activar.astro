@@ -70,6 +70,59 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     const eyeOffConfirm = document.getElementById('eye-off-icon-confirm');
     const guard = document.getElementById('activate-guard');
 
+    function setFormDisabled(disabled) {
+      form?.querySelectorAll('input, button').forEach((el) => {
+        if (disabled) {
+          el.setAttribute('disabled', 'disabled');
+          el.classList.add('opacity-60', 'cursor-not-allowed');
+        } else {
+          el.removeAttribute('disabled');
+          el.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+      });
+    }
+
+    function setGuardMessage(message) {
+      if (!guard) return;
+      guard.textContent = message;
+      guard.classList.remove('hidden');
+    }
+
+    async function resolveSessionFromUrl() {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) return true;
+
+      const url = new URL(window.location.href);
+      const authCode = url.searchParams.get('code');
+      if (authCode) {
+        const { data: codeData } = await supabase.auth.exchangeCodeForSession(authCode);
+        if (codeData?.session) return true;
+      }
+
+      return false;
+    }
+
+    async function waitForSession(timeoutMs = 3000) {
+      return new Promise((resolve) => {
+        let settled = false;
+        const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (settled) return;
+          if (session) {
+            settled = true;
+            subscription?.subscription?.unsubscribe?.();
+            resolve(true);
+          }
+        });
+
+        setTimeout(async () => {
+          if (settled) return;
+          subscription?.subscription?.unsubscribe?.();
+          const { data } = await supabase.auth.getSession();
+          resolve(Boolean(data?.session));
+        }, timeoutMs);
+      });
+    }
+
     togglePasswordBtn?.addEventListener('click', () => {
       const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
       password.setAttribute('type', type);
@@ -95,13 +148,42 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     });
 
     async function guardSession() {
+      const url = new URL(window.location.href);
+      const searchParams = url.searchParams;
+      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+      const hasRecoveryType =
+        searchParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
+      const hasToken =
+        hashParams.has('access_token') || hashParams.has('refresh_token') || hashParams.has('error');
+      const hasCode = searchParams.has('code');
+      const hasRecoveryContext = hasRecoveryType || hasToken || hasCode;
+
+      if (hasRecoveryContext) {
+        setFormDisabled(true);
+        if (status) status.textContent = 'Validando enlace...';
+        const resolved = await resolveSessionFromUrl();
+        const ok = resolved || await waitForSession();
+        if (ok) {
+          guard?.classList.add('hidden');
+          setFormDisabled(false);
+          if (status) status.textContent = '';
+          if (url.hash) {
+            history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+          }
+          return;
+        }
+
+        setGuardMessage('El enlace ya expiró o fue usado. Solicita uno nuevo desde el portal.');
+        if (status) status.textContent = '';
+        return;
+      }
+
       const { data } = await supabase.auth.getSession();
       if (data?.session) return;
-      guard?.classList.remove('hidden');
-      form?.querySelectorAll('input, button').forEach((el) => {
-        el.setAttribute('disabled', 'disabled');
-        el.classList.add('opacity-60', 'cursor-not-allowed');
-      });
+      setGuardMessage(
+        'Abre el enlace que llegó a tu correo para activar tu cuenta. Si no lo ves, revisa la bandeja de spam o solicita un nuevo enlace desde el portal.'
+      );
+      setFormDisabled(true);
     }
 
     guardSession();
