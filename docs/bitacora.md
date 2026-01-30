@@ -272,6 +272,7 @@
   - `c4e2338`: "feat(primicias): add dedicated landing page with geo-aware payment gateway"
   - `9e225a0`: "fix(primicias): resolve syntax error in client-side script"
   - `[new]`: "style(layout): redesign footer with premium navy theme and fix header logo contrast logic"
+  - `[new]`: "fix(auth): correct magiclink generation accessing nested property from Supabase SDK"
   - `[new]`: "feat(primicias): add dedicated landing page with geo-aware payment gateway (Wompi/Stripe/Pushpay)"
 
 
