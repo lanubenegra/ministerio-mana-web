@@ -1,0 +1,10 @@
+---
+import { UserProfile } from '@clerk/astro/components';
+
+const { userId, redirectToSignIn } = Astro.locals.auth();
+if (!userId) {
+  return redirectToSignIn();
+}
+---
+
+<UserProfile path="/portal/cuenta" />

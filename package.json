@@ -14,6 +14,7 @@
     "@astrojs/sitemap": "^3.6.0",
     "@astrojs/tailwind": "^6.0.2",
     "@astrojs/vercel": "^9.0.2",
+    "@clerk/astro": "^2.16.17",
     "@studio-freight/lenis": "^1.0.42",
     "@supabase/supabase-js": "^2.45.0",
     "astro": "^5.15.3",
