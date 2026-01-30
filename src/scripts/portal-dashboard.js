@@ -2,6 +2,7 @@ import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
 import { gsap } from 'gsap';
 
 const loadingEl = document.getElementById('account-loading');
+console.log('Portal Script Started. Loading El:', loadingEl); // DEBUG
 const errorEl = document.getElementById('account-error');
 const contentEl = document.getElementById('account-content');
 const profileName = document.getElementById('profile-name');
@@ -169,6 +170,7 @@ function switchTab(tabId) {
 
 // Core Dashboard Logic - Reactive Auth
 async function fetchDashboardData(session) {
+  console.log('fetchDashboardData called', session);
   try {
     const token = session?.access_token;
     if (!token) throw new Error('No access token');
