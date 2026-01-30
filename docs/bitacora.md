@@ -269,6 +269,9 @@
   - `5f778ce`: "style(portal): high contrast text updates for dashboard and login"
   - `bb80c82`: "style(portal): fix layout and spacing in church manual registration form"
   - `eac6d63`: "style(portal): harmonize admin users card spacing and layout"
+  - `c4e2338`: "feat(primicias): add dedicated landing page with geo-aware payment gateway"
+  - `9e225a0`: "fix(primicias): resolve syntax error in client-side script"
+  - `[new]`: "style(layout): redesign footer with premium navy theme and fix header logo contrast logic"
   - `[new]`: "feat(primicias): add dedicated landing page with geo-aware payment gateway (Wompi/Stripe/Pushpay)"
 
 
