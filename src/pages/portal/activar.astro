@@ -14,6 +14,9 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       <div id="activate-guard" class="hidden mb-6 rounded-2xl border border-[#F2C94C]/30 bg-[#F2C94C]/10 p-4 text-sm text-[#7A5B00]">
         Abre el enlace que llegó a tu correo para activar tu cuenta. Si no lo ves, revisa la bandeja de spam o solicita un nuevo enlace desde el portal.
       </div>
+      <button id="activate-retry" type="button" class="hidden mb-6 w-full text-xs font-bold uppercase tracking-widest text-[#293C74] border border-[#293C74]/20 rounded-xl px-4 py-3 hover:bg-[#293C74]/5 transition">
+        Reintentar validación
+      </button>
 
       <form id="activate-form" class="space-y-4">
         <div class="space-y-2">
@@ -69,6 +72,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     const eyeConfirm = document.getElementById('eye-icon-confirm');
     const eyeOffConfirm = document.getElementById('eye-off-icon-confirm');
     const guard = document.getElementById('activate-guard');
+    const retryBtn = document.getElementById('activate-retry');
+    let hasRecoveryContext = false;
 
     function setFormDisabled(disabled) {
       form?.querySelectorAll('input, button').forEach((el) => {
@@ -86,6 +91,15 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       if (!guard) return;
       guard.textContent = message;
       guard.classList.remove('hidden');
+    }
+
+    function showRetry(show) {
+      if (!retryBtn) return;
+      if (show) {
+        retryBtn.classList.remove('hidden');
+      } else {
+        retryBtn.classList.add('hidden');
+      }
     }
 
     async function resolveSessionFromUrl() {
@@ -123,6 +137,36 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       });
     }
 
+    async function validateRecoveryLink() {
+      setFormDisabled(true);
+      showRetry(false);
+      if (status) status.textContent = 'Validando enlace...';
+      const resolved = await resolveSessionFromUrl();
+      const ok = resolved || await waitForSession(8000);
+      if (ok) {
+        guard?.classList.add('hidden');
+        setFormDisabled(false);
+        showRetry(false);
+        if (status) status.textContent = '';
+        const url = new URL(window.location.href);
+        if (url.hash) {
+          history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+        }
+        return true;
+      }
+
+      const url = new URL(window.location.href);
+      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+      if (hashParams.get('error') === 'access_denied') {
+        setGuardMessage('El enlace no pertenece a este dominio. Abre el link desde el dominio correcto.');
+      } else {
+        setGuardMessage('El enlace ya expiró o fue usado. Solicita uno nuevo desde el portal.');
+      }
+      if (status) status.textContent = '';
+      showRetry(true);
+      return false;
+    }
+
     togglePasswordBtn?.addEventListener('click', () => {
       const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
       password.setAttribute('type', type);
@@ -156,37 +200,33 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       const hasToken =
         hashParams.has('access_token') || hashParams.has('refresh_token') || hashParams.has('error');
       const hasCode = searchParams.has('code');
-      const hasRecoveryContext = hasRecoveryType || hasToken || hasCode;
+      hasRecoveryContext = hasRecoveryType || hasToken || hasCode;
 
       if (hasRecoveryContext) {
-        setFormDisabled(true);
-        if (status) status.textContent = 'Validando enlace...';
-        const resolved = await resolveSessionFromUrl();
-        const ok = resolved || await waitForSession();
-        if (ok) {
-          guard?.classList.add('hidden');
-          setFormDisabled(false);
-          if (status) status.textContent = '';
-          if (url.hash) {
-            history.replaceState({}, document.title, `${url.pathname}${url.search}`);
-          }
-          return;
-        }
-
-        setGuardMessage('El enlace ya expiró o fue usado. Solicita uno nuevo desde el portal.');
-        if (status) status.textContent = '';
+        await validateRecoveryLink();
         return;
       }
 
       const { data } = await supabase.auth.getSession();
-      if (data?.session) return;
+      if (data?.session) {
+        setGuardMessage('Para cambiar tu contraseña, abre el enlace de recuperación enviado a tu correo.');
+        setFormDisabled(true);
+        showRetry(false);
+        return;
+      }
       setGuardMessage(
         'Abre el enlace que llegó a tu correo para activar tu cuenta. Si no lo ves, revisa la bandeja de spam o solicita un nuevo enlace desde el portal.'
       );
       setFormDisabled(true);
+      showRetry(false);
     }
 
     guardSession();
+
+    retryBtn?.addEventListener('click', async () => {
+      if (!hasRecoveryContext) return;
+      await validateRecoveryLink();
+    });
 
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -200,6 +240,10 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       }
       if (value !== confirmValue) {
         status.textContent = 'Las contraseñas no coinciden.';
+        return;
+      }
+      if (!hasRecoveryContext) {
+        status.textContent = 'Debes abrir el enlace de recuperación para cambiar la contraseña.';
         return;
       }
       status.textContent = 'Guardando contraseña...';
