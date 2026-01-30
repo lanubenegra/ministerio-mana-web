@@ -1844,6 +1844,15 @@ registerPasskeyBtn?.addEventListener('click', async () => {
 function initDashboard() {
   let dashboardLoaded = false;
 
+  // 0. Fix Malformed Hash (if present)
+  // Supabase expects #access_token=... but sometimes we get #/access_token=...
+  if (window.location.hash && window.location.hash.startsWith('#/')) {
+    console.log('Fixing malformed hash:', window.location.hash);
+    const cleanHash = window.location.hash.replace('#/', '#');
+    window.history.replaceState(null, '', window.location.pathname + cleanHash);
+    console.log('Cleaned hash:', window.location.hash);
+  }
+
   // 1. Reactive Listener (Primary Driver for Async Events)
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
