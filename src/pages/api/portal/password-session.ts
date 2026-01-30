@@ -1,3 +1,6 @@
+import type { APIRoute } from 'astro';
+import { readPasswordSession } from '@lib/portalPasswordSession';
+
 // Debug-enhanced session check
 export const GET: APIRoute = async ({ request }) => {
   const cookieHeader = request.headers.get('cookie') || '';

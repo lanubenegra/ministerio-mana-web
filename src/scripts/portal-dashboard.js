@@ -222,7 +222,6 @@ async function fetchDashboardData(session) {
     }
 
     // 2. Parallelized Initial Data Fetching
-    if (!supabase) throw new Error('Supabase no configurado');
 
     console.log('[DEBUG] Starting Promise.all for API requests...');
 
@@ -231,7 +230,7 @@ async function fetchDashboardData(session) {
       fetch('/api/cuenta/resumen', { headers })
     ];
 
-    if (token) {
+    if (token && supabase) {
       promises.push(supabase.auth.getUser());
     } else {
       promises.push(Promise.resolve({ data: { user: null } })); // Mock for no-token
@@ -1842,6 +1841,11 @@ const securityStatus = document.getElementById('security-status');
 
 updatePasswordBtn?.addEventListener('click', async () => {
   if (!newPasswordInput || !securityStatus) return;
+  if (!supabase) {
+    securityStatus.textContent = 'Función no disponible en este modo.';
+    securityStatus.className = 'text-sm font-medium text-red-500';
+    return;
+  }
   const password = newPasswordInput.value.trim();
   if (password.length < 6) {
     securityStatus.textContent = 'La contraseña debe tener al menos 6 caracteres.';
@@ -1885,6 +1889,11 @@ const passkeyStatus = document.getElementById('passkey-status');
 
 registerPasskeyBtn?.addEventListener('click', async () => {
   if (!passkeyStatus) return;
+  if (!supabase) {
+    passkeyStatus.textContent = 'Passkeys no disponible en este modo.';
+    passkeyStatus.className = 'text-xs text-center mt-2 font-medium text-red-500';
+    return;
+  }
   passkeyStatus.textContent = 'Iniciando registro de Passkey...';
   passkeyStatus.className = 'text-xs text-center mt-2 font-medium text-slate-500';
   registerPasskeyBtn.disabled = true;
@@ -1923,7 +1932,7 @@ registerPasskeyBtn?.addEventListener('click', async () => {
 
 // Init Dashboard with Reactive Auth
 // Init Dashboard with Reactive Auth
-function initDashboard() {
+async function initDashboard() {
   let dashboardLoaded = false;
 
   // 0. Fix Malformed Hash (if present)
@@ -1935,10 +1944,30 @@ function initDashboard() {
     console.log('Cleaned hash:', window.location.hash);
   }
 
-  // 1. Reactive Listener (Primary Driver for Async Events)
-  // 1. Reactive Listener (Primary Driver for Async Events)
   if (!supabase) {
-    console.error('[DEBUG] Supabase not initialized, skipping initDashboard listener');
+    console.error('[DEBUG] Supabase not initialized, attempting password-only dashboard load');
+    try {
+      const pwRes = await fetch('/api/portal/password-session');
+      if (pwRes.ok) {
+        const pwData = await pwRes.json();
+        if (pwData.ok) {
+          await fetchDashboardData(null);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[DEBUG] Password session fallback failed', err);
+    }
+
+    if (loadingEl && !loadingEl.classList.contains('hidden')) {
+      loadingEl.classList.add('hidden');
+    }
+    if (errorEl) {
+      errorEl.classList.remove('hidden');
+    }
+    setTimeout(() => {
+      window.location.href = '/portal/ingresar';
+    }, 1200);
     return;
   }
   console.log('[DEBUG] Setting up onAuthStateChange listener...');
