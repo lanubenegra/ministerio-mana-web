@@ -1879,7 +1879,7 @@ function initDashboard() {
       console.log('No session from getSession. Hash:', window.location.hash); // DEBUG
       // No session found immediately.
 
-      // If valid magic link hash exists, wait for listener (it should fire).
+      // If valid magic link hash exists, wait for listener OR poll for session.
       const isMagicLink = window.location.hash && window.location.hash.includes('access_token');
 
       if (!isMagicLink) {
@@ -1891,17 +1891,41 @@ function initDashboard() {
         // Is Magic Link, show waiting feedback
         if (loadingEl) {
           const p = loadingEl.querySelector('p');
-          if (p) {
-            p.textContent = 'Verificando enlace...';
-            // Fallback if listener NEVER fires (e.g. invalid link processed silently)
-            setTimeout(() => {
-              if (!dashboardLoaded) {
-                p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
-                setTimeout(() => window.location.href = '/portal/ingresar', 2000);
-              }
-            }, 5000);
-          }
+          if (p) p.textContent = 'Verificando enlace...';
         }
+
+        // Active Polling Fallback (in case listener misses)
+        const pollInterval = setInterval(async () => {
+          if (dashboardLoaded) {
+            clearInterval(pollInterval);
+            return;
+          }
+          console.log('Polling for session...');
+          const { data: pollData } = await supabase.auth.getSession();
+          if (pollData?.session) {
+            console.log('Session found via Polling!');
+            clearInterval(pollInterval);
+            dashboardLoaded = true;
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+            fetchDashboardData(pollData.session);
+          }
+        }, 500);
+
+        // Timeout Safety
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          if (!dashboardLoaded) {
+            if (loadingEl) {
+              const p = loadingEl.querySelector('p');
+              if (p) {
+                p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
+              }
+            }
+            setTimeout(() => window.location.href = '/portal/ingresar', 2000);
+          }
+        }, 8000);
       }
     }
   });
