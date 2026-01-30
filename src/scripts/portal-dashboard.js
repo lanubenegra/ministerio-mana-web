@@ -234,10 +234,11 @@ async function loadAccount() {
       authMode = 'password';
     }
 
-    // 3. Parallelized Data Fetching
-    const [sessionRes, resumenRes] = await Promise.all([
+    // 3. Parallelized Initial Data Fetching
+    const [sessionRes, resumenRes, { data: userData }] = await Promise.all([
       fetch('/api/portal/session', { headers }),
-      token ? fetch('/api/cuenta/resumen', { headers }) : Promise.resolve({ ok: true, json: () => ({ ok: true, user: {}, bookings: [], plans: [], payments: [] }) })
+      token ? fetch('/api/cuenta/resumen', { headers }) : Promise.resolve({ ok: true, json: () => ({ ok: true, user: {}, bookings: [], plans: [], payments: [] }) }),
+      token ? supabase.auth.getUser() : Promise.resolve({ data: { user: null } })
     ]);
 
     const sessionPayload = await sessionRes.json();
@@ -270,7 +271,6 @@ async function loadAccount() {
       churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
     }
 
-    const { data: userData } = token ? await supabase.auth.getUser() : { data: { user: null } };
     const user = userData?.user;
 
     const activeUser = payload.user || {};
@@ -310,17 +310,26 @@ async function loadAccount() {
     renderInstallments(payload.installments || [], payload.plans || [], payload.bookings || []);
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
-    if (hasChurchAccess) {
-      await loadChurchSelector(headers);
-      await loadChurchBookings(headers);
-      await loadChurchPayments(headers);
-      await loadChurchInstallments(headers);
-      await loadChurchMembers(headers);
-    }
-    await loadAdminUsers(headers);
     setupInviteAccess();
     initAdminInvite();
-    await loadChurchDraft();
+    // 5. Reveal Dashboard (Eager Loading)
+    loadingEl.classList.add('hidden');
+    contentEl.classList.remove('hidden');
+    gsap.from(contentEl, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
+
+    // 6. Background Initialization (Parallelized)
+    const backgroundTasks = [];
+    if (hasChurchAccess) {
+      backgroundTasks.push(loadChurchSelector(headers));
+      backgroundTasks.push(loadChurchBookings(headers));
+      backgroundTasks.push(loadChurchPayments(headers));
+      backgroundTasks.push(loadChurchInstallments(headers));
+      backgroundTasks.push(loadChurchMembers(headers));
+    }
+    backgroundTasks.push(loadAdminUsers(headers));
+    backgroundTasks.push(loadChurchDraft());
+
+    await Promise.all(backgroundTasks);
 
     if (authMode === 'password') {
       if (onboardingModal) onboardingModal.classList.add('hidden');
@@ -331,14 +340,12 @@ async function loadAccount() {
     } else if (!portalProfile?.full_name || !portalProfile?.affiliation_type) {
       showOnboarding();
     }
-
-    loadingEl.classList.add('hidden');
-    contentEl.classList.remove('hidden');
-    gsap.from(contentEl, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
   } catch (err) {
     console.error(err);
-    loadingEl.classList.add('hidden');
-    errorEl.classList.remove('hidden');
+    if (!loadingEl.classList.contains('hidden')) {
+      loadingEl.classList.add('hidden');
+      errorEl.classList.remove('hidden');
+    }
   }
 }
 
