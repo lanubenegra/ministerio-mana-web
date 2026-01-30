@@ -21,6 +21,7 @@ const currency = isColombia ? 'COP' : 'USD';
 const symbol = isColombia ? '$' : 'USD $';
 const placeholderAmount = isColombia ? '100000' : '50';
 const minAmount = isColombia ? 10000 : 10;
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <div id="primicias-gateway" class="w-full max-w-2xl mx-auto" data-country={country}>
@@ -32,11 +33,11 @@ const minAmount = isColombia ? 10000 : 10;
 
     <header class="relative z-10 text-center mb-10">
       <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800/50 border border-white/10 mb-6 shadow-inner">
-        <span class="w-2 h-2 rounded-full bg-brand-gold animate-pulse"></span>
-        <span class="text-[10px] font-bold tracking-widest text-brand-gold uppercase">Plataforma Segura</span>
+        <span class="w-2 h-2 rounded-full bg-amber-200 animate-pulse"></span>
+        <span class="text-[10px] font-bold tracking-widest text-amber-100 uppercase">Plataforma Segura</span>
       </div>
       <h2 class="text-3xl md:text-5xl font-display font-bold text-white mb-4 drop-shadow-xl">
-        <span class="bg-clip-text text-transparent bg-gradient-to-r from-brand-gold to-yellow-200">Primicias</span> y Diezmos
+        <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-100 to-orange-100">Primicias</span> y Diezmos
       </h2>
       <p class="text-slate-300 text-lg leading-relaxed max-w-lg mx-auto font-light">
         Honra a Dios con tus bienes y con las primicias de todos tus frutos.
@@ -239,7 +240,7 @@ const minAmount = isColombia ? 10000 : 10;
   }
 </style>
 
-<script>
+<script nonce={cspNonce}>
   // Tabs Logic
   const tabs = document.querySelectorAll('.tab-btn');
   const wompiType = document.getElementById('wompi-type');

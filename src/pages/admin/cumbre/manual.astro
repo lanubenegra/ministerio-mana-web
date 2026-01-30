@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 const token = Astro.url.searchParams.get('token') ?? '';
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout title="Cumbre 2026 Manual | Ministerio Maná" description="Formulario manual para pagos físicos.">
@@ -132,7 +133,7 @@ const token = Astro.url.searchParams.get('token') ?? '';
     </div>
   </section>
 
-  <script type="module">
+  <script type="module" nonce={cspNonce}>
     const participants = [];
     const list = document.getElementById('participants-list');
     const input = document.getElementById('participants-json');

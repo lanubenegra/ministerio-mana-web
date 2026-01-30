@@ -9,6 +9,8 @@ interface IdentitySection {
   pin?: { x: number; y: number; angle: number; len: number; label: string };
 }
 
+const cspNonce = Astro.locals?.cspNonce;
+
 const sections: IdentitySection[] = [
   {
     id: 'intro',
@@ -164,7 +166,7 @@ const sections: IdentitySection[] = [
   </div>
 </section>
 
-<script>
+<script nonce={cspNonce}>
   /* Local Script for granular control of this specific component */
   function initHistory() {
     const scenes = document.querySelectorAll('[data-history-scene]');
