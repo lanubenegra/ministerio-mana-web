@@ -623,7 +623,9 @@ const cspNonce = Astro.locals?.cspNonce;
     }
   </style>
 
-  <script type="module" nonce={cspNonce}>
-    import '../../scripts/portal-dashboard.js';
-  </script>
+  <script
+    type="module"
+    src={Astro.resolve('../../scripts/portal-dashboard.js')}
+    nonce={cspNonce}
+  ></script>
 </BaseLayout>
