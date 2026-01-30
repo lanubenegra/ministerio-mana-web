@@ -79,6 +79,6 @@ const cspNonce = Astro.locals?.cspNonce;
   </div>
 </BaseLayout>
 
-<script nonce={cspNonce}>
+<script type="module" nonce={cspNonce}>
   import '../../scripts/cumbre-nav.js';
 </script>

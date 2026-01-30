@@ -127,7 +127,7 @@ const cspNonce = Astro.locals?.cspNonce;
   </main>
 
 
-  <script nonce={cspNonce}>
+  <script type="module" nonce={cspNonce}>
     import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
     import { gsap } from 'gsap';
 

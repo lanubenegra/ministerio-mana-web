@@ -58,7 +58,7 @@ const cspNonce = Astro.locals?.cspNonce;
     </div>
   </main>
 
-  <script nonce={cspNonce}>
+  <script type="module" nonce={cspNonce}>
     import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
 
     const supabase = getSupabaseBrowserClient();

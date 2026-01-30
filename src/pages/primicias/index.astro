@@ -93,7 +93,7 @@ const cspNonce = Astro.locals?.cspNonce;
   </main>
 </BaseLayout>
 
-<script nonce={cspNonce}>
+<script type="module" nonce={cspNonce}>
   import { gsap } from 'gsap';
 
   window.addEventListener('load', () => {

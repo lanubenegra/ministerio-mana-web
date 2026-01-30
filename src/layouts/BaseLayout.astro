@@ -37,7 +37,7 @@ const cspNonce = Astro.locals?.cspNonce;
     
     <!-- Smooth Scroll & Parallax Animations -->
     {!disableSmoothScroll && (
-    <script nonce={cspNonce}>
+    <script type="module" nonce={cspNonce}>
       import Lenis from '@studio-freight/lenis';
       import { gsap } from 'gsap';
       import { ScrollTrigger } from 'gsap/ScrollTrigger';
