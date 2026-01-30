@@ -246,9 +246,9 @@ async function loadAccount() {
     toggleChurchField(profileAffiliation.value);
 
     if (portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin') {
-      if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Iglesias';
-      if (iglesiaTitle) iglesiaTitle.textContent = 'Iglesias';
-      if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general para gestión de sedes y registros físicos.';
+      if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Eventos';
+      if (iglesiaTitle) iglesiaTitle.textContent = 'Cumbre Mundial 2026';
+      if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general del evento para gestión de sedes y registros físicos.';
     }
 
     // Calculations for highlights
@@ -675,6 +675,20 @@ function renderChurchInstallments(list) {
     const dueLabel = formatDate(item.due_date);
     const reminderLabel = item.last_reminder?.sent_at ? formatDateTime(item.last_reminder.sent_at) : '—';
     const linkLabel = item.last_link?.created_at ? formatDateTime(item.last_link.created_at) : '—';
+    const isAuto = (plan.provider === 'wompi' && plan.provider_payment_method_id)
+      || (plan.provider === 'stripe' && plan.provider_subscription_id);
+    const chargeLabel = isAuto ? 'Auto' : 'Manual';
+    const chargeClass = isAuto ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
+    const actionsHtml = isAuto
+      ? '<div class="text-xs font-semibold text-emerald-700">Cobro automático activo</div>'
+      : `
+        <button class="church-installment-action px-3 py-2 rounded-xl bg-[#293C74] text-white text-xs font-bold hover:shadow-md transition" data-action="copy-link" data-installment="${item.id}">
+          Copiar link
+        </button>
+        <button class="church-installment-action px-3 py-2 rounded-xl bg-white border border-slate-200 text-[#293C74] text-xs font-bold hover:bg-slate-50 transition" data-action="send-reminder" data-installment="${item.id}">
+          Enviar recordatorio
+        </button>
+      `;
 
     const card = document.createElement('div');
     card.className = 'rounded-2xl border border-slate-200 bg-white px-4 py-4';
@@ -689,17 +703,13 @@ function renderChurchInstallments(list) {
         </div>
         <div class="text-right space-y-2">
           <span class="inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${statusClass}">${statusLabel}</span>
+          <span class="inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${chargeClass}">Cobro ${chargeLabel}</span>
           <div class="text-[11px] text-slate-400">Último link: ${linkLabel}</div>
           <div class="text-[11px] text-slate-400">Último recordatorio: ${reminderLabel}</div>
         </div>
       </div>
       <div class="mt-3 flex flex-wrap gap-2">
-        <button class="church-installment-action px-3 py-2 rounded-xl bg-[#293C74] text-white text-xs font-bold hover:shadow-md transition" data-action="copy-link" data-installment="${item.id}">
-          Copiar link
-        </button>
-        <button class="church-installment-action px-3 py-2 rounded-xl bg-white border border-slate-200 text-[#293C74] text-xs font-bold hover:bg-slate-50 transition" data-action="send-reminder" data-installment="${item.id}">
-          Enviar recordatorio
-        </button>
+        ${actionsHtml}
       </div>
     `;
     churchInstallmentsList.appendChild(card);

@@ -75,7 +75,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: installment, error } = await supabaseAdmin
     .from('cumbre_installments')
-    .select('id, booking_id, plan_id, installment_index, due_date, amount, currency, status, booking:cumbre_bookings(id, contact_name, contact_email, contact_phone, contact_church, church_id), plan:cumbre_payment_plans(id, provider, currency, installment_count)')
+    .select('id, booking_id, plan_id, installment_index, due_date, amount, currency, status, booking:cumbre_bookings(id, contact_name, contact_email, contact_phone, contact_church, church_id), plan:cumbre_payment_plans(id, provider, currency, installment_count, provider_payment_method_id, provider_subscription_id)')
     .eq('id', installmentId)
     .maybeSingle();
 
@@ -89,10 +89,19 @@ export const POST: APIRoute = async ({ request }) => {
   const booking = (installment as any).booking || {};
   const plan = (installment as any).plan || {};
   const targetChurch = ctx.profile?.portal_church_id || ctx.profile?.church_id || ctx.churchId;
+  const isAuto = (plan?.provider === 'wompi' && plan?.provider_payment_method_id)
+    || (plan?.provider === 'stripe' && plan?.provider_subscription_id);
 
   if (!ctx.isAdmin && booking?.church_id && targetChurch && booking.church_id !== targetChurch) {
     return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
       status: 401,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  if (isAuto) {
+    return new Response(JSON.stringify({ ok: false, error: 'Cobro automático activo' }), {
+      status: 400,
       headers: { 'content-type': 'application/json' },
     });
   }

@@ -268,6 +268,8 @@
   - `7748207`: "fix(portal): restore stars effect and normalize login UI labels"
   - `5f778ce`: "style(portal): high contrast text updates for dashboard and login"
   - `bb80c82`: "style(portal): fix layout and spacing in church manual registration form"
+  - `eac6d63`: "style(portal): harmonize admin users card spacing and layout"
+  - `[new]`: "feat(primicias): add dedicated landing page with geo-aware payment gateway (Wompi/Stripe/Pushpay)"
 
 
 ### 2026-01-28 (Hotfix: Internal Server Error en Preview)
