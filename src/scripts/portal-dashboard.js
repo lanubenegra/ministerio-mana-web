@@ -1865,6 +1865,7 @@ function initDashboard() {
   // Supabase might have already processed the hash before this script ran.
   // We check getSession() immediately.
   supabase.auth.getSession().then(({ data }) => {
+    console.log('getSession result:', data); // DEBUG
     if (data?.session && !dashboardLoaded) {
       console.log('Session found immediately via getSession');
       dashboardLoaded = true;
@@ -1875,6 +1876,7 @@ function initDashboard() {
 
       fetchDashboardData(data.session);
     } else if (!data?.session) {
+      console.log('No session from getSession. Hash:', window.location.hash); // DEBUG
       // No session found immediately.
 
       // If valid magic link hash exists, wait for listener (it should fire).
