@@ -109,21 +109,7 @@ try {
 } catch (err) {
   console.error('Supabase client initialization failed:', err);
   supabaseInitError = err;
-
-  // Show user-friendly error
-  if (loadingEl) loadingEl.classList.add('hidden');
-  if (errorEl) {
-    errorEl.classList.remove('hidden');
-    const errorText = errorEl.querySelector('p');
-    if (errorText) {
-      errorText.textContent = 'Error de configuración del portal. Contacta a soporte.';
-    }
-  }
-
-  // Redirect to login after showing error
-  setTimeout(() => {
-    window.location.href = '/portal/ingresar?error=config';
-  }, 3000);
+  // Don't redirect or show errors here - let the auth flow handle it
 }
 let portalProfile = null;
 let portalMemberships = [];
