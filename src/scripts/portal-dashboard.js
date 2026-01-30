@@ -168,25 +168,25 @@ function switchTab(tabId) {
 }
 
 async function loadAccount() {
-  // Fix Magic Link Race Condition: If hash exists, wait for Supabase to process it
-  if (window.location.hash && window.location.hash.includes('access_token')) {
-    console.log('Detectado Magic Link, esperando sesión...');
-    await new Promise((resolve) => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          subscription.unsubscribe();
-          resolve();
-        }
-      });
-      // Fallback timeout in case event never fires
-      setTimeout(() => {
-        resolve();
-      }, 3500);
-    });
-  }
-
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
+    // Fix Magic Link: If hash contains access_token, force refresh to process it immediately
+    let sessionData;
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      console.log('Magic Link detectado, procesando...');
+      const { data, error } = await supabase.auth.refreshSession();
+      sessionData = data;
+      if (error) {
+        console.error('Error procesando Magic Link:', error);
+        window.location.href = '/portal/ingresar';
+        return;
+      }
+      // Clear the hash after processing
+      window.history.replaceState(null, '', window.location.pathname);
+    } else {
+      const { data } = await supabase.auth.getSession();
+      sessionData = data;
+    }
+
     let token = sessionData.session?.access_token;
     let headers = {};
     if (token) {
