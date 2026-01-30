@@ -68,9 +68,28 @@
   /** @type {HTMLButtonElement | null} */
   const logoutBtn = document.getElementById('btn-logout-header');
 
-  const supabase = getSupabaseBrowserClient();
+  function showGuest() {
+    if (loading) loading.classList.add('hidden');
+    if (loggedBtn) loggedBtn.classList.add('hidden');
+    if (guestBtn) {
+      guestBtn.classList.remove('hidden');
+      guestBtn.classList.add('flex');
+    }
+  }
+
+  let supabase = null;
+  try {
+    supabase = getSupabaseBrowserClient();
+  } catch (err) {
+    console.error('Supabase client not available:', err);
+    showGuest();
+  }
 
   async function checkSession() {
+    if (!supabase) {
+      showGuest();
+      return;
+    }
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -114,7 +133,9 @@
     logoutBtn.addEventListener('click', async () => {
       logoutBtn.disabled = true;
       logoutBtn.textContent = 'Saliendo...';
-      await supabase.auth.signOut();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
       window.location.href = '/';
     });
   }

@@ -102,7 +102,14 @@ const onboardAffiliation = document.getElementById('onboard-affiliation');
 const onboardChurchWrapper = document.getElementById('onboard-church-wrapper');
 const onboardChurchName = document.getElementById('onboard-church-name');
 
-const supabase = getSupabaseBrowserClient();
+let supabase = null;
+try {
+  supabase = getSupabaseBrowserClient();
+} catch (err) {
+  console.error('Supabase client not available:', err);
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (errorEl) errorEl.classList.remove('hidden');
+}
 let portalProfile = null;
 let portalMemberships = [];
 let authMode = 'supabase';
@@ -206,11 +213,13 @@ async function fetchDashboardData(session) {
     portalAuthHeaders = headers;
 
     // 2. Parallelized Initial Data Fetching
+    if (!supabase) throw new Error('Supabase no configurado');
+
     const [sessionRes, resumenRes, { data: userData }] = await Promise.all([
       fetch('/api/portal/session', { headers }),
       // Fetch resumen immediately with the token we already have
       fetch('/api/cuenta/resumen', { headers }),
-      supabase.auth.getUser()
+      supabase.auth.getUser(),
     ]);
 
 
@@ -1882,6 +1891,8 @@ function initDashboard() {
   }
 
   // 1. Reactive Listener (Primary Driver for Async Events)
+  if (!supabase) return;
+
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
       if (session && !dashboardLoaded) {

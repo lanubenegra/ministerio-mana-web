@@ -197,7 +197,9 @@ const appMiddleware: MiddlewareHandler = async (context, next) => {
   response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), interest-cohort=()');
   response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
 
-  const scriptSrc = [...SCRIPT_SRC_BASE, `'nonce-${nonce}'`];
+  // NOTE: inline scripts are used across the site. Until all scripts include nonce,
+  // keep 'unsafe-inline' to avoid breaking auth/portal flows in production.
+  const scriptSrc = [...SCRIPT_SRC_BASE, `'nonce-${nonce}'`, "'unsafe-inline'"];
   if (IS_VERCEL_PREVIEW) {
     scriptSrc.push('https://vercel.live');
   }
