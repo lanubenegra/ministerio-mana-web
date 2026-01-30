@@ -102,20 +102,27 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       }
     }
 
+    function parseParams(rawValue) {
+      if (!rawValue) return new URLSearchParams();
+      const value = rawValue.replace(/^#/, '').replace(/^\?/, '').replace(/^\//, '');
+      return new URLSearchParams(value);
+    }
+
     function getUrlParams() {
       const url = new URL(window.location.href);
       const searchParams = url.searchParams;
-      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+      const hashParams = parseParams(url.hash);
       return { url, searchParams, hashParams };
     }
 
     function getTokenParams() {
       const { searchParams, hashParams } = getUrlParams();
-      const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
-      const type = hashParams.get('type') || searchParams.get('type');
-      const error = hashParams.get('error') || searchParams.get('error');
-      const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
+      const accessToken = hashParams.get('access_token') || hashParams.get('/access_token') || searchParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token') || hashParams.get('/refresh_token') || searchParams.get('refresh_token');
+      const type = hashParams.get('type') || hashParams.get('/type') || searchParams.get('type');
+      const error = hashParams.get('error') || hashParams.get('/error') || searchParams.get('error');
+      const errorDescription =
+        hashParams.get('error_description') || hashParams.get('/error_description') || searchParams.get('error_description');
       return { accessToken, refreshToken, type, error, errorDescription };
     }
 
