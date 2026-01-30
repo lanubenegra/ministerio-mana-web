@@ -168,6 +168,23 @@ function switchTab(tabId) {
 }
 
 async function loadAccount() {
+  // Fix Magic Link Race Condition: If hash exists, wait for Supabase to process it
+  if (window.location.hash && window.location.hash.includes('access_token')) {
+    console.log('Detectado Magic Link, esperando sesión...');
+    await new Promise((resolve) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          subscription.unsubscribe();
+          resolve();
+        }
+      });
+      // Fallback timeout in case event never fires
+      setTimeout(() => {
+        resolve();
+      }, 3500);
+    });
+  }
+
   try {
     const { data: sessionData } = await supabase.auth.getSession();
     let token = sessionData.session?.access_token;
@@ -1800,6 +1817,49 @@ updatePasswordBtn?.addEventListener('click', async () => {
   }
 });
 
+
+const registerPasskeyBtn = document.getElementById('btn-register-passkey');
+const passkeyStatus = document.getElementById('passkey-status');
+
+registerPasskeyBtn?.addEventListener('click', async () => {
+  if (!passkeyStatus) return;
+  passkeyStatus.textContent = 'Iniciando registro de Passkey...';
+  passkeyStatus.className = 'text-xs text-center mt-2 font-medium text-slate-500';
+  registerPasskeyBtn.disabled = true;
+  registerPasskeyBtn.classList.add('opacity-50');
+
+  try {
+    // 1. Initialize enrollment
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: 'webauthn',
+    });
+
+    if (error) throw error;
+
+    // 2. Challenge and Verify (Triggers Browser Prompt)
+    const { data: verifyData, error: verifyError } = await supabase.auth.mfa.challengeAndVerify({
+      factorId: data.id,
+    });
+
+    if (verifyError) throw verifyError;
+
+    passkeyStatus.textContent = '¡Dispositivo vinculado correctamente!';
+    passkeyStatus.className = 'text-xs text-center mt-2 font-bold text-green-500';
+    registerPasskeyBtn.innerHTML = `
+       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+       Vinculado
+    `;
+
+  } catch (err) {
+    console.error(err);
+    passkeyStatus.textContent = err.message || 'Error al vincular. Verifica que tu dispositivo soporte Passkeys.';
+    passkeyStatus.className = 'text-xs text-center mt-2 font-medium text-red-500';
+    registerPasskeyBtn.disabled = false;
+    registerPasskeyBtn.classList.remove('opacity-50');
+  }
+});
+
 loadAccount();
 initChurchManualForm();
 initInviteForm();
+

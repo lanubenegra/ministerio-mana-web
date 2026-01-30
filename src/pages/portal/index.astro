@@ -285,6 +285,24 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                     </div>
                   </div>
                   <p id="security-status" class="text-sm font-medium text-slate-500 min-h-[1.25rem]"></p>
+                  
+                  <!-- Passkeys Section -->
+                  <div class="pt-6 border-t border-slate-100 mt-2">
+                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                           <div class="flex items-center gap-2 mb-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#293C74]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 8m8.363 12.18c.201-.06.401-.123.6-.192" /></svg>
+                              <h4 class="font-bold text-[#293C74] text-sm">Passkeys (Huella / Rostro)</h4>
+                           </div>
+                           <p class="text-xs text-slate-600 max-w-sm">Vincula tu dispositivo para ingresar sin contraseña la próxima vez.</p>
+                        </div>
+                        <button id="btn-register-passkey" class="bg-white border border-[#293C74]/20 text-[#293C74] px-6 py-3 rounded-2xl font-bold hover:bg-[#293C74] hover:text-white transition-all text-xs flex items-center gap-2">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                           Vincular este dispositivo
+                        </button>
+                     </div>
+                     <p id="passkey-status" class="text-xs text-center mt-2 font-medium"></p>
+                  </div>
                </div>
             </div>
 
