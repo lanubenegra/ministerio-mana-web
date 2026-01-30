@@ -14,12 +14,12 @@ function initMap() {
   );
 
   // Centro del mapa: promedio de los puntos o Colombia por defecto
-  const center: [number, number] =
+  const center =
     withCoords.length > 0
       ? [
-          withCoords.reduce((sum, c) => sum + (c.lat ?? 0), 0) / withCoords.length,
-          withCoords.reduce((sum, c) => sum + (c.lng ?? 0), 0) / withCoords.length,
-        ]
+        withCoords.reduce((sum, c) => sum + (c.lat ?? 0), 0) / withCoords.length,
+        withCoords.reduce((sum, c) => sum + (c.lng ?? 0), 0) / withCoords.length,
+      ]
       : [4.65, -74.06]; // lat, lng Bogotá aprox
 
   const map = L.map(container).setView(center, 6);
@@ -39,7 +39,7 @@ function initMap() {
       </div>
     `;
 
-    L.marker([church.lat!, church.lng!]).addTo(map).bindPopup(popupHtml);
+    L.marker([church.lat, church.lng]).addTo(map).bindPopup(popupHtml);
   });
 }
 
