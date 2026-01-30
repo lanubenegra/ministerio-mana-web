@@ -169,38 +169,54 @@ function switchTab(tabId) {
 
 async function loadAccount() {
   try {
-    // Fix Magic Link: If hash exists, wait briefly for Supabase to process it via onAuthStateChange
+    // 1. Robust Magic Link Handling: Aggressive Polling + Listener
     if (window.location.hash && window.location.hash.includes('access_token')) {
-      console.log('Magic Link detectado, esperando sesión...');
+      console.log('Magic Link detectado, validando...');
+      if (loadingEl) {
+        const p = loadingEl.querySelector('p');
+        if (p) p.textContent = 'Validando enlace de acceso...';
+      }
 
       await new Promise((resolve) => {
-        let resolved = false;
+        let finished = false;
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && !resolved) {
-            resolved = true;
+          if (session && !finished) {
+            finished = true;
             subscription.unsubscribe();
             resolve();
           }
         });
 
-        // Fast timeout fallback (1.5s) to avoid hanging
-        setTimeout(() => {
-          if (!resolved) {
+        const poll = setInterval(async () => {
+          if (finished) return clearInterval(poll);
+          const { data } = await supabase.auth.getSession();
+          if (data?.session) {
+            finished = true;
+            clearInterval(poll);
             subscription.unsubscribe();
             resolve();
           }
-        }, 1500);
+        }, 200);
+
+        setTimeout(() => {
+          if (!finished) {
+            finished = true;
+            clearInterval(poll);
+            subscription.unsubscribe();
+            resolve();
+          }
+        }, 5000);
       });
 
-      // Clean URL after wait
+      // Clear hash after processing
       window.history.replaceState(null, '', window.location.pathname);
     }
 
-    // Proceed to standard session check
+    // 2. Initial Auth Verification
     const { data: sessionData } = await supabase.auth.getSession();
-
     let token = sessionData.session?.access_token;
     let headers = {};
+
     if (token) {
       headers = { Authorization: `Bearer ${token}` };
       portalAuthHeaders = headers;
@@ -218,19 +234,33 @@ async function loadAccount() {
       authMode = 'password';
     }
 
-    const sessionRes = await fetch('/api/portal/session', { headers });
+    // 3. Parallelized Data Fetching
+    const [sessionRes, resumenRes] = await Promise.all([
+      fetch('/api/portal/session', { headers }),
+      token ? fetch('/api/cuenta/resumen', { headers }) : Promise.resolve({ ok: true, json: () => ({ ok: true, user: {}, bookings: [], plans: [], payments: [] }) })
+    ]);
+
     const sessionPayload = await sessionRes.json();
     if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
+
+    let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
+    if (token) {
+      const resData = await resumenRes.json();
+      if (!resumenRes.ok || !resData.ok) throw new Error(resData.error || 'No se pudo cargar el resumen');
+      payload = resData;
+    }
 
     portalProfile = sessionPayload.profile || {};
     portalMemberships = sessionPayload.memberships || [];
     portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
     portalIsSuperadmin = portalProfile?.role === 'superadmin';
+
     const hasChurchRole = (portalMemberships || []).some(
       (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
     );
     const hasChurchAccess = portalIsAdmin || hasChurchRole;
     const membershipChurch = portalMemberships.find((item) => item?.church?.id)?.church || null;
+
     if (!portalSelectedChurchId && membershipChurch?.id) {
       portalSelectedChurchId = membershipChurch.id;
     }
@@ -242,24 +272,6 @@ async function loadAccount() {
 
     const { data: userData } = token ? await supabase.auth.getUser() : { data: { user: null } };
     const user = userData?.user;
-
-    let payload = {
-      ok: true,
-      user: {
-        fullName: portalProfile?.full_name || user?.user_metadata?.full_name || portalProfile?.email || '',
-        email: portalProfile?.email || user?.email || '',
-      },
-      bookings: [],
-      plans: [],
-      payments: [],
-    };
-
-    if (token) {
-      const res = await fetch('/api/cuenta/resumen', { headers });
-      const resPayload = await res.json();
-      if (!res.ok || !resPayload.ok) throw new Error(resPayload.error || 'No se pudo cargar');
-      payload = resPayload;
-    }
 
     const activeUser = payload.user || {};
     const name = activeUser.fullName || user?.user_metadata?.full_name || 'Usuario';
