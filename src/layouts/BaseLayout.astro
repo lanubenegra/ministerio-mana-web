@@ -3,7 +3,6 @@ import SEO from '@components/SEO.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import '../styles/global.css';
-import baseLayoutScript from '../scripts/base-layout.js';
 
 const {
   title,
@@ -16,6 +15,7 @@ const {
   hideFooter = false,
   disableSmoothScroll = true,
 } = Astro.props;
+const baseLayoutScript = Astro.resolve('../scripts/base-layout.js');
 const cspNonce = Astro.locals?.cspNonce;
 ---
 <!doctype html>

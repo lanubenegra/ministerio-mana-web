@@ -1,8 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import portalDashboardScript from '../../scripts/portal-dashboard.js';
+const portalDashboardScript = Astro.resolve('../../scripts/portal-dashboard.js');
 const cspNonce = Astro.locals?.cspNonce;
-
 ---
 
 <BaseLayout title="Portal Maná | Ministerio Maná" description="Gestiona tus aportes y eventos en el Portal Maná." hideHeader hideFooter>

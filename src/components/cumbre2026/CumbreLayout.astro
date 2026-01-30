@@ -2,12 +2,12 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NetOverlay from './NetOverlay.astro';
 import AccountButton from '@components/AccountButton.astro';
-import cumbreNavScript from '../../scripts/cumbre-nav.js';
 
 const { title, description, variant = 'dark' } = Astro.props;
 
 const isLight = variant === 'light';
 const mainBg = isLight ? 'bg-slate-50 text-brand-dark' : 'bg-brand-void text-white';
+const cumbreNavScript = Astro.resolve('../../scripts/cumbre-nav.js');
 const cspNonce = Astro.locals?.cspNonce;
 ---
 

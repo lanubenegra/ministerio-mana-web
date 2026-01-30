@@ -1,6 +1,5 @@
 ---
 import CumbreLayout from '@components/cumbre2026/CumbreLayout.astro';
-import cumbreEstadoScript from '../../../scripts/cumbre-estado.js';
 
 const { bookingId, source } = Astro.url.searchParams;
 const isPayment = source === 'payment';
@@ -11,6 +10,7 @@ const lead = isPayment
 const subtitle = isPayment
   ? 'Hemos enviado un correo con el comprobante del pago.'
   : 'Hemos enviado un correo con todos los detalles y tu comprobante de reserva.';
+const cumbreEstadoScript = Astro.resolve('../../../scripts/cumbre-estado.js');
 const cspNonce = Astro.locals?.cspNonce;
 ---
 

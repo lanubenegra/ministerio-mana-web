@@ -2,11 +2,11 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import PrimiciasGateway from '@components/primicias/PrimiciasGateway.astro';
 import { preferredGatewayForCountry } from '@lib/geo';
-import primiciasPageScript from '../../scripts/primicias-page.js';
 
 // Server Side Geo Detection (Best Effort)
 // Vercel / Cloudflare headers
 const country = Astro.request.headers.get('x-vercel-ip-country') || 'CO'; // Default to CO if unknown
+const primiciasPageScript = Astro.resolve('../../scripts/primicias-page.js');
 const cspNonce = Astro.locals?.cspNonce;
 ---
 

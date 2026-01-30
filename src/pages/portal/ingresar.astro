@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-import portalIngresarScript from '../../scripts/portal-ingresar.js';
+const portalIngresarScript = Astro.resolve('../../scripts/portal-ingresar.js');
 const cspNonce = Astro.locals?.cspNonce;
 ---
 
