@@ -220,13 +220,6 @@ function switchTab(tabId) {
 // Core Dashboard Logic - Reactive Auth
 async function fetchDashboardData(session) {
   console.log('fetchDashboardData called', session);
-
-  // Early exit if Supabase failed to initialize
-  if (supabaseInitError) {
-    console.error('Cannot load dashboard - Supabase not initialized');
-    return; // Error already shown in init block
-  }
-
   try {
     const token = session?.access_token;
     if (!token) throw new Error('No access token');
