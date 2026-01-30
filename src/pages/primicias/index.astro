@@ -9,34 +9,33 @@ const country = Astro.request.headers.get('x-vercel-ip-country') || 'CO'; // Def
 ---
 
 <BaseLayout title="Primicias y Diezmos | Ministerio Maná" description="Honra a Dios con tus primicias. Plataforma segura de donaciones.">
-  <main class="relative min-h-screen bg-brand-void overflow-x-hidden text-white selection:bg-brand-gold selection:text-brand-void">
+  <main class="relative min-h-screen bg-sky-50 overflow-x-hidden text-amber-950 selection:bg-amber-500 selection:text-white">
     
-    <!-- Background Effects (Cumbre-like) -->
+    <!-- Background Effects (Wheat Field) -->
     <div class="fixed inset-0 pointer-events-none z-0">
-      <!-- Gradient Mesh -->
-      <div class="absolute inset-0 bg-gradient-to-b from-brand-void via-[#0f172a] to-brand-void"></div>
-      <div class="absolute inset-0 bg-gradient-to-r from-brand-void via-transparent to-brand-void opacity-80"></div>
+      <!-- Main Image -->
+      <div class="absolute inset-0 bg-[url('/images/primicias-wheat-bg.png')] bg-cover bg-center"></div>
       
-      <!-- Orbs -->
-      <div class="absolute top-0 left-1/4 w-[800px] h-[800px] bg-brand-ocean/10 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 mix-blend-screen"></div>
-      <div class="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-brand-gold/10 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3 mix-blend-screen"></div>
+      <!-- Overlays for Readability -->
+      <div class="absolute inset-0 bg-gradient-to-b from-sky-400/30 via-transparent to-amber-900/40 mix-blend-multiply"></div>
+      <div class="absolute inset-0 bg-white/20 backdrop-blur-[2px]"></div>
       
-      <!-- Gold Sparkles -->
-      <div id="gold-stars" class="absolute inset-0 opacity-40"></div>
+      <!-- Gold Sparkles (Subtle) -->
+      <div id="gold-stars" class="absolute inset-0 opacity-60"></div>
     </div>
 
     <!-- Navigation / Header -->
     <nav class="relative z-50 flex items-center justify-between px-6 py-6 md:px-12">
       <a href="/" class="flex items-center gap-3 group">
-        <div class="w-10 h-10 bg-white/5 border border-white/10 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform backdrop-blur-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7" /></svg>
+        <div class="w-10 h-10 bg-white/40 border border-white/50 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform backdrop-blur-md">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-900" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7" /></svg>
         </div>
-        <span class="font-bold text-white/60 hover:text-white text-sm tracking-widest uppercase transition-colors">Volver al Inicio</span>
+        <span class="font-bold text-amber-950/80 hover:text-amber-950 text-sm tracking-widest uppercase transition-colors drop-shadow-sm">Volver al Inicio</span>
       </a>
       
       <div class="hidden md:flex items-center gap-4">
-        <div class="flex items-center gap-2 text-xs font-bold text-white/40 uppercase tracking-widest">
-           <span class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></span>
+        <div class="flex items-center gap-2 text-xs font-bold text-amber-950/60 uppercase tracking-widest">
+           <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></span>
            Sitio Seguro
         </div>
       </div>
@@ -49,37 +48,37 @@ const country = Astro.request.headers.get('x-vercel-ip-country') || 'CO'; // Def
         <!-- Sidebar / Context (Desktop) -->
         <div class="hidden lg:block w-full max-w-sm pt-12 space-y-12">
            <div class="space-y-6">
-             <h1 class="font-display text-5xl font-bold text-white leading-tight drop-shadow-lg">
-               El poder de la <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-gold to-yellow-200 italic">Primicia</span>
+             <h1 class="font-display text-6xl font-black text-amber-950 leading-[0.9] drop-shadow-xl tracking-tight">
+               El poder de la <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600 italic">Primicia</span>
              </h1>
-             <p class="text-slate-300 text-lg leading-relaxed font-light">
+             <p class="text-amber-900/80 text-xl leading-relaxed font-medium">
                La primicia no es una ofrenda cualquiera, es la evidencia de que Dios está en primer lugar en tu corazón y en tus finanzas.
              </p>
            </div>
            
            <div class="space-y-6">
              <div class="flex items-start gap-4 group">
-               <div class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-2xl group-hover:bg-brand-gold/20 transition-colors">🌱</div>
+               <div class="w-12 h-12 rounded-2xl bg-white/40 border border-white/50 flex items-center justify-center shrink-0 text-2xl group-hover:bg-amber-500/20 transition-colors shadow-sm">🌱</div>
                <div>
-                 <h3 class="font-bold text-white text-lg">Siembra con Fe</h3>
-                 <p class="text-sm text-slate-400 leading-relaxed mt-1">Cada semilla plantada en el reino tiene el potencial de una cosecha sobrenatural.</p>
+                 <h3 class="font-bold text-amber-900 text-lg">Siembra con Fe</h3>
+                 <p class="text-sm text-amber-800/70 leading-relaxed mt-1 font-medium">Cada semilla plantada en el reino tiene el potencial de una cosecha sobrenatural.</p>
                </div>
              </div>
              <div class="flex items-start gap-4 group">
-               <div class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-2xl group-hover:bg-brand-gold/20 transition-colors">🔓</div>
+               <div class="w-12 h-12 rounded-2xl bg-white/40 border border-white/50 flex items-center justify-center shrink-0 text-2xl group-hover:bg-amber-500/20 transition-colors shadow-sm">🔓</div>
                <div>
-                 <h3 class="font-bold text-white text-lg">Abre los Cielos</h3>
-                 <p class="text-sm text-slate-400 leading-relaxed mt-1">El diezmo es la llave que abre las ventanas de los cielos sobre tu casa.</p>
+                 <h3 class="font-bold text-amber-900 text-lg">Abre los Cielos</h3>
+                 <p class="text-sm text-amber-800/70 leading-relaxed mt-1 font-medium">El diezmo es la llave que abre las ventanas de los cielos sobre tu casa.</p>
                </div>
              </div>
            </div>
 
-           <div class="p-8 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 relative overflow-hidden">
-             <div class="absolute -top-10 -right-10 w-32 h-32 bg-brand-gold/10 rounded-full blur-3xl"></div>
-             <blockquote class="text-slate-200 italic mb-4 relative z-10 font-medium leading-relaxed">
+           <div class="p-8 bg-white/30 backdrop-blur-xl rounded-3xl border border-white/40 relative overflow-hidden shadow-2xl">
+             <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl"></div>
+             <blockquote class="text-amber-900/90 italic mb-4 relative z-10 font-bold leading-relaxed text-lg">
                "Honra a Jehová con tus bienes, y con las primicias de todos tus frutos; y serán llenos tus graneros con abundancia..."
              </blockquote>
-             <cite class="block text-xs font-bold text-brand-gold uppercase not-italic tracking-wider relative z-10">— Proverbios 3:9-10</cite>
+             <cite class="block text-xs font-black text-amber-700 uppercase not-italic tracking-wider relative z-10">— Proverbios 3:9-10</cite>
            </div>
         </div>
 
