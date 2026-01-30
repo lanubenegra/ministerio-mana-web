@@ -77,7 +77,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 </svg>
               </button>
             </div>
-            <p class="text-[11px] text-slate-600">Si no tienes contraseña, usa el enlace mágico para activarla.</p>
+            <p class="text-[11px] text-slate-600">Si no tienes contraseña o la olvidaste, usa el enlace mágico para ingresar sin clave.</p>
           </div>
 
           <div class="space-y-3">
@@ -230,7 +230,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
         // OTP Flow
         statusEl.textContent = 'Enviando enlace mágico...';
-        const redirectTo = `${window.location.origin}/portal/activar?next=${encodeURIComponent('/portal')}`;
+        const redirectTo = `${window.location.origin}/portal`;
         const res = await fetch('/api/auth/send-link', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },

@@ -146,9 +146,9 @@ navLinks.forEach(link => {
 });
 
 document.querySelectorAll('[data-tab-trigger]').forEach(btn => {
-   btn.addEventListener('click', () => {
-      switchTab(btn.dataset.tabTrigger);
-   });
+  btn.addEventListener('click', () => {
+    switchTab(btn.dataset.tabTrigger);
+  });
 });
 
 function switchTab(tabId) {
@@ -258,10 +258,10 @@ async function loadAccount() {
 
     const activePlan = payload.plans?.find(p => p.status === 'ACTIVE');
     if (activePlan) {
-       statNextDue.textContent = formatDate(activePlan.next_due_date);
-       planHighlight.classList.remove('hidden');
-       highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
-       highlightDate.textContent = formatDate(activePlan.next_due_date);
+      statNextDue.textContent = formatDate(activePlan.next_due_date);
+      planHighlight.classList.remove('hidden');
+      highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
+      highlightDate.textContent = formatDate(activePlan.next_due_date);
     }
 
     renderBookings(payload.bookings || []);
@@ -718,12 +718,12 @@ function renderChurchInstallments(list) {
 
 async function loadChurchBookings(headers = {}) {
   if (!churchBookingsList || !churchBookingsEmpty) return;
-    if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
-      churchBookingsEmpty.textContent = 'Selecciona una iglesia para ver los registros.';
-      churchBookingsEmpty.classList.remove('hidden');
-      churchBookingsList.classList.add('hidden');
-      return;
-    }
+  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
+    churchBookingsEmpty.textContent = 'Selecciona una iglesia para ver los registros.';
+    churchBookingsEmpty.classList.remove('hidden');
+    churchBookingsList.classList.add('hidden');
+    return;
+  }
   try {
     const url = new URL('/api/portal/iglesia/bookings', window.location.origin);
     if (portalSelectedChurchId) {
@@ -1127,20 +1127,20 @@ function initChurchManualForm() {
       participants: collectParticipants(),
     };
 
-  try {
-    const res = await fetch('/api/portal/iglesia/submit', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
-    churchFormStatus.textContent = 'Inscripción registrada.';
-    await loadChurchBookings();
-    await loadChurchPayments();
-    churchForm.reset();
-    participantsList.innerHTML = '';
-    participantsList.appendChild(buildParticipantRow());
+    try {
+      const res = await fetch('/api/portal/iglesia/submit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
+      churchFormStatus.textContent = 'Inscripción registrada.';
+      await loadChurchBookings();
+      await loadChurchPayments();
+      churchForm.reset();
+      participantsList.innerHTML = '';
+      participantsList.appendChild(buildParticipantRow());
       await fetch('/api/portal/iglesia/draft', { method: 'DELETE', headers: portalAuthHeaders });
     } catch (error) {
       console.error(error);
@@ -1233,7 +1233,7 @@ function renderPlans(plans, bookings) {
     const statusLabel = plan.status === 'PAUSED' ? 'Pausado' : plan.status === 'COMPLETED' ? 'Completado' : 'Activo';
     const actionLabel = plan.status === 'PAUSED' ? 'Reactivar abonos' : 'Pausar abonos';
     const actionClass = plan.status === 'PAUSED' ? 'bg-brand-teal text-white' : 'bg-white/5 text-white/60 hover:bg-white/10';
-    
+
     card.innerHTML = `
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-3">
@@ -1415,11 +1415,11 @@ async function updateProfile() {
     });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo actualizar');
-    
+
     profileStatus.textContent = '¡Cambios guardados con éxito!';
     profileStatus.className = 'text-sm font-medium text-green-400';
     welcomeName.textContent = profileName.value.trim().split(' ')[0];
-    
+
     setTimeout(() => { profileStatus.textContent = ''; }, 3000);
   } catch (err) {
     console.error(err);
@@ -1738,6 +1738,50 @@ onboardingForm?.addEventListener('submit', async (event) => {
   }
 });
 plansList?.addEventListener('click', handlePlanAction);
+
+
+const updatePasswordBtn = document.getElementById('btn-update-password');
+const newPasswordInput = document.getElementById('security-new-password');
+const securityStatus = document.getElementById('security-status');
+
+updatePasswordBtn?.addEventListener('click', async () => {
+  if (!newPasswordInput || !securityStatus) return;
+  const password = newPasswordInput.value.trim();
+  if (password.length < 6) {
+    securityStatus.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    securityStatus.className = 'text-sm font-medium text-red-500';
+    return;
+  }
+
+  securityStatus.textContent = 'Actualizando contraseña...';
+  securityStatus.className = 'text-sm font-medium text-slate-500';
+  updatePasswordBtn.disabled = true;
+  updatePasswordBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  const originalText = updatePasswordBtn.textContent;
+  updatePasswordBtn.textContent = 'Guardando...';
+
+  try {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+
+    securityStatus.textContent = '¡Contraseña actualizada correctamente!';
+    securityStatus.className = 'text-sm font-medium text-green-500';
+    newPasswordInput.value = '';
+  } catch (err) {
+    console.error(err);
+    securityStatus.textContent = err.message || 'No se pudo actualizar la contraseña.';
+    securityStatus.className = 'text-sm font-medium text-red-500';
+  } finally {
+    updatePasswordBtn.disabled = false;
+    updatePasswordBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    updatePasswordBtn.textContent = originalText;
+    setTimeout(() => {
+      if (securityStatus.textContent.includes('correctamente')) {
+        securityStatus.textContent = '';
+      }
+    }, 3000);
+  }
+});
 
 loadAccount();
 initChurchManualForm();

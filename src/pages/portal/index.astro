@@ -257,12 +257,34 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                     </div>
                   </div>
 
+
                   <div class="pt-4 flex items-center justify-between gap-4">
                      <p id="profile-status" class="text-sm font-medium"></p>
-                     <button id="btn-save-profile" class="bg-[#293C74] text-white px-10 py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 hover:-translate-y-0.5 transition-all">
-                        Guardar Cambios
+                     <button id="btn-save-profile" class="bg-[#293C74] text-white px-8 py-3 rounded-2xl font-bold hover:shadow-lg hover:shadow-[#293C74]/20 hover:-translate-y-0.5 transition-all text-sm">
+                        Guardar Personales
                      </button>
                   </div>
+               </div>
+
+               <!-- Security Section -->
+               <div class="max-w-3xl bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-10 space-y-6 shadow-lg shadow-slate-200/50">
+                  <div>
+                    <h3 class="text-lg font-bold text-[#293C74]">Seguridad</h3>
+                    <p class="text-sm text-slate-600">Actualiza tu contraseña para ingresar sin enlace mágico.</p>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                      <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Nueva Contraseña</label>
+                      <input type="password" id="security-new-password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all placeholder-slate-400" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="space-y-2">
+                       <button id="btn-update-password" class="w-full h-full mt-6 md:mt-0 bg-white border border-[#293C74]/20 text-[#293C74] px-6 py-4 rounded-2xl font-bold hover:bg-[#293C74] hover:text-white transition-all text-sm">
+                          Actualizar Contraseña
+                       </button>
+                    </div>
+                  </div>
+                  <p id="security-status" class="text-sm font-medium text-slate-500 min-h-[1.25rem]"></p>
                </div>
             </div>
 
