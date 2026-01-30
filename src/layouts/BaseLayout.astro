@@ -3,6 +3,7 @@ import SEO from '@components/SEO.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import '../styles/global.css';
+import baseLayoutScript from '../scripts/base-layout.js';
 
 const {
   title,
@@ -39,7 +40,7 @@ const cspNonce = Astro.locals?.cspNonce;
     {!disableSmoothScroll && (
     <script
       type="module"
-      src={Astro.resolve('../scripts/base-layout.js')}
+      src={baseLayoutScript}
       nonce={cspNonce}
     ></script>
     )}

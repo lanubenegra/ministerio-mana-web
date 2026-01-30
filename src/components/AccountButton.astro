@@ -1,6 +1,7 @@
 ---
 // This component detects if user has an active session
 // Shows "Iniciar sesión" for guests or account dropdown for logged users
+import accountButtonScript from '../scripts/account-button.js';
 const cspNonce = Astro.locals?.cspNonce;
 ---
 
@@ -52,6 +53,6 @@ const cspNonce = Astro.locals?.cspNonce;
 
 <script
   type="module"
-  src={Astro.resolve('../scripts/account-button.js')}
+  src={accountButtonScript}
   nonce={cspNonce}
 ></script>

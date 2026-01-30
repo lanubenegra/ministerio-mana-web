@@ -2,6 +2,7 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import PrimiciasGateway from '@components/primicias/PrimiciasGateway.astro';
 import { preferredGatewayForCountry } from '@lib/geo';
+import primiciasPageScript from '../../scripts/primicias-page.js';
 
 // Server Side Geo Detection (Best Effort)
 // Vercel / Cloudflare headers
@@ -95,6 +96,6 @@ const cspNonce = Astro.locals?.cspNonce;
 
 <script
   type="module"
-  src={Astro.resolve('../../scripts/primicias-page.js')}
+  src={primiciasPageScript}
   nonce={cspNonce}
 ></script>

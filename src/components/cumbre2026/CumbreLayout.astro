@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NetOverlay from './NetOverlay.astro';
 import AccountButton from '@components/AccountButton.astro';
+import cumbreNavScript from '../../scripts/cumbre-nav.js';
 
 const { title, description, variant = 'dark' } = Astro.props;
 
@@ -81,6 +82,6 @@ const cspNonce = Astro.locals?.cspNonce;
 
 <script
   type="module"
-  src={Astro.resolve('../../scripts/cumbre-nav.js')}
+  src={cumbreNavScript}
   nonce={cspNonce}
 ></script>

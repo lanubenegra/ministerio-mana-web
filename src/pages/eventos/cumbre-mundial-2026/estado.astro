@@ -1,5 +1,6 @@
 ---
 import CumbreLayout from '@components/cumbre2026/CumbreLayout.astro';
+import cumbreEstadoScript from '../../../scripts/cumbre-estado.js';
 
 const { bookingId, source } = Astro.url.searchParams;
 const isPayment = source === 'payment';
@@ -69,6 +70,6 @@ const cspNonce = Astro.locals?.cspNonce;
 
 <script
   type="module"
-  src={Astro.resolve('../../../scripts/cumbre-estado.js')}
+  src={cumbreEstadoScript}
   nonce={cspNonce}
 ></script>
