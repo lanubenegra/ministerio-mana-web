@@ -205,10 +205,16 @@ function switchTab(tabId) {
 
 // Core Dashboard Logic - Reactive Auth
 async function fetchDashboardData(session) {
-  console.log('fetchDashboardData called', session);
+  console.log('[DEBUG] fetchDashboardData called with session:', session);
+  if (!session) {
+    console.error('[DEBUG] No session provided to fetchDashboardData');
+    return;
+  }
+
   try {
     const token = session?.access_token;
     if (!token) throw new Error('No access token');
+    console.log('[DEBUG] Access token present:', token.substring(0, 10) + '...');
 
     let headers = { Authorization: `Bearer ${token}` };
     portalAuthHeaders = headers;
@@ -216,20 +222,32 @@ async function fetchDashboardData(session) {
     // 2. Parallelized Initial Data Fetching
     if (!supabase) throw new Error('Supabase no configurado');
 
+    console.log('[DEBUG] Starting Promise.all for API requests...');
     const [sessionRes, resumenRes, { data: userData }] = await Promise.all([
       fetch('/api/portal/session', { headers }),
       // Fetch resumen immediately with the token we already have
       fetch('/api/cuenta/resumen', { headers }),
       supabase.auth.getUser(),
     ]);
+    console.log('[DEBUG] Promise.all completed.');
+    console.log('[DEBUG] sessionRes status:', sessionRes.status);
+    console.log('[DEBUG] resumenRes status:', resumenRes.status);
+    console.log('[DEBUG] userData:', userData);
 
-
+    if (!sessionRes.ok) {
+      console.error('[DEBUG] /api/portal/session failed:', sessionRes.status, sessionRes.statusText);
+      const text = await sessionRes.text();
+      console.error('[DEBUG] /api/portal/session body:', text);
+      throw new Error(`Session API error: ${sessionRes.status}`);
+    }
 
     const sessionPayload = await sessionRes.json();
+    console.log('[DEBUG] sessionPayload:', sessionPayload);
     if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
 
     let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
     const resData = await resumenRes.json();
+    console.log('[DEBUG] resData (resumen):', resData);
     if (!resumenRes.ok || !resData.ok) {
       // Optional: Log error but continue with minimal profile?
       console.warn('Could not load resumen:', resData.error);
@@ -242,6 +260,8 @@ async function fetchDashboardData(session) {
     portalMemberships = sessionPayload.memberships || [];
     portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
     portalIsSuperadmin = portalProfile?.role === 'superadmin';
+
+    console.log('[DEBUG] Data loaded. Profile:', portalProfile);
 
     const hasChurchRole = (portalMemberships || []).some(
       (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
@@ -1907,17 +1927,27 @@ function initDashboard() {
   }
 
   // 1. Reactive Listener (Primary Driver for Async Events)
-  if (!supabase) return;
+  // 1. Reactive Listener (Primary Driver for Async Events)
+  if (!supabase) {
+    console.error('[DEBUG] Supabase not initialized, skipping initDashboard listener');
+    return;
+  }
+  console.log('[DEBUG] Setting up onAuthStateChange listener...');
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log('[DEBUG] Auth State Change:', event, session ? 'Session OK' : 'No Session');
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
       if (session && !dashboardLoaded) {
-        console.log('Auth Event:', event);
+        console.log('[DEBUG] Auth Event Triggered Load:', event);
         dashboardLoaded = true;
 
         cleanupAuthRedirect();
 
         await fetchDashboardData(session);
+      } else if (!session) {
+        console.warn('[DEBUG] Event', event, 'but no session present');
+      } else if (dashboardLoaded) {
+        console.log('[DEBUG] Event', event, 'ignored (dashboard already loaded)');
       }
     }
   });
@@ -1925,16 +1955,18 @@ function initDashboard() {
   // 2. Immediate State Check (Handle Pre-processed Sessions)
   // Supabase might have already processed the hash before this script ran.
   // We check getSession() immediately.
-  supabase.auth.getSession().then(({ data }) => {
-    console.log('getSession result:', data); // DEBUG
+  console.log('[DEBUG] Calling supabase.auth.getSession()...');
+  supabase.auth.getSession().then(({ data, error }) => {
+    console.log('[DEBUG] getSession result:', data, 'Error:', error);
     if (data?.session && !dashboardLoaded) {
-      console.log('Session found immediately via getSession');
+      console.log('[DEBUG] Session found immediately via getSession');
       dashboardLoaded = true;
 
       cleanupAuthRedirect();
 
       fetchDashboardData(data.session);
     } else if (!data?.session) {
+      console.log('[DEBUG] No session from getSession. Auth state:', getAuthRedirectState());
       const authState = getAuthRedirectState();
       console.log('No session from getSession. Auth state:', authState); // DEBUG
       // No session found immediately.
