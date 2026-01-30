@@ -167,87 +167,34 @@ function switchTab(tabId) {
   });
 }
 
-async function loadAccount() {
+// Core Dashboard Logic - Reactive Auth
+async function fetchDashboardData(session) {
   try {
-    // 1. Robust Magic Link Handling: Aggressive Polling + Listener
-    if (window.location.hash && window.location.hash.includes('access_token')) {
-      console.log('Magic Link detectado, validando...');
-      if (loadingEl) {
-        const p = loadingEl.querySelector('p');
-        if (p) p.textContent = 'Validando enlace de acceso...';
-      }
+    const token = session?.access_token;
+    if (!token) throw new Error('No access token');
 
-      await new Promise((resolve) => {
-        let finished = false;
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (session && !finished) {
-            finished = true;
-            subscription.unsubscribe();
-            resolve();
-          }
-        });
+    let headers = { Authorization: `Bearer ${token}` };
+    portalAuthHeaders = headers;
 
-        const poll = setInterval(async () => {
-          if (finished) return clearInterval(poll);
-          const { data } = await supabase.auth.getSession();
-          if (data?.session) {
-            finished = true;
-            clearInterval(poll);
-            subscription.unsubscribe();
-            resolve();
-          }
-        }, 200);
-
-        setTimeout(() => {
-          if (!finished) {
-            finished = true;
-            clearInterval(poll);
-            subscription.unsubscribe();
-            resolve();
-          }
-        }, 5000);
-      });
-
-      // Clear hash after processing
-      window.history.replaceState(null, '', window.location.pathname);
-    }
-
-    // 2. Initial Auth Verification
-    const { data: sessionData } = await supabase.auth.getSession();
-    let token = sessionData.session?.access_token;
-    let headers = {};
-
-    if (token) {
-      headers = { Authorization: `Bearer ${token}` };
-      portalAuthHeaders = headers;
-    } else {
-      const fallbackRes = await fetch('/api/portal/password-session');
-      if (!fallbackRes.ok) {
-        window.location.href = '/portal/ingresar';
-        return;
-      }
-      const fallback = await fallbackRes.json();
-      if (!fallback.ok) {
-        window.location.href = '/portal/ingresar';
-        return;
-      }
-      authMode = 'password';
-    }
-
-    // 3. Parallelized Initial Data Fetching
+    // 2. Parallelized Initial Data Fetching
     const [sessionRes, resumenRes, { data: userData }] = await Promise.all([
       fetch('/api/portal/session', { headers }),
-      token ? fetch('/api/cuenta/resumen', { headers }) : Promise.resolve({ ok: true, json: () => ({ ok: true, user: {}, bookings: [], plans: [], payments: [] }) }),
-      token ? supabase.auth.getUser() : Promise.resolve({ data: { user: null } })
+      // Fetch resumen immediately with the token we already have
+      fetch('/api/cuenta/resumen', { headers }),
+      supabase.auth.getUser()
     ]);
+
+
 
     const sessionPayload = await sessionRes.json();
     if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
 
     let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
-    if (token) {
-      const resData = await resumenRes.json();
-      if (!resumenRes.ok || !resData.ok) throw new Error(resData.error || 'No se pudo cargar el resumen');
+    const resData = await resumenRes.json();
+    if (!resumenRes.ok || !resData.ok) {
+      // Optional: Log error but continue with minimal profile?
+      console.warn('Could not load resumen:', resData.error);
+    } else {
       payload = resData;
     }
 
@@ -1890,7 +1837,63 @@ registerPasskeyBtn?.addEventListener('click', async () => {
   }
 });
 
-loadAccount();
+// Init Dashboard with Reactive Auth
+function initDashboard() {
+  let dashboardLoaded = false;
+
+  // 1. Reactive Listener (Primary Driver)
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+      if (session && !dashboardLoaded) {
+        console.log('Auth Event:', event);
+        dashboardLoaded = true;
+
+        // Clean Hash if Magic Link
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+
+        await fetchDashboardData(session);
+      }
+    } else if (event === 'SIGNED_OUT') {
+      // Only redirect if we were previously calling fetchDashboardData or expected to be logged in
+      // But on initial load, SIGNED_OUT might fire if no session?
+      // Safer: Do nothing here, let the fallback check handle redirects if needed.
+      // window.location.href = '/portal/ingresar';
+    }
+  });
+
+  // 2. Initial State Check (Fallback/Boost)
+  // Only check manually if NOT a magic link callback (hash handles itself via listener)
+  if (!window.location.hash || !window.location.hash.includes('access_token')) {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        // Check legacy/local auth? Or just redirect
+        // We give a small grace period for listener, then redirect
+        setTimeout(() => {
+          if (!dashboardLoaded) window.location.href = '/portal/ingresar';
+        }, 2000); // 2s grace
+      }
+    });
+  } else {
+    // We are in a magic link flow. Show feedback.
+    if (loadingEl) {
+      const p = loadingEl.querySelector('p');
+      if (p) {
+        p.textContent = 'Verificando enlace...';
+        // Add a simple timeout fallback for broken links
+        setTimeout(() => {
+          if (!dashboardLoaded) {
+            p.textContent = 'El enlace parece haber expirado. Redirigiendo...';
+            setTimeout(() => window.location.href = '/portal/ingresar', 2000);
+          }
+        }, 8000);
+      }
+    }
+  }
+}
+
+initDashboard();
 initChurchManualForm();
 initInviteForm();
 
