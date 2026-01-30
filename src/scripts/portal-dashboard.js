@@ -1954,9 +1954,15 @@ function initDashboard() {
 
   // 2. Immediate State Check (Handle Pre-processed Sessions)
   // Supabase might have already processed the hash before this script ran.
-  // We check getSession() immediately.
-  console.log('[DEBUG] Calling supabase.auth.getSession()...');
-  supabase.auth.getSession().then(({ data, error }) => {
+  // We check getSession() immediately with a timeout safety.
+  console.log('[DEBUG] Calling supabase.auth.getSession() with timeout...');
+
+  const getSessionSafe = Promise.race([
+    supabase.auth.getSession(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2500))
+  ]);
+
+  getSessionSafe.then(({ data, error }) => {
     console.log('[DEBUG] getSession result:', data, 'Error:', error);
     if (data?.session && !dashboardLoaded) {
       console.log('[DEBUG] Session found immediately via getSession');
@@ -1975,7 +1981,7 @@ function initDashboard() {
         // No hash, no session -> Redirect after grace period
         setTimeout(() => {
           if (!dashboardLoaded) window.location.href = '/portal/ingresar';
-        }, 2000);
+        }, 1000); // Reduced to 1s
       } else {
         // Auth redirect, show waiting feedback
         if (loadingEl) {
@@ -2002,15 +2008,20 @@ function initDashboard() {
             return;
           }
           console.log('Polling for session...');
-          const { data: pollData } = await supabase.auth.getSession();
-          if (pollData?.session) {
-            console.log('Session found via Polling!');
-            clearInterval(pollInterval);
-            dashboardLoaded = true;
-            if (window.location.hash && window.location.hash.includes('access_token')) {
-              cleanupAuthRedirect();
+          try {
+            // Correct cleanup for polling
+            const { data: pollData } = await supabase.auth.getSession();
+            if (pollData?.session) {
+              console.log('Session found via Polling!');
+              clearInterval(pollInterval);
+              dashboardLoaded = true;
+              if (window.location.hash && window.location.hash.includes('access_token')) {
+                cleanupAuthRedirect();
+              }
+              fetchDashboardData(pollData.session);
             }
-            fetchDashboardData(pollData.session);
+          } catch (e) {
+            console.warn('Polling error', e);
           }
         }, 500);
 
@@ -2020,13 +2031,25 @@ function initDashboard() {
           if (!dashboardLoaded) {
             if (loadingEl) {
               const p = loadingEl.querySelector('p');
-              if (p) {
-                p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
-              }
+              if (p) p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
             }
             setTimeout(() => window.location.href = '/portal/ingresar', 2000);
           }
         }, 12000);
+      }
+    }
+  }).catch(err => {
+    console.warn('[DEBUG] getSession failed or timed out:', err);
+    // If it times out or fails, we assume no session (unless listener catches it later)
+    // But we shouldn't block forever.
+    if (!dashboardLoaded) {
+      console.log('[DEBUG] getSession timed out. Checking if we should redirect...');
+      const authState = getAuthRedirectState();
+      if (!authState.isAuthRedirect) {
+        // If not waiting for a magic link, redirect to login
+        setTimeout(() => {
+          if (!dashboardLoaded) window.location.href = '/portal/ingresar';
+        }, 1000);
       }
     }
   });
