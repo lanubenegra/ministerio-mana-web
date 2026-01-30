@@ -1971,17 +1971,46 @@ function initDashboard() {
     new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2500))
   ]);
 
-  getSessionSafe.then(({ data, error }) => {
+  getSessionSafe.then(async ({ data, error }) => {
     console.log('[DEBUG] getSession result:', data, 'Error:', error);
+
+    // 1. Valid Supabase Session
     if (data?.session && !dashboardLoaded) {
       console.log('[DEBUG] Session found immediately via getSession');
       dashboardLoaded = true;
 
       cleanupAuthRedirect();
 
-      fetchDashboardData(data.session);
+      await fetchDashboardData(data.session);
     } else if (!data?.session) {
-      console.log('[DEBUG] No session from getSession. Auth state:', getAuthRedirectState());
+      console.log('[DEBUG] No Supabase session. Checking password fallback...');
+
+      // 2. Fallback: Check Password Session (Cookies)
+      let passwordSessionFound = false;
+      try {
+        // Only check password session if NOT handling an auth redirect hash/code
+        const checkState = getAuthRedirectState();
+        if (!checkState.isAuthRedirect) {
+          const pwRes = await fetch('/api/portal/password-session');
+          if (pwRes.ok) {
+            const pwData = await pwRes.json();
+            if (pwData.ok) {
+              console.log('[DEBUG] Found Password Session (Fallback)');
+              dashboardLoaded = true;
+              passwordSessionFound = true;
+              await fetchDashboardData(null); // Load with cookie auth
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[DEBUG] Password session check failed', e);
+      }
+
+      if (passwordSessionFound) return;
+
+      console.log('[DEBUG] No session from getSession or Fallback. Auth state:', getAuthRedirectState());
+
       const authState = getAuthRedirectState();
       console.log('No session from getSession. Auth state:', authState); // DEBUG
       // No session found immediately.
