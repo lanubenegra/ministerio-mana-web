@@ -23,12 +23,16 @@ export interface ParticipantInput {
   fullName: string;
   packageType: PackageType;
   relationship?: string | null;
+  documentType?: string | null;
+  documentNumber?: string | null;
 }
 
 export interface SanitizedParticipant {
   fullName: string;
   packageType: PackageType;
   relationship: string | null;
+  documentType: string | null;
+  documentNumber: string | null;
 }
 
 export function normalizeCountryGroup(value: string | null | undefined): CountryGroup {
@@ -51,10 +55,15 @@ export function sanitizeParticipant(input: ParticipantInput): SanitizedParticipa
   if (!isValidPackageType(input.packageType)) return null;
   const relationship = input.relationship ? sanitizePlainText(input.relationship, 80) : '';
   if (containsBlockedSequence(relationship)) return null;
+  const documentType = input.documentType ? sanitizePlainText(input.documentType, 40) : '';
+  const documentNumber = input.documentNumber ? sanitizePlainText(input.documentNumber, 50) : '';
+  if (containsBlockedSequence(documentType) || containsBlockedSequence(documentNumber)) return null;
   return {
     fullName,
     packageType: input.packageType,
     relationship: relationship || null,
+    documentType: documentType || null,
+    documentNumber: documentNumber || null,
   };
 }
 

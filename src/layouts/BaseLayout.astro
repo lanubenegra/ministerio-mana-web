@@ -1,8 +1,8 @@
-
 ---
 import SEO from '@components/SEO.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
+import '../styles/global.css';
 
 const {
   title,
@@ -13,6 +13,7 @@ const {
   noindex = false,
   hideHeader = false,
   hideFooter = false,
+  disableSmoothScroll = true,
 } = Astro.props;
 ---
 <!doctype html>
@@ -20,7 +21,6 @@ const {
   <head>
     <SEO {title} {description} {image} {type} {structuredData} {noindex} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/src/styles/global.css" />
     <!-- Turnstile: script global (NO inline) -->
     <script
       src="https://challenges.cloudflare.com/turnstile/v0/api.js"
@@ -35,7 +35,73 @@ const {
     {!hideFooter && <Footer />}
     
     <!-- Smooth Scroll & Parallax Animations -->
-    <script src="/src/scripts/lenis.ts" type="module"></script>
-    <script src="/src/scripts/home-animations.ts" type="module"></script>
+    {!disableSmoothScroll && (
+    <script>
+      import Lenis from '@studio-freight/lenis';
+      import { gsap } from 'gsap';
+      import { ScrollTrigger } from 'gsap/ScrollTrigger';
+      
+      gsap.registerPlugin(ScrollTrigger);
+      
+      let lenis;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      if (!prefersReducedMotion) {
+        lenis = new Lenis({
+          duration: 0.5, // Significantly reduced for immediate response (no "lag")
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          orientation: 'vertical',
+          gestureOrientation: 'vertical',
+          smoothWheel: true,
+          wheelMultiplier: 1, // Natural 1:1 speed, depends on user force
+          smoothTouch: false,
+          touchMultiplier: 2,
+          infinite: false,
+        });
+        
+        function raf(time) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        }
+        
+        requestAnimationFrame(raf);
+        window.lenis = lenis;
+      }
+      
+      document.documentElement.setAttribute('data-lenis-enabled', String(!prefersReducedMotion));
+      
+      // Home parallax animations
+      window.addEventListener('load', () => {
+        if (prefersReducedMotion) return;
+        
+        const hero = document.querySelector('[data-hero]');
+        if (hero) {
+          gsap.to(hero, {
+            scrollTrigger: {
+              trigger: hero,
+              start: 'top top',
+              end: 'bottom top',
+              scrub: true,
+            },
+            y: 100,
+            opacity: 0.6,
+          });
+        }
+        
+        document.querySelectorAll('[data-parallax-bg]').forEach((el) => {
+          const speed = parseFloat(el.dataset.bg) || 0.5;
+          gsap.to(el, {
+            scrollTrigger: {
+              trigger: el,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            },
+            y: -50 * speed,
+          });
+        });
+      });
+    </script>
+    )}
   </body>
 </html>

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from './supabaseAdmin';
-import { statusFromPaid, depositThreshold } from './cumbre2026';
+import { statusFromPaid, depositThreshold, generateAccessToken, hashToken } from './cumbre2026';
 import { logSecurityEvent } from './securityEvents';
 import { sendCumbreEmail } from './cumbreMailer';
 
@@ -64,6 +64,25 @@ export type InstallmentRecord = {
   provider_reference: string | null;
   provider_tx_id: string | null;
   paid_at: string | null;
+};
+
+export type InstallmentReminderRecord = {
+  id: string;
+  installment_id: string;
+  reminder_key: string;
+  channel: string;
+  sent_at: string;
+  payload: Record<string, unknown> | null;
+  error: string | null;
+};
+
+export type InstallmentLinkRecord = {
+  id: string;
+  installment_id: string;
+  token_hash: string;
+  expires_at: string | null;
+  used_at: string | null;
+  created_at: string;
 };
 
 export async function getBookingById(id: string): Promise<BookingRecord | null> {
@@ -381,6 +400,143 @@ export async function listDueInstallments(limit = 25): Promise<(InstallmentRecor
   return (data || []) as (InstallmentRecord & { plan: PaymentPlanRecord })[];
 }
 
+export async function listInstallmentsByDueDates(
+  dueDates: string[],
+  limit = 200,
+): Promise<(InstallmentRecord & { plan: PaymentPlanRecord; booking: BookingRecord })[]> {
+  if (!dueDates.length) return [];
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_installments')
+    .select('*, plan:cumbre_payment_plans(*), booking:cumbre_bookings(*)')
+    .in('status', ['PENDING', 'FAILED'])
+    .in('due_date', dueDates)
+    .order('due_date', { ascending: true })
+    .limit(limit);
+  if (error) {
+    console.error('[cumbre.installments] due list error', error);
+    return [];
+  }
+  return (data || []) as (InstallmentRecord & { plan: PaymentPlanRecord; booking: BookingRecord })[];
+}
+
+export async function getInstallmentById(installmentId: string): Promise<InstallmentRecord | null> {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_installments')
+    .select('*')
+    .eq('id', installmentId)
+    .maybeSingle();
+  if (error) {
+    console.error('[cumbre.installments] lookup error', error);
+    return null;
+  }
+  return data as InstallmentRecord | null;
+}
+
+export async function hasInstallmentReminder(params: {
+  installmentId: string;
+  reminderKey: string;
+  channel: string;
+}): Promise<boolean> {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_installment_reminders')
+    .select('id')
+    .eq('installment_id', params.installmentId)
+    .eq('reminder_key', params.reminderKey)
+    .eq('channel', params.channel)
+    .maybeSingle();
+  if (error) {
+    console.error('[cumbre.reminders] lookup error', error);
+    return true;
+  }
+  return Boolean(data?.id);
+}
+
+export async function recordInstallmentReminder(params: {
+  installmentId: string;
+  reminderKey: string;
+  channel: string;
+  payload?: Record<string, unknown> | null;
+  error?: string | null;
+}): Promise<void> {
+  const supabase = ensureSupabase();
+  const { error } = await supabase
+    .from('cumbre_installment_reminders')
+    .insert({
+      installment_id: params.installmentId,
+      reminder_key: params.reminderKey,
+      channel: params.channel,
+      payload: params.payload ?? null,
+      error: params.error ?? null,
+    });
+  if (error) {
+    console.error('[cumbre.reminders] insert error', error);
+  }
+}
+
+export async function createInstallmentLinkToken(installmentId: string, ttlDays = 30): Promise<string | null> {
+  const supabase = ensureSupabase();
+  const tokenPair = generateAccessToken();
+  const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from('cumbre_installment_links')
+    .insert({
+      installment_id: installmentId,
+      token_hash: tokenPair.hash,
+      expires_at: expiresAt,
+    });
+  if (error) {
+    console.error('[cumbre.installments.links] insert error', error);
+    return null;
+  }
+  return tokenPair.token;
+}
+
+export async function getInstallmentByLinkToken(token: string): Promise<{
+  link: InstallmentLinkRecord;
+  installment: InstallmentRecord & { plan: PaymentPlanRecord; booking: BookingRecord };
+} | null> {
+  if (!token) return null;
+  const supabase = ensureSupabase();
+  const tokenHash = hashToken(token);
+  const { data, error } = await supabase
+    .from('cumbre_installment_links')
+    .select('id, installment_id, token_hash, expires_at, used_at, created_at, installment:cumbre_installments(*, plan:cumbre_payment_plans(*), booking:cumbre_bookings(*))')
+    .eq('token_hash', tokenHash)
+    .maybeSingle();
+  if (error) {
+    console.error('[cumbre.installments.links] lookup error', error);
+    return null;
+  }
+  if (!data?.installment) return null;
+  const link: InstallmentLinkRecord = {
+    id: data.id,
+    installment_id: data.installment_id,
+    token_hash: data.token_hash,
+    expires_at: data.expires_at ?? null,
+    used_at: data.used_at ?? null,
+    created_at: data.created_at,
+  };
+  return {
+    link,
+    installment: data.installment as InstallmentRecord & { plan: PaymentPlanRecord; booking: BookingRecord },
+  };
+}
+
+export async function markInstallmentLinksUsed(installmentId: string): Promise<void> {
+  const supabase = ensureSupabase();
+  const { error } = await supabase
+    .from('cumbre_installment_links')
+    .update({ used_at: new Date().toISOString() })
+    .eq('installment_id', installmentId)
+    .is('used_at', null);
+  if (error) {
+    console.error('[cumbre.installments.links] mark used error', error);
+  }
+}
+
 export async function getPlanByProviderSubscription(subscriptionId: string): Promise<PaymentPlanRecord | null> {
   const supabase = ensureSupabase();
   const { data, error } = await supabase
@@ -401,6 +557,20 @@ export async function getPlanByBookingId(bookingId: string): Promise<PaymentPlan
     .from('cumbre_payment_plans')
     .select('*')
     .eq('booking_id', bookingId)
+    .maybeSingle();
+  if (error) {
+    console.error('[cumbre.installments] plan lookup error', error);
+    return null;
+  }
+  return data as PaymentPlanRecord | null;
+}
+
+export async function getPlanById(planId: string): Promise<PaymentPlanRecord | null> {
+  const supabase = ensureSupabase();
+  const { data, error } = await supabase
+    .from('cumbre_payment_plans')
+    .select('*')
+    .eq('id', planId)
     .maybeSingle();
   if (error) {
     console.error('[cumbre.installments] plan lookup error', error);

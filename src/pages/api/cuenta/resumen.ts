@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
+import { readPasswordSession } from '@lib/portalPasswordSession';
 
 export const prerender = false;
 
@@ -13,14 +14,17 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const user = await getUserFromRequest(request);
-  if (!user?.email) {
-    return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    });
+  let email = user?.email?.toLowerCase() ?? '';
+  if (!email) {
+    const passwordSession = readPasswordSession(request);
+    if (!passwordSession?.email) {
+      return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    email = passwordSession.email.toLowerCase();
   }
-
-  const email = user.email.toLowerCase();
   const { data: bookings, error: bookingsError } = await supabaseAdmin
     .from('cumbre_bookings')
     .select('id, contact_name, contact_email, contact_phone, country_group, currency, total_amount, total_paid, status, deposit_threshold, created_at')
@@ -40,7 +44,7 @@ export const GET: APIRoute = async ({ request }) => {
       ok: true,
       user: {
         email,
-        fullName: user.user_metadata?.full_name || '',
+        fullName: user?.user_metadata?.full_name || email.split('@')[0],
       },
       bookings: [],
       plans: [],
@@ -74,7 +78,7 @@ export const GET: APIRoute = async ({ request }) => {
     ok: true,
     user: {
       email,
-      fullName: user.user_metadata?.full_name || '',
+      fullName: user?.user_metadata?.full_name || email.split('@')[0],
     },
     bookings: bookings ?? [],
     plans: plans ?? [],

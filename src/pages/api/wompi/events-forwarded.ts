@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import crypto from 'node:crypto';
-import { verifyWompiWebhook } from '@lib/wompi';
+import { createWompiPaymentSource, verifyWompiWebhook } from '@lib/wompi';
 import { logSecurityEvent } from '@lib/securityEvents';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { parseReferenceBookingId, parseReferencePlanId } from '@lib/cumbre2026';
@@ -8,12 +8,14 @@ import {
   recordPayment,
   recomputeBookingTotals,
   getBookingById,
+  getPlanById,
   getInstallmentByReference,
   getNextPendingInstallment,
   updateInstallment,
   addPlanPayment,
   updatePaymentPlan,
   refreshPlanNextDueDate,
+  markInstallmentLinksUsed,
 } from '@lib/cumbreStore';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 
@@ -144,10 +146,9 @@ export const POST: APIRoute = async ({ request }) => {
     const amount = amountInCents ? Number(amountInCents) / 100 : 0;
     const normalizedCurrency = transaction?.currency || 'COP';
     const providerTxId = txId ? String(txId) : null;
-    const paymentSourceId = transaction?.payment_source_id
-      ?? transaction?.payment_method?.token
-      ?? transaction?.payment_method?.id
-      ?? null;
+    const paymentMethodType = transaction?.payment_method?.type ?? transaction?.payment_method_type ?? null;
+    const paymentMethodToken = transaction?.payment_method?.token ?? null;
+    const paymentSourceId = transaction?.payment_source_id ?? null;
 
     let installmentId: string | null = null;
     if (planId) {
@@ -168,13 +169,41 @@ export const POST: APIRoute = async ({ request }) => {
         if (normalizedStatus === 'APPROVED') {
           await addPlanPayment(planId, amount);
           await refreshPlanNextDueDate(planId);
+          if (installmentId) {
+            await markInstallmentLinksUsed(installmentId);
+          }
         }
       }
 
-      if (paymentSourceId) {
-        await updatePaymentPlan(planId, {
-          provider_payment_method_id: String(paymentSourceId),
-        });
+      const plan = await getPlanById(planId);
+      if (plan?.provider === 'wompi') {
+        if (paymentSourceId) {
+          await updatePaymentPlan(planId, {
+            provider_payment_method_id: String(paymentSourceId),
+          });
+        } else if (paymentMethodType === 'CARD' && paymentMethodToken) {
+          const booking = bookingId ? await getBookingById(bookingId) : null;
+          if (booking?.contact_email) {
+            try {
+              const sourceId = await createWompiPaymentSource({
+                token: String(paymentMethodToken),
+                customerEmail: booking.contact_email,
+              });
+              if (sourceId) {
+                await updatePaymentPlan(planId, {
+                  provider_payment_method_id: String(sourceId),
+                });
+              }
+            } catch (error: any) {
+              void logSecurityEvent({
+                type: 'payment_error',
+                identifier: 'wompi.forwarded',
+                detail: error?.message || 'No se pudo tokenizar tarjeta Wompi',
+                meta: { planId, bookingId },
+              });
+            }
+          }
+        }
       }
     }
 

@@ -1,0 +1,263 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+---
+
+<BaseLayout title="Accede al Portal Maná | Ministerio Maná" description="Ingresa al Portal Maná para ver tus aportes y gestionar tu inscripción.">
+  <main class="relative min-h-screen flex items-center justify-center p-4 overflow-x-hidden bg-[#EBF1F6]">
+    <!-- Corporate Clean Background -->
+    <div class="absolute inset-0 z-0 overflow-hidden">
+      <!-- Subtle Pattern -->
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23293C74\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+      
+      <!-- Stars Container for GSAP -->
+      <div id="stars-container" class="absolute inset-0 z-0 pointer-events-none"></div>
+
+      <!-- Elegant Gradient Mesh -->
+      <div class="absolute inset-0 bg-gradient-to-br from-white/80 via-transparent to-[#293C74]/5"></div>
+      
+      <!-- Accent Shapes -->
+      <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-[#293C74]/10 to-transparent rounded-bl-[100%]"></div>
+      <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-[#F2C94C]/10 to-transparent rounded-tr-[100%]"></div>
+    </div>
+
+    <!-- Login Card -->
+    <div id="login-card" class="relative z-10 w-full max-w-md">
+      <div class="bg-white border border-white/40 rounded-[2rem] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(41,60,116,0.1)] overflow-hidden">
+        
+        <header class="relative mb-8 text-center">
+          <div class="inline-flex items-center justify-center mb-6">
+            <img src="/images/cumbre/logo-ministerio-mana-teal.svg" alt="Ministerio Maná" class="h-20 w-auto object-contain">
+          </div>
+          <h1 class="text-3xl font-display font-bold text-[#293C74] mb-2">Portal Maná</h1>
+          <p class="text-slate-600 text-sm leading-relaxed">Bienvenido al portal de usuarios del Ministerio Maná.</p>
+          <a href="/eventos/cumbre-mundial-2026" class="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#293C74]/80 hover:text-[#293C74]">
+            Volver a la Cumbre
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7" />
+            </svg>
+          </a>
+        </header>
+
+        <form id="login-form" class="relative space-y-6">
+          <div class="space-y-2 text-left">
+            <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Correo Electrónico</label>
+            <div class="relative group">
+              <input 
+                type="email" 
+                id="login-email" 
+                required 
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-500 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300" 
+                placeholder="nombre@email.com"
+              >
+              <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-left">
+            <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Contraseña</label>
+            <div class="relative group">
+              <input 
+                type="password" 
+                id="login-password"
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-500 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300 pr-12" 
+                placeholder="••••••••"
+              >
+              <button type="button" id="toggle-password" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#293C74] transition-colors focus:outline-none">
+                <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                </svg>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-600">Si no tienes contraseña, usa el enlace mágico para activarla.</p>
+          </div>
+
+          <div class="space-y-3">
+            <button type="submit" data-action="password" id="btn-submit-password" class="w-full relative group bg-[#293C74] text-white px-6 py-4 rounded-xl font-bold overflow-hidden shadow-lg shadow-[#293C74]/20 hover:shadow-[#293C74]/40 hover:-translate-y-0.5 transition-all duration-300">
+              <span class="relative z-10 flex items-center justify-center gap-2">
+                Ingresar con Contraseña
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V8a3 3 0 016 0v3m-9 0h9m-9 0a2 2 0 00-2 2v5a2 2 0 002 2h9a2 2 0 002-2v-5a2 2 0 00-2-2H9z" />
+                </svg>
+              </span>
+            </button>
+
+            <button type="submit" data-action="otp" id="btn-submit" class="w-full relative group bg-white text-[#293C74] px-6 py-4 rounded-xl font-bold border border-[#293C74]/15 hover:border-[#293C74]/40 hover:bg-[#293C74]/5 transition-all duration-300">
+              <span class="relative z-10 flex items-center justify-center gap-2">
+                Ingresar con Enlace Mágico
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </form>
+
+        <div id="login-status-container" class="hidden mt-6 text-center">
+           <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200">
+              <span id="login-status-icon" class="w-2 h-2 rounded-full bg-[#293C74] animate-ping"></span>
+              <p id="login-status" class="text-xs text-slate-600 font-medium"></p>
+           </div>
+        </div>
+
+        <footer class="mt-10 pt-6 border-t border-slate-100 text-center">
+          <a href="https://wa.me/573148297534" class="inline-flex items-center gap-2 text-slate-600 hover:text-[#293C74] transition-colors text-xs font-bold">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.855-1.246L3 20l1.246-4.855A9.863 9.863 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            ¿Necesitas ayuda? Contactar Soporte
+          </a>
+        </footer>
+      </div>
+      
+      <p class="text-center text-[#293C74]/60 text-xs mt-8">Create by Ministerio Maná · © 2026</p>
+    </div>
+  </main>
+
+
+  <script>
+    import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
+    import { gsap } from 'gsap';
+
+    window.addEventListener('load', () => {
+      const loginCard = document.getElementById('login-card');
+      if (loginCard) {
+        gsap.to('#login-card', {
+          opacity: 1,
+          y: 0,
+          duration: 1.2,
+          ease: 'power4.out',
+          delay: 0.2,
+        });
+      }
+
+      const starsContainer = document.getElementById('stars-container');
+      if (!starsContainer) return;
+
+      for (let i = 0; i < 30; i += 1) {
+        const star = document.createElement('div');
+        star.className = 'absolute w-[2px] h-[2px] bg-white rounded-full';
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+        starsContainer.appendChild(star);
+
+        gsap.to(star, {
+          opacity: 0.2,
+          duration: 2 + Math.random() * 3,
+          repeat: -1,
+          yoyo: true,
+          delay: Math.random() * 5,
+        });
+      }
+    });
+
+    const form = document.getElementById('login-form');
+    const emailInput = document.getElementById('login-email');
+    const passwordInput = document.getElementById('login-password');
+    const statusContainer = document.getElementById('login-status-container');
+    const statusEl = document.getElementById('login-status');
+    const statusIcon = document.getElementById('login-status-icon');
+    const submitBtn = document.getElementById('btn-submit');
+    const passwordBtn = document.getElementById('btn-submit-password');
+    const togglePasswordBtn = document.getElementById('toggle-password');
+    const eyeIcon = document.getElementById('eye-icon');
+    const eyeOffIcon = document.getElementById('eye-off-icon');
+    let lastAction = 'otp';
+
+    // Toggle Password Visibility
+    togglePasswordBtn?.addEventListener('click', () => {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      if (type === 'text') {
+        eyeIcon?.classList.add('hidden');
+        eyeOffIcon?.classList.remove('hidden');
+      } else {
+        eyeIcon?.classList.remove('hidden');
+        eyeOffIcon?.classList.add('hidden');
+      }
+    });
+
+    submitBtn?.addEventListener('click', () => {
+      lastAction = 'otp';
+    });
+    passwordBtn?.addEventListener('click', () => {
+      lastAction = 'password';
+    });
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!emailInput || !submitBtn || !statusContainer || !statusEl || !statusIcon) return;
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      if (passwordBtn) {
+        passwordBtn.disabled = true;
+        passwordBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+      
+      statusContainer.classList.remove('hidden');
+      statusEl.textContent = 'Procesando...';
+      statusIcon.classList.replace('bg-green-400', 'bg-brand-teal');
+      statusIcon.classList.replace('bg-red-400', 'bg-brand-teal');
+
+      try {
+        const email = emailInput.value.trim();
+        const password = passwordInput?.value?.trim();
+
+        const action = (event.submitter && event.submitter.dataset.action) || lastAction;
+        
+        if (password && action === 'password') {
+          statusEl.textContent = 'Validando acceso...';
+          const supabase = getSupabaseBrowserClient();
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          statusIcon.classList.replace('bg-brand-teal', 'bg-green-400');
+          statusIcon.classList.remove('animate-ping');
+          statusEl.textContent = 'Acceso concedido. Entrando...';
+          window.location.href = '/portal';
+          return;
+        }
+
+        // OTP Flow
+        statusEl.textContent = 'Enviando enlace mágico...';
+        const redirectTo = `${window.location.origin}/portal/activar?next=${encodeURIComponent('/portal')}`;
+        const res = await fetch('/api/auth/send-link', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email, kind: 'magiclink', redirectTo }),
+        });
+        const payload = await res.json();
+        if (!res.ok || !payload?.ok) {
+          throw new Error(payload?.error || 'No se pudo enviar el enlace.');
+        }
+
+        statusIcon.classList.replace('bg-brand-teal', 'bg-green-400');
+        statusIcon.classList.remove('animate-ping');
+        statusEl.textContent = 'Enlace enviado. Revisa tu inbox.';
+
+        gsap.from(statusContainer, { scale: 0.9, duration: 0.4, ease: 'back.out' });
+      } catch (err) {
+        console.error(err);
+        statusIcon.classList.replace('bg-brand-teal', 'bg-red-400');
+        statusIcon.classList.remove('animate-ping');
+        statusEl.textContent = err.message || 'Error al intentar ingresar. Intenta de nuevo.';
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        if (passwordBtn) {
+          passwordBtn.disabled = false;
+          passwordBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      }
+    });
+  </script>
+</BaseLayout>

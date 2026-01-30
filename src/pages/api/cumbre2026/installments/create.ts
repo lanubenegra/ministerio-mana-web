@@ -4,11 +4,37 @@ import { logSecurityEvent } from '@lib/securityEvents';
 import { resolveBaseUrl } from '@lib/url';
 import { buildInstallmentReference } from '@lib/cumbre2026';
 import { buildInstallmentSchedule, type InstallmentFrequency } from '@lib/cumbreInstallments';
-import { createPaymentPlan, getBookingById, getPlanByBookingId, getInstallmentByPlanIndex, updateInstallment } from '@lib/cumbreStore';
-import { createStripeInstallmentSession } from '@lib/stripe';
+import {
+  createPaymentPlan,
+  getBookingById,
+  getPlanByBookingId,
+  getInstallmentByPlanIndex,
+  updateInstallment,
+  updatePaymentPlan,
+} from '@lib/cumbreStore';
+import { createStripeDonationSession, createStripeInstallmentSession } from '@lib/stripe';
 import { buildWompiCheckoutUrl } from '@lib/wompi';
 
 export const prerender = false;
+
+function env(key: string): string | undefined {
+  return import.meta.env?.[key] ?? process.env?.[key];
+}
+
+function isTestModeAllowed(runtimeEnv: string): boolean {
+  if (runtimeEnv === 'production') return false;
+  const flag = env('CUMBRE_TEST_MODE') ?? env('PUBLIC_CUMBRE_TEST_MODE');
+  return flag === 'true';
+}
+
+function getTestAmount(currency: string): number {
+  const raw = currency === 'COP'
+    ? env('CUMBRE_TEST_AMOUNT_COP') ?? env('PUBLIC_CUMBRE_TEST_AMOUNT_COP')
+    : env('CUMBRE_TEST_AMOUNT_USD') ?? env('PUBLIC_CUMBRE_TEST_AMOUNT_USD');
+  const fallback = currency === 'COP' ? 5000 : 1;
+  const value = Number(raw ?? fallback);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
 
 function normalizeFrequency(raw: string | null | undefined): InstallmentFrequency {
   const value = (raw || '').toString().trim().toUpperCase();
@@ -77,10 +103,15 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       });
     }
 
+    const runtimeEnv =
+      import.meta.env?.VERCEL_ENV ?? process.env?.VERCEL_ENV ?? process.env?.NODE_ENV ?? 'development';
+    const allowTestMode = isTestModeAllowed(runtimeEnv);
+    const testMode = Boolean(payload.testMode) && allowTestMode;
     const frequency = normalizeFrequency(payload.frequency);
     const currency = booking.currency === 'COP' ? 'COP' : 'USD';
+    const totalAmount = testMode ? getTestAmount(currency) : Number(booking.total_amount || 0);
     const schedule = buildInstallmentSchedule({
-      totalAmount: Number(booking.total_amount || 0),
+      totalAmount,
       currency,
       frequency,
     });
@@ -91,7 +122,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       frequency,
       startDate: schedule.startDate,
       endDate: schedule.endDate,
-      totalAmount: Number(booking.total_amount || 0),
+      totalAmount,
       currency,
       installmentCount: schedule.installmentCount,
       installmentAmount: schedule.installmentAmount,
@@ -103,44 +134,96 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const baseUrl = resolveBaseUrl(request);
     const tokenParam = payload.token ? `&token=${encodeURIComponent(payload.token)}` : '';
     const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}${tokenParam}`;
+    const registerUrl = `${baseUrl}/eventos/cumbre-mundial-2026/registro?bookingId=${bookingId}${tokenParam}`;
 
     if (provider === 'stripe') {
       const interval = frequency === 'BIWEEKLY' ? 'week' : 'month';
       const intervalCount = frequency === 'BIWEEKLY' ? 2 : 1;
       const cancelAt = new Date(`${schedule.endDate}T23:59:59-05:00`).getTime() / 1000;
-      const session = await createStripeInstallmentSession({
-        amount: schedule.installmentAmount,
-        currency: 'USD',
-        description: 'Cumbre Mundial 2026 - Cuotas',
-        interval,
-        intervalCount,
-        successUrl: statusUrl,
-        cancelUrl: statusUrl,
-        cancelAt: Math.floor(cancelAt),
-        metadata: {
-          cumbre_booking_id: bookingId,
-          cumbre_plan_id: plan.id,
-          cumbre_frequency: frequency,
-        },
-        customerEmail: booking.contact_email || undefined,
-      });
 
-      if (!session.url) {
-        return new Response(JSON.stringify({ ok: false, error: 'No se pudo iniciar el pago en cuotas' }), {
-          status: 500,
+      try {
+        const session = await createStripeInstallmentSession({
+          amount: schedule.installmentAmount,
+          currency: 'USD',
+          description: 'Cumbre Mundial 2026 - Cuotas',
+          interval,
+          intervalCount,
+          successUrl: registerUrl,
+          cancelUrl: statusUrl,
+          metadata: {
+            cumbre_booking_id: bookingId,
+            cumbre_plan_id: plan.id,
+            cumbre_frequency: frequency,
+            cumbre_cancel_at: String(Math.floor(cancelAt)),
+          },
+          customerEmail: booking.contact_email || undefined,
+        });
+
+        if (!session.url) {
+          throw new Error('No se pudo iniciar el pago en cuotas');
+        }
+
+        return new Response(JSON.stringify({
+          ok: true,
+          planId: plan.id,
+          provider: 'stripe',
+          url: session.url,
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      } catch (stripeError: any) {
+        console.error('[cumbre.installments] stripe subscription error', stripeError);
+        const allowFallback =
+          (env('CUMBRE_STRIPE_SUBSCRIPTION_FALLBACK') ?? env('PUBLIC_CUMBRE_STRIPE_SUBSCRIPTION_FALLBACK')) === 'true';
+        if (!allowFallback) {
+          throw stripeError;
+        }
+
+        const firstInstallment = schedule.installments[0];
+        const reference = buildInstallmentReference({
+          bookingId,
+          planId: plan.id,
+          installmentIndex: firstInstallment.installmentIndex,
+        });
+        const installmentRow = await getInstallmentByPlanIndex(plan.id, firstInstallment.installmentIndex);
+        if (installmentRow) {
+          await updateInstallment(installmentRow.id, { provider_reference: reference });
+        }
+        await updatePaymentPlan(plan.id, { auto_debit: false });
+
+        const fallbackSession = await createStripeDonationSession({
+          amountUsd: firstInstallment.amount,
+          currency: 'USD',
+          description: 'Cumbre Mundial 2026 - Cuota 1',
+          successUrl: registerUrl,
+          cancelUrl: statusUrl,
+          customerEmail: booking.contact_email || undefined,
+          metadata: {
+            cumbre_booking_id: bookingId,
+            cumbre_plan_id: plan.id,
+            cumbre_installment_id: installmentRow?.id || '',
+            cumbre_reference: reference,
+            cumbre_frequency: frequency,
+            cumbre_cancel_at: String(Math.floor(cancelAt)),
+          },
+        });
+
+        if (!fallbackSession.url) {
+          throw stripeError;
+        }
+
+        return new Response(JSON.stringify({
+          ok: true,
+          planId: plan.id,
+          provider: 'stripe',
+          url: fallbackSession.url,
+          mode: 'manual',
+        }), {
+          status: 200,
           headers: { 'content-type': 'application/json' },
         });
       }
-
-      return new Response(JSON.stringify({
-        ok: true,
-        planId: plan.id,
-        provider: 'stripe',
-        url: session.url,
-      }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      });
     }
 
     const firstInstallment = schedule.installments[0];
@@ -158,7 +241,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       amountInCents: Math.round(firstInstallment.amount * 100),
       currency: 'COP',
       description: 'Cumbre Mundial 2026 - Cuota 1',
-      redirectUrl: statusUrl,
+      redirectUrl: registerUrl,
       reference,
       email: booking.contact_email || undefined,
     });
@@ -174,7 +257,11 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     });
   } catch (error: any) {
     console.error('[cumbre.installments] error', error);
-    return new Response(JSON.stringify({ ok: false, error: 'Error creando plan de cuotas' }), {
+    const runtimeEnv =
+      import.meta.env?.VERCEL_ENV ?? process.env?.VERCEL_ENV ?? process.env?.NODE_ENV ?? 'development';
+    const isProd = runtimeEnv === 'production';
+    const message = isProd ? 'Error creando plan de cuotas' : (error?.message || 'Error creando plan de cuotas');
+    return new Response(JSON.stringify({ ok: false, error: message }), {
       status: 500,
       headers: { 'content-type': 'application/json' },
     });

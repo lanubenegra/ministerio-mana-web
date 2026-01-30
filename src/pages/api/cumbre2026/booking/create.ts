@@ -13,8 +13,30 @@ import {
 } from '@lib/cumbre2026';
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
+import { resolveBaseUrl } from '@lib/url';
+import { sendAuthLink } from '@lib/authMailer';
+import { findAuthUserByEmail } from '@lib/supabaseAdminUsers';
 
 export const prerender = false;
+
+function env(key: string): string | undefined {
+  return import.meta.env?.[key] ?? process.env?.[key];
+}
+
+function isTestModeAllowed(runtimeEnv: string): boolean {
+  if (runtimeEnv === 'production') return false;
+  const flag = env('CUMBRE_TEST_MODE') ?? env('PUBLIC_CUMBRE_TEST_MODE');
+  return flag === 'true';
+}
+
+function getTestAmount(currency: string): number {
+  const raw = currency === 'COP'
+    ? env('CUMBRE_TEST_AMOUNT_COP') ?? env('PUBLIC_CUMBRE_TEST_AMOUNT_COP')
+    : env('CUMBRE_TEST_AMOUNT_USD') ?? env('PUBLIC_CUMBRE_TEST_AMOUNT_USD');
+  const fallback = currency === 'COP' ? 5000 : 1;
+  const value = Number(raw ?? fallback);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
 
 function parseParticipants(raw: unknown) {
   if (!Array.isArray(raw)) return [];
@@ -47,7 +69,11 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   }
 
   try {
-    const turnstileConfigured = Boolean(
+    const runtimeEnv =
+      import.meta.env?.VERCEL_ENV ?? process.env?.VERCEL_ENV ?? process.env?.NODE_ENV ?? 'development';
+    const allowTestMode = isTestModeAllowed(runtimeEnv);
+    const enforceTurnstile = runtimeEnv === 'production';
+    const turnstileConfigured = enforceTurnstile && Boolean(
       import.meta.env?.TURNSTILE_SECRET_KEY ?? process.env?.TURNSTILE_SECRET_KEY,
     );
     if (turnstileConfigured) {
@@ -103,6 +129,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     const countryGroup = normalizeCountryGroup(payload.countryGroup);
     const currency = currencyForGroup(countryGroup);
+    const testMode = Boolean(payload.testMode) && allowTestMode;
 
     let participantsRaw: unknown = payload.participants;
     if (typeof participantsRaw === 'string') {
@@ -119,6 +146,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         fullName: entry?.fullName ?? entry?.name ?? '',
         packageType: entry?.packageType ?? entry?.type,
         relationship: entry?.relationship ?? '',
+        documentType: entry?.documentType ?? entry?.document_type ?? entry?.docType ?? '',
+        documentNumber: entry?.documentNumber ?? entry?.document_number ?? entry?.docNumber ?? '',
       }))
       .filter(Boolean) as ReturnType<typeof sanitizeParticipant>[];
 
@@ -129,7 +158,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       });
     }
 
-    const totalAmount = calculateTotals(currency, participants);
+    let totalAmount = calculateTotals(currency, participants);
+    if (testMode) {
+      totalAmount = getTestAmount(currency);
+    }
     const threshold = depositThreshold(totalAmount);
     const token = generateAccessToken();
 
@@ -175,6 +207,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       full_name: participant.fullName,
       package_type: participant.packageType,
       relationship: participant.relationship,
+      document_type: participant.documentType,
+      document_number: participant.documentNumber,
     }));
 
     const { data: participantData, error: participantsError } = await supabaseAdmin
@@ -203,6 +237,21 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       totalPaid: 0,
       currency,
     });
+
+    try {
+      const baseUrl = resolveBaseUrl(request);
+      const nextUrl = `${baseUrl}/eventos/cumbre-mundial-2026/registro?bookingId=${booking.id}&token=${encodeURIComponent(token.token)}`;
+      const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent(nextUrl)}`;
+      const existingUser = await findAuthUserByEmail(email);
+      if (!existingUser) {
+        const result = await sendAuthLink({ kind: 'invite', email, redirectTo });
+        if (!result.ok) {
+          console.warn('[cumbre.booking] invite email failed', result.error);
+        }
+      }
+    } catch (inviteError) {
+      console.error('[cumbre.booking] invite error', inviteError);
+    }
 
     return new Response(JSON.stringify({
       ok: true,

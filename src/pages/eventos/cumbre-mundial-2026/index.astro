@@ -6,6 +6,16 @@ const eventDetails = {
   location: "Rionegro, Colombia",
   price: "Desde $150 USD" 
 };
+
+const whatsappOnly =
+  (import.meta.env?.PUBLIC_CUMBRE_WHATSAPP_ONLY ?? process.env?.PUBLIC_CUMBRE_WHATSAPP_ONLY) === 'true';
+
+const ctaHref = whatsappOnly
+  ? 'https://wa.me/573148297534?text=Hola%20quiero%20inscribirme%20a%20la%20Cumbre%20Mundial%202026'
+  : '/eventos/cumbre-mundial-2026/inscripcion';
+
+const ctaLabel = whatsappOnly ? 'Inscripciones por WhatsApp' : 'Reservar Cupo';
+const ctaLabelCaps = whatsappOnly ? 'INSCRIBIRME POR WHATSAPP' : 'COMENZAR REGISTRO';
 ---
 
 <CumbreLayout title="Cumbre Mundial 2026 | Ministerio Maná" description="Únete a la gran reunión de la familia Maná en Rionegro, Colombia.">
@@ -75,9 +85,9 @@ const eventDetails = {
          
          <div class="flex flex-col sm:flex-row gap-4">
              <!-- Primary CTA -->
-             <a href="https://wa.me/573148297534?text=Hola%20quiero%20inscribirme%20a%20la%20Cumbre%20Mundial%202026" target="_blank" rel="noopener noreferrer" class="group relative px-10 py-4 bg-brand-ocean text-white font-black text-lg rounded-full shadow-[0_0_40px_rgba(40,166,189,0.3)] hover:shadow-[0_0_60px_rgba(40,166,189,0.5)] hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+             <a href={ctaHref} {...(whatsappOnly ? { target: '_blank', rel: 'noopener noreferrer' } : {})} class="group relative px-10 py-4 bg-brand-ocean text-white font-black text-lg rounded-full shadow-[0_0_40px_rgba(40,166,189,0.3)] hover:shadow-[0_0_60px_rgba(40,166,189,0.5)] hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                 <span class="relative z-10 flex items-center gap-2 uppercase tracking-wider">
-                  Inscripciones por WhatsApp
+                  {ctaLabel}
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                 </span>
                 <div class="absolute inset-0 bg-gradient-to-r from-brand-ocean via-[#4CC9E0] to-brand-ocean opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -86,6 +96,11 @@ const eventDetails = {
              <!-- More Info -->
              <a href="#detalles" class="px-10 py-4 border border-white/20 hover:bg-white/5 text-white font-medium rounded-full transition-colors uppercase tracking-wide text-sm flex items-center">
                 Más Información
+             </a>
+
+             <!-- Portal CTA -->
+             <a href="/portal" class="px-10 py-4 border border-brand-gold/40 text-brand-gold font-semibold rounded-full transition-colors uppercase tracking-wide text-sm flex items-center hover:bg-brand-gold/10">
+                Ir a Portal Maná
              </a>
          </div>
       </div>
@@ -120,7 +135,8 @@ const eventDetails = {
           </div>
           <h3 class="text-xl font-bold text-white">Flexibilidad de alojamiento</h3>
           <p class="text-white/60 leading-relaxed text-sm">
-            Puedes quedarte en el lugar de la cumbre o en hoteles cercanos. Los hoteles cercanos se pagan por separado y existe precio para asistentes sin alojamiento.
+            El lugar cuenta con habitaciones tipo seminario (cama y nido por habitación). Si prefieres mayor comodidad,
+            puedes hospedarte en hoteles cercanos (se pagan por separado) y elegir el precio sin alojamiento.
           </p>
         </div>
 
@@ -147,8 +163,8 @@ const eventDetails = {
       <p class="text-white/70">
         Los cupos son limitados. Asegura tu asistencia y la de tu familia hoy mismo.
       </p>
-      <a href="https://wa.me/573148297534?text=Hola%20quiero%20inscribirme%20a%20la%20Cumbre%20Mundial%202026" target="_blank" rel="noopener noreferrer" class="inline-block px-10 py-5 bg-white text-brand-dark font-black text-xl rounded-full hover:scale-105 transition-transform">
-        INSCRIBIRME POR WHATSAPP
+      <a href={ctaHref} {...(whatsappOnly ? { target: '_blank', rel: 'noopener noreferrer' } : {})} class="inline-block px-10 py-5 bg-white text-brand-dark font-black text-xl rounded-full hover:scale-105 transition-transform">
+        {ctaLabelCaps}
       </a>
       <p class="text-xs text-white/40">
         <a href="/eventos/cumbre-mundial-2026/condiciones" class="underline hover:text-white">Ver condiciones comerciales</a>.

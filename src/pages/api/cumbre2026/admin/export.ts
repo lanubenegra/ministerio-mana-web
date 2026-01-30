@@ -79,9 +79,15 @@ export const GET: APIRoute = async ({ request }) => {
     'plan_installment_amount',
     'plan_amount_paid',
     'plan_next_due_date',
-    'last_payment_amount',
-    'last_payment_status',
-    'last_payment_date',
+    'payment_id',
+    'payment_reference',
+    'payment_provider',
+    'payment_amount',
+    'payment_currency',
+    'payment_status',
+    'payment_installment_id',
+    'payment_method',
+    'payment_created_at',
     'participant_id',
     'participant_name',
     'participant_package_type',
@@ -129,11 +135,12 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
-  const lastPaymentByBooking = new Map<string, any>();
+  const paymentsByBooking = new Map<string, any[]>();
   for (const payment of payments || []) {
-    if (!lastPaymentByBooking.has(payment.booking_id)) {
-      lastPaymentByBooking.set(payment.booking_id, payment);
-    }
+    const key = payment.booking_id;
+    const list = paymentsByBooking.get(key) ?? [];
+    list.push(payment);
+    paymentsByBooking.set(key, list);
   }
 
   const bookingMap = new Map<string, any>();
@@ -141,48 +148,111 @@ export const GET: APIRoute = async ({ request }) => {
     bookingMap.set(booking.id, booking);
   }
 
-  const rows = (participants || []).map((participant: any) => {
+  const rows: string[][] = [];
+  (participants || []).forEach((participant: any) => {
     const booking = bookingMap.get(participant.booking_id);
     const plan = plansByBooking.get(participant.booking_id);
-    const lastPayment = lastPaymentByBooking.get(participant.booking_id);
+    const paymentRows = paymentsByBooking.get(participant.booking_id) ?? [];
 
-    return [
-      csvEscape(participant.booking_id),
-      csvEscape(booking?.contact_name),
-      csvEscape(booking?.contact_email),
-      csvEscape(booking?.contact_phone),
-      csvEscape(booking?.country_group),
-      csvEscape(booking?.currency),
-      csvEscape(booking?.total_amount),
-      csvEscape(booking?.total_paid),
-      csvEscape(booking?.deposit_threshold),
-      csvEscape(booking?.status),
-      csvEscape(booking?.created_at),
-      csvEscape(plan?.status),
-      csvEscape(plan?.provider),
-      csvEscape(plan?.frequency),
-      csvEscape(plan?.installment_count),
-      csvEscape(plan?.installment_amount),
-      csvEscape(plan?.amount_paid),
-      csvEscape(plan?.next_due_date),
-      csvEscape(lastPayment?.amount),
-      csvEscape(lastPayment?.status),
-      csvEscape(lastPayment?.created_at),
-      csvEscape(participant.id),
-      csvEscape(participant.full_name),
-      csvEscape(participant.package_type),
-      csvEscape(participant.relationship),
-      csvEscape(participant.birthdate),
-      csvEscape(participant.gender),
-      csvEscape(participant.nationality),
-      csvEscape(participant.document_type),
-      csvEscape(participant.document_number),
-      csvEscape(participant.room_preference),
-      csvEscape(participant.blood_type),
-      csvEscape(participant.allergies),
-      csvEscape(participant.diet_type),
-      csvEscape(participant.diet_notes),
-    ];
+    if (!paymentRows.length) {
+      rows.push([
+        csvEscape(participant.booking_id),
+        csvEscape(booking?.contact_name),
+        csvEscape(booking?.contact_email),
+        csvEscape(booking?.contact_phone),
+        csvEscape(booking?.country_group),
+        csvEscape(booking?.currency),
+        csvEscape(booking?.total_amount),
+        csvEscape(booking?.total_paid),
+        csvEscape(booking?.deposit_threshold),
+        csvEscape(booking?.status),
+        csvEscape(booking?.created_at),
+        csvEscape(plan?.status),
+        csvEscape(plan?.provider),
+        csvEscape(plan?.frequency),
+        csvEscape(plan?.installment_count),
+        csvEscape(plan?.installment_amount),
+        csvEscape(plan?.amount_paid),
+        csvEscape(plan?.next_due_date),
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        csvEscape(participant.id),
+        csvEscape(participant.full_name),
+        csvEscape(participant.package_type),
+        csvEscape(participant.relationship),
+        csvEscape(participant.birthdate),
+        csvEscape(participant.gender),
+        csvEscape(participant.nationality),
+        csvEscape(participant.document_type),
+        csvEscape(participant.document_number),
+        csvEscape(participant.room_preference),
+        csvEscape(participant.blood_type),
+        csvEscape(participant.allergies),
+        csvEscape(participant.diet_type),
+        csvEscape(participant.diet_notes),
+      ]);
+      return;
+    }
+
+    paymentRows.forEach((payment: any) => {
+      const raw = payment?.raw_event && typeof payment.raw_event === 'object' ? payment.raw_event : {};
+      const method =
+        raw?.payment_method ||
+        raw?.payment_method_type ||
+        raw?.method ||
+        raw?.payment_method_types?.[0] ||
+        '';
+      rows.push([
+        csvEscape(participant.booking_id),
+        csvEscape(booking?.contact_name),
+        csvEscape(booking?.contact_email),
+        csvEscape(booking?.contact_phone),
+        csvEscape(booking?.country_group),
+        csvEscape(booking?.currency),
+        csvEscape(booking?.total_amount),
+        csvEscape(booking?.total_paid),
+        csvEscape(booking?.deposit_threshold),
+        csvEscape(booking?.status),
+        csvEscape(booking?.created_at),
+        csvEscape(plan?.status),
+        csvEscape(plan?.provider),
+        csvEscape(plan?.frequency),
+        csvEscape(plan?.installment_count),
+        csvEscape(plan?.installment_amount),
+        csvEscape(plan?.amount_paid),
+        csvEscape(plan?.next_due_date),
+        csvEscape(payment?.id),
+        csvEscape(payment?.reference),
+        csvEscape(payment?.provider),
+        csvEscape(payment?.amount),
+        csvEscape(payment?.currency),
+        csvEscape(payment?.status),
+        csvEscape(payment?.installment_id),
+        csvEscape(method),
+        csvEscape(payment?.created_at),
+        csvEscape(participant.id),
+        csvEscape(participant.full_name),
+        csvEscape(participant.package_type),
+        csvEscape(participant.relationship),
+        csvEscape(participant.birthdate),
+        csvEscape(participant.gender),
+        csvEscape(participant.nationality),
+        csvEscape(participant.document_type),
+        csvEscape(participant.document_number),
+        csvEscape(participant.room_preference),
+        csvEscape(participant.blood_type),
+        csvEscape(participant.allergies),
+        csvEscape(participant.diet_type),
+        csvEscape(participant.diet_notes),
+      ]);
+    });
   });
 
   const csv = [headers.join(','), ...rows.map((row: string[]) => row.join(','))].join('\n');

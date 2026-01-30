@@ -73,7 +73,6 @@ export async function createStripeInstallmentSession(params: {
   intervalCount: number;
   successUrl: string;
   cancelUrl: string;
-  cancelAt: number;
   metadata?: Record<string, string>;
   customerEmail?: string;
 }): Promise<Stripe.Checkout.Session> {
@@ -104,7 +103,6 @@ export async function createStripeInstallmentSession(params: {
       },
     ],
     subscription_data: {
-      cancel_at: params.cancelAt,
       metadata: params.metadata,
     },
     success_url: params.successUrl,
