@@ -2,6 +2,7 @@ import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
 import { gsap } from 'gsap';
 
 const loadingEl = document.getElementById('account-loading');
+console.log('Portal Script Started. Loading El:', loadingEl); // DEBUG
 const errorEl = document.getElementById('account-error');
 const contentEl = document.getElementById('account-content');
 const profileName = document.getElementById('profile-name');
@@ -101,7 +102,14 @@ const onboardAffiliation = document.getElementById('onboard-affiliation');
 const onboardChurchWrapper = document.getElementById('onboard-church-wrapper');
 const onboardChurchName = document.getElementById('onboard-church-name');
 
-const supabase = getSupabaseBrowserClient();
+let supabase = null;
+try {
+  supabase = getSupabaseBrowserClient();
+} catch (err) {
+  console.error('Supabase client not available:', err);
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (errorEl) errorEl.classList.remove('hidden');
+}
 let portalProfile = null;
 let portalMemberships = [];
 let authMode = 'supabase';
@@ -137,6 +145,33 @@ function formatDateTime(value) {
   return date.toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function getAuthRedirectState() {
+  const url = new URL(window.location.href);
+  const hasHashToken = Boolean(window.location.hash && window.location.hash.includes('access_token'));
+  const hasCode = url.searchParams.has('code');
+  const hasError = url.searchParams.has('error');
+  const hasType = url.searchParams.has('type');
+  return {
+    url,
+    hasHashToken,
+    hasCode,
+    hasError,
+    hasType,
+    isAuthRedirect: hasHashToken || hasCode || hasError || hasType,
+  };
+}
+
+function cleanupAuthRedirect() {
+  const url = new URL(window.location.href);
+  if (url.hash && url.hash.includes('access_token')) {
+    url.hash = '';
+  }
+  ['code', 'type', 'error', 'error_description', 'access_token', 'refresh_token', 'expires_in', 'token_type'].forEach((param) => {
+    url.searchParams.delete(param);
+  });
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
 // Tabs Navigation
 navLinks.forEach(link => {
   link.addEventListener('click', () => {
@@ -146,9 +181,9 @@ navLinks.forEach(link => {
 });
 
 document.querySelectorAll('[data-tab-trigger]').forEach(btn => {
-   btn.addEventListener('click', () => {
-      switchTab(btn.dataset.tabTrigger);
-   });
+  btn.addEventListener('click', () => {
+    switchTab(btn.dataset.tabTrigger);
+  });
 });
 
 function switchTab(tabId) {
@@ -167,41 +202,52 @@ function switchTab(tabId) {
   });
 }
 
-async function loadAccount() {
+// Core Dashboard Logic - Reactive Auth
+async function fetchDashboardData(session) {
+  console.log('fetchDashboardData called', session);
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    let token = sessionData.session?.access_token;
-    let headers = {};
-    if (token) {
-      headers = { Authorization: `Bearer ${token}` };
-      portalAuthHeaders = headers;
-    } else {
-      const fallbackRes = await fetch('/api/portal/password-session');
-      if (!fallbackRes.ok) {
-        window.location.href = '/portal/ingresar';
-        return;
-      }
-      const fallback = await fallbackRes.json();
-      if (!fallback.ok) {
-        window.location.href = '/portal/ingresar';
-        return;
-      }
-      authMode = 'password';
-    }
+    const token = session?.access_token;
+    if (!token) throw new Error('No access token');
 
-    const sessionRes = await fetch('/api/portal/session', { headers });
+    let headers = { Authorization: `Bearer ${token}` };
+    portalAuthHeaders = headers;
+
+    // 2. Parallelized Initial Data Fetching
+    if (!supabase) throw new Error('Supabase no configurado');
+
+    const [sessionRes, resumenRes, { data: userData }] = await Promise.all([
+      fetch('/api/portal/session', { headers }),
+      // Fetch resumen immediately with the token we already have
+      fetch('/api/cuenta/resumen', { headers }),
+      supabase.auth.getUser(),
+    ]);
+
+
+
     const sessionPayload = await sessionRes.json();
     if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
 
+    let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
+    const resData = await resumenRes.json();
+    if (!resumenRes.ok || !resData.ok) {
+      // Optional: Log error but continue with minimal profile?
+      console.warn('Could not load resumen:', resData.error);
+    } else {
+      payload = resData;
+    }
+
+    authMode = sessionPayload.mode || 'supabase';
     portalProfile = sessionPayload.profile || {};
     portalMemberships = sessionPayload.memberships || [];
     portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
     portalIsSuperadmin = portalProfile?.role === 'superadmin';
+
     const hasChurchRole = (portalMemberships || []).some(
       (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
     );
     const hasChurchAccess = portalIsAdmin || hasChurchRole;
     const membershipChurch = portalMemberships.find((item) => item?.church?.id)?.church || null;
+
     if (!portalSelectedChurchId && membershipChurch?.id) {
       portalSelectedChurchId = membershipChurch.id;
     }
@@ -211,26 +257,7 @@ async function loadAccount() {
       churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
     }
 
-    const { data: userData } = token ? await supabase.auth.getUser() : { data: { user: null } };
     const user = userData?.user;
-
-    let payload = {
-      ok: true,
-      user: {
-        fullName: portalProfile?.full_name || user?.user_metadata?.full_name || portalProfile?.email || '',
-        email: portalProfile?.email || user?.email || '',
-      },
-      bookings: [],
-      plans: [],
-      payments: [],
-    };
-
-    if (token) {
-      const res = await fetch('/api/cuenta/resumen', { headers });
-      const resPayload = await res.json();
-      if (!res.ok || !resPayload.ok) throw new Error(resPayload.error || 'No se pudo cargar');
-      payload = resPayload;
-    }
 
     const activeUser = payload.user || {};
     const name = activeUser.fullName || user?.user_metadata?.full_name || 'Usuario';
@@ -258,10 +285,10 @@ async function loadAccount() {
 
     const activePlan = payload.plans?.find(p => p.status === 'ACTIVE');
     if (activePlan) {
-       statNextDue.textContent = formatDate(activePlan.next_due_date);
-       planHighlight.classList.remove('hidden');
-       highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
-       highlightDate.textContent = formatDate(activePlan.next_due_date);
+      statNextDue.textContent = formatDate(activePlan.next_due_date);
+      planHighlight.classList.remove('hidden');
+      highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
+      highlightDate.textContent = formatDate(activePlan.next_due_date);
     }
 
     renderBookings(payload.bookings || []);
@@ -269,17 +296,26 @@ async function loadAccount() {
     renderInstallments(payload.installments || [], payload.plans || [], payload.bookings || []);
     renderPayments(payload.payments || []);
     renderMemberships(portalMemberships);
-    if (hasChurchAccess) {
-      await loadChurchSelector(headers);
-      await loadChurchBookings(headers);
-      await loadChurchPayments(headers);
-      await loadChurchInstallments(headers);
-      await loadChurchMembers(headers);
-    }
-    await loadAdminUsers(headers);
     setupInviteAccess();
     initAdminInvite();
-    await loadChurchDraft();
+    // 5. Reveal Dashboard (Eager Loading)
+    loadingEl.classList.add('hidden');
+    contentEl.classList.remove('hidden');
+    gsap.from(contentEl, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
+
+    // 6. Background Initialization (Parallelized)
+    const backgroundTasks = [];
+    if (hasChurchAccess) {
+      backgroundTasks.push(loadChurchSelector(headers));
+      backgroundTasks.push(loadChurchBookings(headers));
+      backgroundTasks.push(loadChurchPayments(headers));
+      backgroundTasks.push(loadChurchInstallments(headers));
+      backgroundTasks.push(loadChurchMembers(headers));
+    }
+    backgroundTasks.push(loadAdminUsers(headers));
+    backgroundTasks.push(loadChurchDraft());
+
+    await Promise.all(backgroundTasks);
 
     if (authMode === 'password') {
       if (onboardingModal) onboardingModal.classList.add('hidden');
@@ -290,14 +326,12 @@ async function loadAccount() {
     } else if (!portalProfile?.full_name || !portalProfile?.affiliation_type) {
       showOnboarding();
     }
-
-    loadingEl.classList.add('hidden');
-    contentEl.classList.remove('hidden');
-    gsap.from(contentEl, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
   } catch (err) {
     console.error(err);
-    loadingEl.classList.add('hidden');
-    errorEl.classList.remove('hidden');
+    if (!loadingEl.classList.contains('hidden')) {
+      loadingEl.classList.add('hidden');
+      errorEl.classList.remove('hidden');
+    }
   }
 }
 
@@ -718,12 +752,12 @@ function renderChurchInstallments(list) {
 
 async function loadChurchBookings(headers = {}) {
   if (!churchBookingsList || !churchBookingsEmpty) return;
-    if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
-      churchBookingsEmpty.textContent = 'Selecciona una iglesia para ver los registros.';
-      churchBookingsEmpty.classList.remove('hidden');
-      churchBookingsList.classList.add('hidden');
-      return;
-    }
+  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
+    churchBookingsEmpty.textContent = 'Selecciona una iglesia para ver los registros.';
+    churchBookingsEmpty.classList.remove('hidden');
+    churchBookingsList.classList.add('hidden');
+    return;
+  }
   try {
     const url = new URL('/api/portal/iglesia/bookings', window.location.origin);
     if (portalSelectedChurchId) {
@@ -1127,20 +1161,20 @@ function initChurchManualForm() {
       participants: collectParticipants(),
     };
 
-  try {
-    const res = await fetch('/api/portal/iglesia/submit', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
-    churchFormStatus.textContent = 'Inscripción registrada.';
-    await loadChurchBookings();
-    await loadChurchPayments();
-    churchForm.reset();
-    participantsList.innerHTML = '';
-    participantsList.appendChild(buildParticipantRow());
+    try {
+      const res = await fetch('/api/portal/iglesia/submit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
+      churchFormStatus.textContent = 'Inscripción registrada.';
+      await loadChurchBookings();
+      await loadChurchPayments();
+      churchForm.reset();
+      participantsList.innerHTML = '';
+      participantsList.appendChild(buildParticipantRow());
       await fetch('/api/portal/iglesia/draft', { method: 'DELETE', headers: portalAuthHeaders });
     } catch (error) {
       console.error(error);
@@ -1233,7 +1267,7 @@ function renderPlans(plans, bookings) {
     const statusLabel = plan.status === 'PAUSED' ? 'Pausado' : plan.status === 'COMPLETED' ? 'Completado' : 'Activo';
     const actionLabel = plan.status === 'PAUSED' ? 'Reactivar abonos' : 'Pausar abonos';
     const actionClass = plan.status === 'PAUSED' ? 'bg-brand-teal text-white' : 'bg-white/5 text-white/60 hover:bg-white/10';
-    
+
     card.innerHTML = `
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-3">
@@ -1415,11 +1449,11 @@ async function updateProfile() {
     });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo actualizar');
-    
+
     profileStatus.textContent = '¡Cambios guardados con éxito!';
     profileStatus.className = 'text-sm font-medium text-green-400';
     welcomeName.textContent = profileName.value.trim().split(' ')[0];
-    
+
     setTimeout(() => { profileStatus.textContent = ''; }, 3000);
   } catch (err) {
     console.error(err);
@@ -1651,23 +1685,40 @@ churchExportBtn?.addEventListener('click', () => {
   void exportChurchBookings();
 });
 
+
+const churchFormContainer = document.getElementById('church-manual-form-container');
+const churchFormCloseBtn = document.getElementById('church-form-close');
+const inviteToggleBtn = document.getElementById('btn-toggle-invite');
+
 churchFormToggle?.addEventListener('click', () => {
-  if (!churchForm) return;
+  if (!churchFormContainer) return;
   if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
     if (churchFormStatus) {
       churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
     }
     return;
   }
-  const isCollapsed = churchForm.classList.contains('hidden');
-  if (isCollapsed) {
-    churchForm.classList.remove('hidden');
-    churchForm.dataset.collapsed = 'false';
-    churchFormToggle.textContent = 'Cerrar formulario';
+
+  churchFormContainer.classList.remove('hidden');
+  churchForm?.classList.remove('hidden');
+  // Scroll to form
+  churchFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+churchFormCloseBtn?.addEventListener('click', () => {
+  if (!churchFormContainer) return;
+  churchFormContainer.classList.add('hidden');
+});
+
+inviteToggleBtn?.addEventListener('click', () => {
+  if (!inviteCard) return;
+  const isHidden = inviteCard.classList.contains('hidden');
+  if (isHidden) {
+    inviteCard.classList.remove('hidden');
+    inviteToggleBtn.textContent = 'Cerrar Gestión';
   } else {
-    churchForm.classList.add('hidden');
-    churchForm.dataset.collapsed = 'true';
-    churchFormToggle.textContent = 'Abrir formulario';
+    inviteCard.classList.add('hidden');
+    inviteToggleBtn.textContent = 'Gestionar Equipo';
   }
 });
 
@@ -1739,6 +1790,200 @@ onboardingForm?.addEventListener('submit', async (event) => {
 });
 plansList?.addEventListener('click', handlePlanAction);
 
-loadAccount();
+
+const updatePasswordBtn = document.getElementById('btn-update-password');
+const newPasswordInput = document.getElementById('security-new-password');
+const securityStatus = document.getElementById('security-status');
+
+updatePasswordBtn?.addEventListener('click', async () => {
+  if (!newPasswordInput || !securityStatus) return;
+  const password = newPasswordInput.value.trim();
+  if (password.length < 6) {
+    securityStatus.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    securityStatus.className = 'text-sm font-medium text-red-500';
+    return;
+  }
+
+  securityStatus.textContent = 'Actualizando contraseña...';
+  securityStatus.className = 'text-sm font-medium text-slate-500';
+  updatePasswordBtn.disabled = true;
+  updatePasswordBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  const originalText = updatePasswordBtn.textContent;
+  updatePasswordBtn.textContent = 'Guardando...';
+
+  try {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+
+    securityStatus.textContent = '¡Contraseña actualizada correctamente!';
+    securityStatus.className = 'text-sm font-medium text-green-500';
+    newPasswordInput.value = '';
+  } catch (err) {
+    console.error(err);
+    securityStatus.textContent = err.message || 'No se pudo actualizar la contraseña.';
+    securityStatus.className = 'text-sm font-medium text-red-500';
+  } finally {
+    updatePasswordBtn.disabled = false;
+    updatePasswordBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    updatePasswordBtn.textContent = originalText;
+    setTimeout(() => {
+      if (securityStatus.textContent.includes('correctamente')) {
+        securityStatus.textContent = '';
+      }
+    }, 3000);
+  }
+});
+
+
+const registerPasskeyBtn = document.getElementById('btn-register-passkey');
+const passkeyStatus = document.getElementById('passkey-status');
+
+registerPasskeyBtn?.addEventListener('click', async () => {
+  if (!passkeyStatus) return;
+  passkeyStatus.textContent = 'Iniciando registro de Passkey...';
+  passkeyStatus.className = 'text-xs text-center mt-2 font-medium text-slate-500';
+  registerPasskeyBtn.disabled = true;
+  registerPasskeyBtn.classList.add('opacity-50');
+
+  try {
+    // 1. Initialize enrollment
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: 'webauthn',
+    });
+
+    if (error) throw error;
+
+    // 2. Challenge and Verify (Triggers Browser Prompt)
+    const { data: verifyData, error: verifyError } = await supabase.auth.mfa.challengeAndVerify({
+      factorId: data.id,
+    });
+
+    if (verifyError) throw verifyError;
+
+    passkeyStatus.textContent = '¡Dispositivo vinculado correctamente!';
+    passkeyStatus.className = 'text-xs text-center mt-2 font-bold text-green-500';
+    registerPasskeyBtn.innerHTML = `
+       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+       Vinculado
+    `;
+
+  } catch (err) {
+    console.error(err);
+    passkeyStatus.textContent = err.message || 'Error al vincular. Verifica que tu dispositivo soporte Passkeys.';
+    passkeyStatus.className = 'text-xs text-center mt-2 font-medium text-red-500';
+    registerPasskeyBtn.disabled = false;
+    registerPasskeyBtn.classList.remove('opacity-50');
+  }
+});
+
+// Init Dashboard with Reactive Auth
+// Init Dashboard with Reactive Auth
+function initDashboard() {
+  let dashboardLoaded = false;
+
+  // 0. Fix Malformed Hash (if present)
+  // Supabase expects #access_token=... but sometimes we get #/access_token=...
+  if (window.location.hash && window.location.hash.startsWith('#/')) {
+    console.log('Fixing malformed hash:', window.location.hash);
+    const cleanHash = window.location.hash.replace('#/', '#');
+    window.history.replaceState(null, '', window.location.pathname + cleanHash);
+    console.log('Cleaned hash:', window.location.hash);
+  }
+
+  // 1. Reactive Listener (Primary Driver for Async Events)
+  if (!supabase) return;
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+      if (session && !dashboardLoaded) {
+        console.log('Auth Event:', event);
+        dashboardLoaded = true;
+
+        cleanupAuthRedirect();
+
+        await fetchDashboardData(session);
+      }
+    }
+  });
+
+  // 2. Immediate State Check (Handle Pre-processed Sessions)
+  // Supabase might have already processed the hash before this script ran.
+  // We check getSession() immediately.
+  supabase.auth.getSession().then(({ data }) => {
+    console.log('getSession result:', data); // DEBUG
+    if (data?.session && !dashboardLoaded) {
+      console.log('Session found immediately via getSession');
+      dashboardLoaded = true;
+
+      cleanupAuthRedirect();
+
+      fetchDashboardData(data.session);
+    } else if (!data?.session) {
+      const authState = getAuthRedirectState();
+      console.log('No session from getSession. Auth state:', authState); // DEBUG
+      // No session found immediately.
+
+      if (!authState.isAuthRedirect) {
+        // No hash, no session -> Redirect after grace period
+        setTimeout(() => {
+          if (!dashboardLoaded) window.location.href = '/portal/ingresar';
+        }, 2000);
+      } else {
+        // Auth redirect, show waiting feedback
+        if (loadingEl) {
+          const p = loadingEl.querySelector('p');
+          if (p) {
+            if (authState.hasError) {
+              const description = authState.url.searchParams.get('error_description');
+              p.textContent = description ? decodeURIComponent(description.replace(/\+/g, ' ')) : 'El enlace no es válido.';
+            } else {
+              p.textContent = 'Verificando enlace...';
+            }
+          }
+        }
+
+        if (authState.hasError) {
+          setTimeout(() => window.location.href = '/portal/ingresar', 2500);
+          return;
+        }
+
+        // Active Polling Fallback (in case listener misses)
+        const pollInterval = setInterval(async () => {
+          if (dashboardLoaded) {
+            clearInterval(pollInterval);
+            return;
+          }
+          console.log('Polling for session...');
+          const { data: pollData } = await supabase.auth.getSession();
+          if (pollData?.session) {
+            console.log('Session found via Polling!');
+            clearInterval(pollInterval);
+            dashboardLoaded = true;
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+              cleanupAuthRedirect();
+            }
+            fetchDashboardData(pollData.session);
+          }
+        }, 500);
+
+        // Timeout Safety
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          if (!dashboardLoaded) {
+            if (loadingEl) {
+              const p = loadingEl.querySelector('p');
+              if (p) {
+                p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
+              }
+            }
+            setTimeout(() => window.location.href = '/portal/ingresar', 2000);
+          }
+        }, 12000);
+      }
+    }
+  });
+}
+
+initDashboard();
 initChurchManualForm();
 initInviteForm();

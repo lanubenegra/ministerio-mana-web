@@ -150,7 +150,7 @@
 - Responsable: Delta (Codex)
 - Cambios:
   - Se actualizo copy de paquetes: evento + alimentacion + alojamiento / evento + alimentacion.
-  - Se actualizo nota de ninos 0-7 (alojamiento/comida compartidos con padres).
+  - Se actualizo nota de ninos 0-4 / 5-10 (alojamiento compartido con padres, menu infantil para 5-10).
   - Se actualizo texto de alojamiento (habitaciones tipo seminario).
   - Se actualizo seccion de condiciones: menu tradicional/vegetariano y politica de cambios.
 - Pruebas: N/A
@@ -269,6 +269,11 @@
   - `5f778ce`: "style(portal): high contrast text updates for dashboard and login"
   - `bb80c82`: "style(portal): fix layout and spacing in church manual registration form"
   - `eac6d63`: "style(portal): harmonize admin users card spacing and layout"
+  - `c4e2338`: "feat(primicias): add dedicated landing page with geo-aware payment gateway"
+  - `9e225a0`: "fix(primicias): resolve syntax error in client-side script"
+  - `[new]`: "style(layout): redesign footer with premium navy theme and fix header logo contrast logic"
+  - `[new]`: "fix(auth): correct magiclink generation accessing nested property from Supabase SDK"
+  - `[new]`: "feat(portal): redirect magic link directly to dashboard and add password update section in profile"
   - `[new]`: "feat(primicias): add dedicated landing page with geo-aware payment gateway (Wompi/Stripe/Pushpay)"
 
 

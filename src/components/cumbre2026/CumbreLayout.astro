@@ -7,6 +7,7 @@ const { title, description, variant = 'dark' } = Astro.props;
 
 const isLight = variant === 'light';
 const mainBg = isLight ? 'bg-slate-50 text-brand-dark' : 'bg-brand-void text-white';
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout title={title} description={description} hideHeader hideFooter>
@@ -78,6 +79,6 @@ const mainBg = isLight ? 'bg-slate-50 text-brand-dark' : 'bg-brand-void text-whi
   </div>
 </BaseLayout>
 
-<script>
+<script type="module" nonce={cspNonce}>
   import '../../scripts/cumbre-nav.js';
 </script>

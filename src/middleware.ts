@@ -130,7 +130,7 @@ function isLocalhost(request: Request): boolean {
   return host.startsWith('localhost') || host.startsWith('127.') || host.endsWith('.local');
 }
 
-export const onRequest: MiddlewareHandler = async (context, next) => {
+const appMiddleware: MiddlewareHandler = async (context, next) => {
   const { cookies, locals, request } = context;
   const url = new URL(request.url);
   const cumbreOnly =
@@ -214,6 +214,10 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     'https://checkout.wompi.co',
     'https://js.stripe.com',
   ];
+  const frameSrc = [...FRAME_SRC];
+  if (IS_VERCEL_PREVIEW) {
+    frameSrc.push('https://vercel.live');
+  }
 
   const supabaseUrl = import.meta.env?.SUPABASE_URL
     ?? import.meta.env?.PUBLIC_SUPABASE_URL
@@ -227,11 +231,6 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     } catch {
       // ignore malformed supabase url
     }
-  }
-
-  const frameSrc = [...FRAME_SRC];
-  if (IS_VERCEL_PREVIEW) {
-    frameSrc.push('https://vercel.live');
   }
 
   const cspDirectives = [
@@ -255,3 +254,4 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   return response;
 };
+export const onRequest = appMiddleware;

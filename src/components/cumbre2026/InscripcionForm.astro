@@ -11,6 +11,7 @@ const testModeEnabled =
   (import.meta.env?.PUBLIC_CUMBRE_TEST_MODE ?? process.env?.PUBLIC_CUMBRE_TEST_MODE) === 'true';
 const testAmountCop = Number(import.meta.env?.PUBLIC_CUMBRE_TEST_AMOUNT_COP ?? 5000);
 const testAmountUsd = Number(import.meta.env?.PUBLIC_CUMBRE_TEST_AMOUNT_USD ?? 1);
+const cspNonce = Astro.locals?.cspNonce;
 
 const pricing = isColombia
   ? {
@@ -29,8 +30,8 @@ const pricing = isColombia
 const priceRows = [
   { label: 'Asistencia + alimentación + alojamiento', key: 'lodging' },
   { label: 'Asistencia + alimentación (sin alojamiento)', key: 'no_lodging' },
-  { label: 'Niños 0 a 7 años', key: 'child_0_7' },
-  { label: 'Niños 7 a 13 años', key: 'child_7_13' },
+  { label: 'Niños 0 a 4 años', key: 'child_0_7' },
+  { label: 'Niños 5 a 10 años', key: 'child_7_13' },
 ];
 
 const formatter = new Intl.NumberFormat(isColombia ? 'es-CO' : 'en-US', {
@@ -120,8 +121,8 @@ const formatTestAmount = (value, currency) =>
             <div class="text-xs text-white/50 space-y-2">
                <p>Los valores se muestran según tu ubicación.</p>
                <p>
-                 Niños 0 a 7 años: incluye material de trabajo. Alimentación y alojamiento se comparten con sus padres.
-                 Si requiere alimentación y alojamiento individual, contáctanos.
+                 Niños 0 a 4 años: incluye material de trabajo. No incluye alimentación. El alojamiento se comparte con sus padres.
+                 Niños 5 a 10 años: incluye alimentación con menú infantil.
                  <a href="/eventos/cumbre-mundial-2026/condiciones" class="underline hover:text-white">Ver condiciones comerciales</a>.
                </p>
             </div>
@@ -441,7 +442,7 @@ const formatTestAmount = (value, currency) =>
 
 </div>
 
-<script type="module">
+<script type="module" nonce={cspNonce}>
   // Simple Vanilla JS Logic
   const APP = {
     step: 1,
@@ -686,14 +687,14 @@ const formatTestAmount = (value, currency) =>
     },
 
     getPackageTypeFromAge(age, lodgingChoice) {
-       if (age <= 7) return 'child_0_7';
-       if (age <= 13) return 'child_7_13';
+       if (age <= 4) return 'child_0_7';
+       if (age <= 10) return 'child_7_13';
        return lodgingChoice === 'no_lodging' ? 'no_lodging' : 'lodging';
     },
 
     updateAddPersonControls() {
        const age = this.parseAge(this.dom.inputAge?.value || '');
-       const isChild = typeof age === 'number' && age <= 13;
+       const isChild = typeof age === 'number' && age <= 10;
        if (this.dom.inputLodging) {
           this.dom.inputLodging.disabled = isChild;
           const container = this.dom.inputLodging.parentElement;
@@ -820,8 +821,8 @@ const formatTestAmount = (value, currency) =>
         const labels = {
             lodging: 'Asistencia + alimentación + alojamiento',
             no_lodging: 'Asistencia + alimentación (sin alojamiento)',
-            child_0_7: 'Niño 0-7',
-            child_7_13: 'Niño 7-13'
+            child_0_7: 'Niño 0-4',
+            child_7_13: 'Niño 5-10'
         };
         return labels[type] || type;
     },

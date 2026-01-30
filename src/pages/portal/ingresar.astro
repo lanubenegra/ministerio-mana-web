@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
-
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <BaseLayout title="Accede al Portal Maná | Ministerio Maná" description="Ingresa al Portal Maná para ver tus aportes y gestionar tu inscripción.">
@@ -22,7 +22,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     </div>
 
     <!-- Login Card -->
-    <div id="login-card" class="relative z-10 w-full max-w-md">
+    <div id="login-card" class="relative z-10 w-full max-w-md opacity-0 translate-y-4">
       <div class="bg-white border border-white/40 rounded-[2rem] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(41,60,116,0.1)] overflow-hidden">
         
         <header class="relative mb-8 text-center">
@@ -39,67 +39,71 @@ import BaseLayout from '@layouts/BaseLayout.astro';
           </a>
         </header>
 
-        <form id="login-form" class="relative space-y-6">
-          <div class="space-y-2 text-left">
-            <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Correo Electrónico</label>
-            <div class="relative group">
-              <input 
-                type="email" 
-                id="login-email" 
-                required 
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-500 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300" 
-                placeholder="nombre@email.com"
-              >
-              <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
 
-          <div class="space-y-2 text-left">
-            <label class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Contraseña</label>
-            <div class="relative group">
-              <input 
-                type="password" 
-                id="login-password"
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-[#293C74] placeholder-slate-500 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all group-hover:border-slate-300 pr-12" 
-                placeholder="••••••••"
-              >
-              <button type="button" id="toggle-password" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#293C74] transition-colors focus:outline-none">
-                <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-                </svg>
+          <!-- Initial Password Form (Primary) -->
+          <form id="password-form" class="space-y-4">
+            <div class="space-y-4">
+              <div>
+                <label for="password-email" class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1 mb-1">Email</label>
+                <input type="email" id="password-email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74]" placeholder="email@ejemplo.com">
+              </div>
+              <div>
+                <label for="login-password" class="block text-[10px] font-bold text-[#293C74] uppercase tracking-widest ml-1 mb-1">Contraseña</label>
+                <div class="relative group">
+                  <input 
+                    type="password" 
+                    id="login-password"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[#293C74] placeholder-slate-500 focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] outline-none transition-all pr-12" 
+                    placeholder="••••••••"
+                  >
+                  <button type="button" id="toggle-password-view" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#293C74] transition-colors focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  </button>
+                </div>
+              </div>
+              <button type="submit" id="btn-submit-password" class="w-full bg-[#293C74] text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-[#293C74]/20 hover:-translate-y-0.5 transition-all">
+                Iniciar Sesión
               </button>
             </div>
-            <p class="text-[11px] text-slate-600">Si no tienes contraseña, usa el enlace mágico para activarla.</p>
+            
+            <div class="pt-2 text-center">
+               <button type="button" id="btn-toggle-magic" class="text-xs font-bold text-slate-400 hover:text-[#293C74] underline">
+                 Olvidé mi contraseña (Restablecer)
+               </button>
+            </div>
+          </form>
+
+          <div class="relative py-2">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
+            <div class="relative flex justify-center"><span class="bg-white px-4 text-xs font-bold text-slate-300 uppercase tracking-widest">O</span></div>
           </div>
 
-          <div class="space-y-3">
-            <button type="submit" data-action="password" id="btn-submit-password" class="w-full relative group bg-[#293C74] text-white px-6 py-4 rounded-xl font-bold overflow-hidden shadow-lg shadow-[#293C74]/20 hover:shadow-[#293C74]/40 hover:-translate-y-0.5 transition-all duration-300">
-              <span class="relative z-10 flex items-center justify-center gap-2">
-                Ingresar con Contraseña
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V8a3 3 0 016 0v3m-9 0h9m-9 0a2 2 0 00-2 2v5a2 2 0 002 2h9a2 2 0 002-2v-5a2 2 0 00-2-2H9z" />
-                </svg>
-              </span>
-            </button>
+          <!-- Secondary Options -->
+           <button type="button" id="btn-passkey" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all group mb-4" title="Ingresar con FaceID / TouchID">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 group-hover:text-[#293C74]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 8m8.363 12.18c.201-.06.401-.123.6-.192" /></svg>
+              <span class="text-xs font-bold text-slate-600 group-hover:text-[#293C74]">Ingresar con Passkey (Huella / Rostro)</span>
+           </button>
 
-            <button type="submit" data-action="otp" id="btn-submit" class="w-full relative group bg-white text-[#293C74] px-6 py-4 rounded-xl font-bold border border-[#293C74]/15 hover:border-[#293C74]/40 hover:bg-[#293C74]/5 transition-all duration-300">
-              <span class="relative z-10 flex items-center justify-center gap-2">
-                Ingresar con Enlace Mágico
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
-                </svg>
-              </span>
-            </button>
-          </div>
-        </form>
+          <!-- Hidden Magic Link Form -->
+          <form id="magic-link-form" class="hidden space-y-4 pt-4 border-t border-slate-100">
+             <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-4">
+                <p class="text-xs text-blue-800 text-center">Te enviaremos un enlace para restablecer tu contraseña.</p>
+             </div>
+             <div>
+                <label for="magic-email" class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Correo Electrónico</label>
+                <input type="email" name="email" id="magic-email" 
+                       class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-[#293C74] font-medium outline-none focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] transition-all placeholder-slate-400"
+                       placeholder="tu@correo.com">
+             </div>
+             
+             <button type="submit" id="btn-submit-magic" class="w-full bg-white text-[#293C74] border border-[#293C74]/20 font-bold py-4 rounded-2xl hover:bg-[#293C74]/5 transition-all flex items-center justify-center gap-2 group">
+                <span id="btn-text-magic">Enviar enlace de restablecimiento</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+             </button>
+             <button type="button" id="btn-cancel-magic" class="w-full text-center text-[10px] font-bold text-slate-400 hover:underline">Cancelar y volver a contraseña</button>
+          </form>
+
+        </div>
 
         <div id="login-status-container" class="hidden mt-6 text-center">
            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200">
@@ -118,146 +122,174 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         </footer>
       </div>
       
-      <p class="text-center text-[#293C74]/60 text-xs mt-8">Create by Ministerio Maná · © 2026</p>
+      <!-- Footer removed -->
     </div>
   </main>
 
 
-  <script>
+  <script type="module" nonce={cspNonce}>
     import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
     import { gsap } from 'gsap';
 
     window.addEventListener('load', () => {
-      const loginCard = document.getElementById('login-card');
-      if (loginCard) {
-        gsap.to('#login-card', {
-          opacity: 1,
-          y: 0,
-          duration: 1.2,
-          ease: 'power4.out',
-          delay: 0.2,
-        });
-      }
-
+      gsap.to('#login-card', { opacity: 1, y: 0, duration: 1.2, ease: 'power4.out', delay: 0.2 });
+      
+      // Stars Animation
       const starsContainer = document.getElementById('stars-container');
-      if (!starsContainer) return;
-
-      for (let i = 0; i < 30; i += 1) {
-        const star = document.createElement('div');
-        star.className = 'absolute w-[2px] h-[2px] bg-white rounded-full';
-        star.style.left = `${Math.random() * 100}%`;
-        star.style.top = `${Math.random() * 100}%`;
-        starsContainer.appendChild(star);
-
-        gsap.to(star, {
-          opacity: 0.2,
-          duration: 2 + Math.random() * 3,
-          repeat: -1,
-          yoyo: true,
-          delay: Math.random() * 5,
-        });
+      if (starsContainer) {
+        for (let i = 0; i < 30; i += 1) {
+          const star = document.createElement('div');
+          star.className = 'absolute w-[2px] h-[2px] bg-white rounded-full';
+          star.style.left = `${Math.random() * 100}%`;
+          star.style.top = `${Math.random() * 100}%`;
+          starsContainer.appendChild(star);
+          gsap.to(star, { opacity: 0.2, duration: 2 + Math.random() * 3, repeat: -1, yoyo: true, delay: Math.random() * 5 });
+        }
       }
     });
 
-    const form = document.getElementById('login-form');
-    const emailInput = document.getElementById('login-email');
+    // Elements
+    const magicForm = document.getElementById('magic-link-form');
+    const passwordForm = document.getElementById('password-form');
+    const magicEmailInput = document.getElementById('magic-email');
+    const passwordEmailInput = document.getElementById('password-email');
     const passwordInput = document.getElementById('login-password');
+    const toggleMagicBtn = document.getElementById('btn-toggle-magic');
+    const cancelMagicBtn = document.getElementById('btn-cancel-magic');
+    const togglePasswordViewBtn = document.getElementById('toggle-password-view');
+    const passkeyBtn = document.getElementById('btn-passkey');
+    
     const statusContainer = document.getElementById('login-status-container');
     const statusEl = document.getElementById('login-status');
     const statusIcon = document.getElementById('login-status-icon');
-    const submitBtn = document.getElementById('btn-submit');
-    const passwordBtn = document.getElementById('btn-submit-password');
-    const togglePasswordBtn = document.getElementById('toggle-password');
-    const eyeIcon = document.getElementById('eye-icon');
-    const eyeOffIcon = document.getElementById('eye-off-icon');
-    let lastAction = 'otp';
 
-    // Toggle Password Visibility
-    togglePasswordBtn?.addEventListener('click', () => {
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
-      
-      if (type === 'text') {
-        eyeIcon?.classList.add('hidden');
-        eyeOffIcon?.classList.remove('hidden');
-      } else {
-        eyeIcon?.classList.remove('hidden');
-        eyeOffIcon?.classList.add('hidden');
+    let supabase = null;
+    try {
+      supabase = getSupabaseBrowserClient();
+    } catch (err) {
+      console.error('Supabase client not available:', err);
+      showStatus('El portal no está configurado. Escríbenos por WhatsApp.', 'error');
+    }
+
+    // Listen for Auth State Changes (Magic Link Redirect Fix)
+    supabase?.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        showStatus('¡Sesión iniciada! Entrando...', 'success');
+        window.location.href = '/portal';
       }
     });
 
-    submitBtn?.addEventListener('click', () => {
-      lastAction = 'otp';
-    });
-    passwordBtn?.addEventListener('click', () => {
-      lastAction = 'password';
-    });
-
-    form?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      if (!emailInput || !submitBtn || !statusContainer || !statusEl || !statusIcon) return;
-
-      submitBtn.disabled = true;
-      submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      if (passwordBtn) {
-        passwordBtn.disabled = true;
-        passwordBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      }
-      
+    function showStatus(msg, type = 'loading') {
       statusContainer.classList.remove('hidden');
-      statusEl.textContent = 'Procesando...';
-      statusIcon.classList.replace('bg-green-400', 'bg-brand-teal');
-      statusIcon.classList.replace('bg-red-400', 'bg-brand-teal');
+      statusEl.textContent = msg;
+      statusIcon.className = `w-2 h-2 rounded-full ${type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-[#293C74] animate-ping'}`;
+      gsap.from(statusContainer, { scale: 0.9, duration: 0.4, ease: 'back.out' });
+    }
 
-      try {
-        const email = emailInput.value.trim();
-        const password = passwordInput?.value?.trim();
+    // Toggle Forms
+    toggleMagicBtn?.addEventListener('click', () => {
+       passwordForm.classList.add('hidden');
+       magicForm.classList.remove('hidden');
+       if (passwordEmailInput.value) magicEmailInput.value = passwordEmailInput.value;
+       magicForm.scrollIntoView({ behavior: 'smooth' });
+    });
 
-        const action = (event.submitter && event.submitter.dataset.action) || lastAction;
-        
-        if (password && action === 'password') {
-          statusEl.textContent = 'Validando acceso...';
-          const supabase = getSupabaseBrowserClient();
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-          statusIcon.classList.replace('bg-brand-teal', 'bg-green-400');
-          statusIcon.classList.remove('animate-ping');
-          statusEl.textContent = 'Acceso concedido. Entrando...';
-          window.location.href = '/portal';
-          return;
-        }
+    cancelMagicBtn?.addEventListener('click', () => {
+       magicForm.classList.add('hidden');
+       passwordForm.classList.remove('hidden');
+    });
 
-        // OTP Flow
-        statusEl.textContent = 'Enviando enlace mágico...';
+    togglePasswordViewBtn?.addEventListener('click', () => {
+       const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+       passwordInput.setAttribute('type', type);
+       togglePasswordViewBtn.classList.toggle('text-[#293C74]');
+    });
+
+    // Magic Link Submit
+    magicForm?.addEventListener('submit', async (e) => {
+       e.preventDefault();
+       const email = magicEmailInput.value.trim();
+       if (!email) return;
+
+       showStatus('Enviando enlace de restablecimiento...', 'loading');
+       const btn = document.getElementById('btn-submit-magic');
+       btn.disabled = true;
+       btn.classList.add('opacity-50');
+
+       try {
         const redirectTo = `${window.location.origin}/portal/activar?next=${encodeURIComponent('/portal')}`;
         const res = await fetch('/api/auth/send-link', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ email, kind: 'magiclink', redirectTo }),
+          body: JSON.stringify({ email, kind: 'recovery', redirectTo }),
         });
         const payload = await res.json();
-        if (!res.ok || !payload?.ok) {
-          throw new Error(payload?.error || 'No se pudo enviar el enlace.');
-        }
-
-        statusIcon.classList.replace('bg-brand-teal', 'bg-green-400');
-        statusIcon.classList.remove('animate-ping');
-        statusEl.textContent = 'Enlace enviado. Revisa tu inbox.';
-
-        gsap.from(statusContainer, { scale: 0.9, duration: 0.4, ease: 'back.out' });
-      } catch (err) {
-        console.error(err);
-        statusIcon.classList.replace('bg-brand-teal', 'bg-red-400');
-        statusIcon.classList.remove('animate-ping');
-        statusEl.textContent = err.message || 'Error al intentar ingresar. Intenta de nuevo.';
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        if (passwordBtn) {
-          passwordBtn.disabled = false;
-          passwordBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-      }
+        if (!res.ok || !payload?.ok) throw new Error(payload?.error || 'Error al enviar enlace.');
+        
+        showStatus('¡Enlace enviado! Revisa tu correo para restablecer.', 'success');
+        magicEmailInput.value = '';
+       } catch (err) {
+         showStatus(err.message, 'error');
+         btn.disabled = false;
+         btn.classList.remove('opacity-50');
+       }
     });
+
+    // Password Submit
+    passwordForm?.addEventListener('submit', async (e) => {
+       e.preventDefault();
+       const email = passwordEmailInput.value.trim();
+       const password = passwordInput.value.trim();
+       if (!email || !password) return;
+
+       showStatus('Validando contraseña...', 'loading');
+       const btn = document.getElementById('btn-submit-password');
+       btn.disabled = true;
+       btn.classList.add('opacity-50');
+
+       try {
+          if (!supabase) {
+            throw new Error('El portal no está configurado.');
+          }
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          showStatus('Acceso correcto. Entrando...', 'success');
+          window.location.href = '/portal';
+       } catch (err) {
+          showStatus('Contraseña incorrecta o usuario no encontrado.', 'error');
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+       }
+    });
+
+    // Passkey Handler
+    passkeyBtn?.addEventListener('click', async () => {
+       showStatus('Verificando soporte de Passkeys...', 'loading');
+       try {
+           if (!supabase) {
+             throw new Error('El portal no está configurado.');
+           }
+           // Check if WebAuthn is supported in this Supabase client version
+           if (typeof supabase.auth.signInWithSSO !== 'function') {
+              throw new Error('Passkeys no configurado en esta versión.');
+           }
+           // Placeholder for Passkey flow
+           const { data, error } = await supabase.auth.signInWithSSO({ 
+             domain: 'ministeriomana.com',
+             options: {
+                redirectTo: `${window.location.origin}/portal`
+             } 
+           });
+           
+           if (error) throw error;
+           if (data?.url) window.location.href = data.url;
+           else throw new Error('Debes configurar Passkeys en tu cuenta primero.');
+
+       } catch (err) {
+          showStatus(err.message || 'Función Beta: Contacta soporte para activar.', 'error');
+          setTimeout(() => { showStatus('', 'loading'); statusContainer.classList.add('hidden'); }, 3000);
+       }
+    });
+
   </script>
 </BaseLayout>

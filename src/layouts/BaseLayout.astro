@@ -15,6 +15,7 @@ const {
   hideFooter = false,
   disableSmoothScroll = true,
 } = Astro.props;
+const cspNonce = Astro.locals?.cspNonce;
 ---
 <!doctype html>
 <html lang="es" class="scroll-smooth">
@@ -36,7 +37,7 @@ const {
     
     <!-- Smooth Scroll & Parallax Animations -->
     {!disableSmoothScroll && (
-    <script>
+    <script type="module" nonce={cspNonce}>
       import Lenis from '@studio-freight/lenis';
       import { gsap } from 'gsap';
       import { ScrollTrigger } from 'gsap/ScrollTrigger';
