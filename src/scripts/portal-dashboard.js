@@ -254,8 +254,8 @@ async function fetchDashboardData(session) {
     dlog('[DEBUG] Starting Promise.all for API requests...');
 
     const promises = [
-      fetch('/api/portal/session', { headers }),
-      fetch('/api/cuenta/resumen', { headers })
+      fetch('/api/portal/session', { headers, credentials: 'include' }),
+      fetch('/api/cuenta/resumen', { headers, credentials: 'include' })
     ];
 
     if (token && supabase) {
@@ -490,7 +490,7 @@ async function loadChurchSelector(headers = {}) {
   if (!churchSelector || !churchSelectorInput) return;
   churchSelectorStatus.textContent = 'Cargando iglesias...';
   try {
-    const res = await fetch('/api/portal/iglesia/selection', { headers });
+    const res = await fetch('/api/portal/iglesia/selection', { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar iglesias');
 
@@ -553,6 +553,7 @@ async function saveChurchSelection(churchId, headers = {}) {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...headers },
       body: JSON.stringify({ churchId }),
+      credentials: 'include'
     });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo guardar');
@@ -820,7 +821,7 @@ async function loadChurchBookings(headers = {}) {
     if (portalSelectedChurchId) {
       url.searchParams.set('churchId', portalSelectedChurchId);
     }
-    const res = await fetch(url.toString(), { headers });
+    const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchBookingsData = payload.bookings || [];
@@ -847,7 +848,7 @@ async function loadChurchInstallments(headers = {}) {
     if (portalSelectedChurchId) {
       url.searchParams.set('churchId', portalSelectedChurchId);
     }
-    const res = await fetch(url.toString(), { headers });
+    const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchInstallmentsData = payload.installments || [];
@@ -876,7 +877,7 @@ async function loadChurchPayments(headers = {}) {
     if (portalSelectedChurchId) {
       url.searchParams.set('churchId', portalSelectedChurchId);
     }
-    const res = await fetch(url.toString(), { headers });
+    const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchPaymentsData = payload.payments || [];
@@ -942,7 +943,7 @@ async function loadChurchMembers(headers = {}) {
     if (portalSelectedChurchId) {
       url.searchParams.set('churchId', portalSelectedChurchId);
     }
-    const res = await fetch(url.toString(), { headers });
+    const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchMembersData = payload.members || [];
