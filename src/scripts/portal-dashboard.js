@@ -5,6 +5,24 @@ const DEBUG = import.meta.env?.DEV === true;
 const dlog = (...args) => { if (DEBUG) console.log(...args); };
 const dwarn = (...args) => { if (DEBUG) console.warn(...args); };
 
+async function clearStaleServiceWorkersOnce() {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return false;
+  if (sessionStorage.getItem('portal_sw_cleared') === '1') return false;
+
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  if (!registrations.length) return false;
+
+  sessionStorage.setItem('portal_sw_cleared', '1');
+  await Promise.all(registrations.map((reg) => reg.unregister()));
+
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => caches.delete(key)));
+  }
+
+  return true;
+}
+
 const loadingEl = document.getElementById('account-loading');
 dlog('Portal Script Started. Loading El:', loadingEl);
 const errorEl = document.getElementById('account-error');
@@ -1963,6 +1981,13 @@ async function getSessionSoftTimeout(ms = 8000) {
 // Init Dashboard with Reactive Auth
 // Init Dashboard with Reactive Auth
 async function initDashboard() {
+  const cleared = await clearStaleServiceWorkersOnce();
+  if (cleared) {
+    dlog('[DEBUG] Cleared stale service workers. Reloading...');
+    window.location.reload();
+    return;
+  }
+
   let dashboardLoaded = false;
 
   // 0. Fix Malformed Hash (if present)
