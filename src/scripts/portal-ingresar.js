@@ -40,8 +40,19 @@ function resetTurnstile() {
 
 function getTurnstileTokenIfRequired() {
   const widget = document.querySelector('.cf-turnstile');
+
+  // If no widget in HTML, it's not enabled
   if (!widget) return { ok: true, bypass: true, token: '' };
 
+  // If widget exists but has no data-sitekey, it wasn't configured properly (env var missing)
+  // In this case, bypass the check instead of blocking the user
+  const siteKey = widget.getAttribute('data-sitekey');
+  if (!siteKey) {
+    console.warn('[Turnstile] Widget rendered without site key. Bypassing validation.');
+    return { ok: true, bypass: true, token: '' };
+  }
+
+  // Widget is configured, so validation is required
   const token = window.turnstile?.getResponse?.() || '';
   if (!token) {
     return { ok: false, error: 'Completa la verificación antes de continuar.' };
