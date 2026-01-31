@@ -1,8 +1,12 @@
 import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
 import { gsap } from 'gsap';
 
+const DEBUG = import.meta.env?.DEV === true;
+const dlog = (...args) => { if (DEBUG) console.log(...args); };
+const dwarn = (...args) => { if (DEBUG) console.warn(...args); };
+
 const loadingEl = document.getElementById('account-loading');
-console.log('Portal Script Started. Loading El:', loadingEl); // DEBUG
+dlog('Portal Script Started. Loading El:', loadingEl);
 const errorEl = document.getElementById('account-error');
 const contentEl = document.getElementById('account-content');
 const profileName = document.getElementById('profile-name');
@@ -205,31 +209,31 @@ function switchTab(tabId) {
 
 // Core Dashboard Logic - Reactive Auth
 async function fetchDashboardData(session) {
-  console.log('[DEBUG] fetchDashboardData called with session:', session ? 'Present' : 'Null');
+  dlog('[DEBUG] fetchDashboardData called with session:', session ? 'Present' : 'Null');
 
   try {
     let token = session?.access_token;
 
     if (!token && supabase) {
       const { data, error } = await supabase.auth.getSession();
-      if (error) console.warn('[DEBUG] getSession error:', error);
+      if (error) dwarn('[DEBUG] getSession error:', error);
       token = data?.session?.access_token || null;
     }
 
     if (!token) {
-      console.warn('[DEBUG] No session token. Redirecting to /portal/ingresar');
+      dwarn('[DEBUG] No session token. Redirecting to /portal/ingresar');
       window.location.href = '/portal/ingresar';
       return;
     }
 
-    console.log('[DEBUG] Access token present:', token.substring(0, 10) + '...');
+    dlog('[DEBUG] Access token present:', token.substring(0, 10) + '...');
 
     const headers = { Authorization: `Bearer ${token}` };
     portalAuthHeaders = headers;
 
     // 2. Parallelized Initial Data Fetching
 
-    console.log('[DEBUG] Starting Promise.all for API requests...');
+    dlog('[DEBUG] Starting Promise.all for API requests...');
 
     const promises = [
       fetch('/api/portal/session', { headers }),
@@ -243,10 +247,10 @@ async function fetchDashboardData(session) {
     }
 
     const [sessionRes, resumenRes, { data: userData }] = await Promise.all(promises);
-    console.log('[DEBUG] Promise.all completed.');
-    console.log('[DEBUG] sessionRes status:', sessionRes.status);
-    console.log('[DEBUG] resumenRes status:', resumenRes.status);
-    console.log('[DEBUG] userData:', userData);
+    dlog('[DEBUG] Promise.all completed.');
+    dlog('[DEBUG] sessionRes status:', sessionRes.status);
+    dlog('[DEBUG] resumenRes status:', resumenRes.status);
+    dlog('[DEBUG] userData:', userData);
 
     if (!sessionRes.ok) {
       console.error('[DEBUG] /api/portal/session failed:', sessionRes.status, sessionRes.statusText);
@@ -256,15 +260,15 @@ async function fetchDashboardData(session) {
     }
 
     const sessionPayload = await sessionRes.json();
-    console.log('[DEBUG] sessionPayload:', sessionPayload);
+    dlog('[DEBUG] sessionPayload:', sessionPayload);
     if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
 
     let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
     const resData = await resumenRes.json();
-    console.log('[DEBUG] resData (resumen):', resData);
+    dlog('[DEBUG] resData (resumen):', resData);
     if (!resumenRes.ok || !resData.ok) {
       // Optional: Log error but continue with minimal profile?
-      console.warn('Could not load resumen:', resData.error);
+      dwarn('Could not load resumen:', resData.error);
     } else {
       payload = resData;
     }
@@ -275,7 +279,7 @@ async function fetchDashboardData(session) {
     portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
     portalIsSuperadmin = portalProfile?.role === 'superadmin';
 
-    console.log('[DEBUG] Data loaded. Profile:', portalProfile);
+    dlog('[DEBUG] Data loaded. Profile:', portalProfile);
 
     const hasChurchRole = (portalMemberships || []).some(
       (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
@@ -1936,6 +1940,26 @@ registerPasskeyBtn?.addEventListener('click', async () => {
   }
 });
 
+async function getSessionSoftTimeout(ms = 8000) {
+  if (!supabase) {
+    return { data: { session: null }, error: null, timedOut: true };
+  }
+
+  let timeoutId;
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutId = setTimeout(() => resolve({ data: { session: null }, error: null, timedOut: true }), ms);
+  });
+
+  const sessionPromise = supabase.auth
+    .getSession()
+    .then((result) => ({ ...result, timedOut: false }))
+    .catch((error) => ({ data: { session: null }, error, timedOut: false }));
+
+  const result = await Promise.race([sessionPromise, timeoutPromise]);
+  clearTimeout(timeoutId);
+  return result;
+}
+
 // Init Dashboard with Reactive Auth
 // Init Dashboard with Reactive Auth
 async function initDashboard() {
@@ -1944,10 +1968,10 @@ async function initDashboard() {
   // 0. Fix Malformed Hash (if present)
   // Supabase expects #access_token=... but sometimes we get #/access_token=...
   if (window.location.hash && window.location.hash.startsWith('#/')) {
-    console.log('Fixing malformed hash:', window.location.hash);
+    dlog('Fixing malformed hash:', window.location.hash);
     const cleanHash = window.location.hash.replace('#/', '#');
     window.history.replaceState(null, '', window.location.pathname + cleanHash);
-    console.log('Cleaned hash:', window.location.hash);
+    dlog('Cleaned hash:', window.location.hash);
   }
 
   if (!supabase) {
@@ -1962,7 +1986,7 @@ async function initDashboard() {
         }
       }
     } catch (err) {
-      console.warn('[DEBUG] Password session fallback failed', err);
+      dwarn('[DEBUG] Password session fallback failed', err);
     }
 
     if (loadingEl && !loadingEl.classList.contains('hidden')) {
@@ -1976,156 +2000,138 @@ async function initDashboard() {
     }, 1200);
     return;
   }
-  console.log('[DEBUG] Setting up onAuthStateChange listener...');
+  dlog('[DEBUG] Setting up onAuthStateChange listener...');
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log('[DEBUG] Auth State Change:', event, session ? 'Session OK' : 'No Session');
+    dlog('[DEBUG] Auth State Change:', event, session ? 'Session OK' : 'No Session');
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
       if (session && !dashboardLoaded) {
-        console.log('[DEBUG] Auth Event Triggered Load:', event);
+        dlog('[DEBUG] Auth Event Triggered Load:', event);
         dashboardLoaded = true;
 
         cleanupAuthRedirect();
 
         await fetchDashboardData(session);
       } else if (!session) {
-        console.warn('[DEBUG] Event', event, 'but no session present');
+        dwarn('[DEBUG] Event', event, 'but no session present');
       } else if (dashboardLoaded) {
-        console.log('[DEBUG] Event', event, 'ignored (dashboard already loaded)');
+        dlog('[DEBUG] Event', event, 'ignored (dashboard already loaded)');
       }
     }
   });
 
   // 2. Immediate State Check (Handle Pre-processed Sessions)
   // Supabase might have already processed the hash before this script ran.
-  // We check getSession() immediately with a timeout safety.
-  console.log('[DEBUG] Calling supabase.auth.getSession() with timeout...');
+  // We check getSession() immediately with a soft timeout.
+  dlog('[DEBUG] Calling supabase.auth.getSession() with soft timeout...');
 
-  const getSessionSafe = Promise.race([
-    supabase.auth.getSession(),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2500))
-  ]);
+  const { data, error, timedOut } = await getSessionSoftTimeout(8000);
+  if (error) dwarn('[DEBUG] getSession error:', error);
+  if (timedOut) dlog('[DEBUG] getSession timed out (soft).');
+  dlog('[DEBUG] getSession result:', data, 'Error:', error);
 
-  getSessionSafe.then(async ({ data, error }) => {
-    console.log('[DEBUG] getSession result:', data, 'Error:', error);
+  // 1. Valid Supabase Session
+  if (data?.session && !dashboardLoaded) {
+    dlog('[DEBUG] Session found immediately via getSession');
+    dashboardLoaded = true;
 
-    // 1. Valid Supabase Session
-    if (data?.session && !dashboardLoaded) {
-      console.log('[DEBUG] Session found immediately via getSession');
-      dashboardLoaded = true;
+    cleanupAuthRedirect();
 
-      cleanupAuthRedirect();
+    await fetchDashboardData(data.session);
+  } else if (!data?.session) {
+    dlog('[DEBUG] No Supabase session. Checking password fallback...');
 
-      await fetchDashboardData(data.session);
-    } else if (!data?.session) {
-      console.log('[DEBUG] No Supabase session. Checking password fallback...');
-
-      // 2. Fallback: Check Password Session (Cookies)
-      let passwordSessionFound = false;
-      try {
-        // Only check password session if NOT handling an auth redirect hash/code
-        const checkState = getAuthRedirectState();
-        if (!checkState.isAuthRedirect) {
-          const pwRes = await fetch('/api/portal/password-session');
-          if (pwRes.ok) {
-            const pwData = await pwRes.json();
-            if (pwData.ok) {
-              console.log('[DEBUG] Found Password Session (Fallback)');
-              dashboardLoaded = true;
-              passwordSessionFound = true;
-              await fetchDashboardData(null); // Load with cookie auth
-              return;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('[DEBUG] Password session check failed', e);
-      }
-
-      if (passwordSessionFound) return;
-
-      console.log('[DEBUG] No session from getSession or Fallback. Auth state:', getAuthRedirectState());
-
-      const authState = getAuthRedirectState();
-      console.log('No session from getSession. Auth state:', authState); // DEBUG
-      // No session found immediately.
-
-      if (!authState.isAuthRedirect) {
-        // No hash, no session -> Redirect after grace period
-        setTimeout(() => {
-          if (!dashboardLoaded) window.location.href = '/portal/ingresar';
-        }, 1000); // Reduced to 1s
-      } else {
-        // Auth redirect, show waiting feedback
-        if (loadingEl) {
-          const p = loadingEl.querySelector('p');
-          if (p) {
-            if (authState.hasError) {
-              const description = authState.url.searchParams.get('error_description');
-              p.textContent = description ? decodeURIComponent(description.replace(/\+/g, ' ')) : 'El enlace no es válido.';
-            } else {
-              p.textContent = 'Verificando enlace...';
-            }
-          }
-        }
-
-        if (authState.hasError) {
-          setTimeout(() => window.location.href = '/portal/ingresar', 2500);
-          return;
-        }
-
-        // Active Polling Fallback (in case listener misses)
-        const pollInterval = setInterval(async () => {
-          if (dashboardLoaded) {
-            clearInterval(pollInterval);
+    // 2. Fallback: Check Password Session (Cookies)
+    let passwordSessionFound = false;
+    try {
+      // Only check password session if NOT handling an auth redirect hash/code
+      const checkState = getAuthRedirectState();
+      if (!checkState.isAuthRedirect) {
+        const pwRes = await fetch('/api/portal/password-session');
+        if (pwRes.ok) {
+          const pwData = await pwRes.json();
+          if (pwData.ok) {
+            dlog('[DEBUG] Found Password Session (Fallback)');
+            dashboardLoaded = true;
+            passwordSessionFound = true;
+            await fetchDashboardData(null); // Load with cookie auth
             return;
           }
-          console.log('Polling for session...');
-          try {
-            // Correct cleanup for polling
-            const { data: pollData } = await supabase.auth.getSession();
-            if (pollData?.session) {
-              console.log('Session found via Polling!');
-              clearInterval(pollInterval);
-              dashboardLoaded = true;
-              if (window.location.hash && window.location.hash.includes('access_token')) {
-                cleanupAuthRedirect();
-              }
-              fetchDashboardData(pollData.session);
-            }
-          } catch (e) {
-            console.warn('Polling error', e);
-          }
-        }, 500);
+        }
+      }
+    } catch (e) {
+      dwarn('[DEBUG] Password session check failed', e);
+    }
 
-        // Timeout Safety
-        setTimeout(() => {
-          clearInterval(pollInterval);
-          if (!dashboardLoaded) {
-            if (loadingEl) {
-              const p = loadingEl.querySelector('p');
-              if (p) p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
-            }
-            setTimeout(() => window.location.href = '/portal/ingresar', 2000);
+    if (passwordSessionFound) return;
+
+    dlog('[DEBUG] No session from getSession or Fallback. Auth state:', getAuthRedirectState());
+
+    const authState = getAuthRedirectState();
+    dlog('No session from getSession. Auth state:', authState);
+    // No session found immediately.
+
+    if (!authState.isAuthRedirect) {
+      // No hash, no session -> Redirect after grace period
+      setTimeout(() => {
+        if (!dashboardLoaded) window.location.href = '/portal/ingresar';
+      }, 1000); // Reduced to 1s
+    } else {
+      // Auth redirect, show waiting feedback
+      if (loadingEl) {
+        const p = loadingEl.querySelector('p');
+        if (p) {
+          if (authState.hasError) {
+            const description = authState.url.searchParams.get('error_description');
+            p.textContent = description ? decodeURIComponent(description.replace(/\+/g, ' ')) : 'El enlace no es válido.';
+          } else {
+            p.textContent = 'Verificando enlace...';
           }
-        }, 12000);
+        }
       }
-    }
-  }).catch(err => {
-    console.warn('[DEBUG] getSession failed or timed out:', err);
-    // If it times out or fails, we assume no session (unless listener catches it later)
-    // But we shouldn't block forever.
-    if (!dashboardLoaded) {
-      console.log('[DEBUG] getSession timed out. Checking if we should redirect...');
-      const authState = getAuthRedirectState();
-      if (!authState.isAuthRedirect) {
-        // If not waiting for a magic link, redirect to login
-        setTimeout(() => {
-          if (!dashboardLoaded) window.location.href = '/portal/ingresar';
-        }, 1000);
+
+      if (authState.hasError) {
+        setTimeout(() => window.location.href = '/portal/ingresar', 2500);
+        return;
       }
+
+      // Active Polling Fallback (in case listener misses)
+      const pollInterval = setInterval(async () => {
+        if (dashboardLoaded) {
+          clearInterval(pollInterval);
+          return;
+        }
+        dlog('Polling for session...');
+        try {
+          // Correct cleanup for polling
+          const { data: pollData } = await supabase.auth.getSession();
+          if (pollData?.session) {
+            dlog('Session found via Polling!');
+            clearInterval(pollInterval);
+            dashboardLoaded = true;
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+              cleanupAuthRedirect();
+            }
+            fetchDashboardData(pollData.session);
+          }
+        } catch (e) {
+          dwarn('Polling error', e);
+        }
+      }, 500);
+
+      // Timeout Safety
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (!dashboardLoaded) {
+          if (loadingEl) {
+            const p = loadingEl.querySelector('p');
+            if (p) p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
+          }
+          setTimeout(() => window.location.href = '/portal/ingresar', 2000);
+        }
+      }, 12000);
     }
-  });
+  }
 }
 
 initDashboard();
