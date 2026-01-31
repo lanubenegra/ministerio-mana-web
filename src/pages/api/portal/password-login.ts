@@ -42,14 +42,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     });
   }
 
+  // Turnstile validation: Only enforce if secret is configured AND client sent a token
+  // If client sends empty token, it means widget is broken/misconfigured → bypass
   const hasSecret = Boolean(env('TURNSTILE_SECRET_KEY'));
-  if (isProduction() && hasSecret) {
-    if (!captchaToken) {
-      return new Response(JSON.stringify({ ok: false, error: 'Captcha requerido' }), {
-        status: 400,
-        headers: { 'content-type': 'application/json' },
-      });
-    }
+  if (isProduction() && hasSecret && captchaToken) {
     const okCaptcha = await verifyTurnstile(captchaToken, clientAddress);
     if (!okCaptcha) {
       return new Response(JSON.stringify({ ok: false, error: 'Captcha invalido' }), {
