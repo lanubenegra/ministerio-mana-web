@@ -4,6 +4,14 @@ import { gsap } from 'gsap';
 const DEBUG = import.meta.env?.DEV === true;
 const dlog = (...args) => { if (DEBUG) console.log(...args); };
 const dwarn = (...args) => { if (DEBUG) console.warn(...args); };
+const PORTAL_PASSWORD_MODE_KEY = 'portal_password_mode';
+let portalPasswordModeActive = false;
+
+try {
+  portalPasswordModeActive = localStorage.getItem(PORTAL_PASSWORD_MODE_KEY) === '1';
+} catch {
+  portalPasswordModeActive = false;
+}
 
 async function clearStaleServiceWorkersOnce() {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return false;
@@ -239,14 +247,19 @@ async function fetchDashboardData(session) {
     }
 
     if (!token) {
-      dwarn('[DEBUG] No session token. Redirecting to /portal/ingresar');
-      window.location.href = '/portal/ingresar';
-      return;
+      if (!portalPasswordModeActive) {
+        dwarn('[DEBUG] No session token. Redirecting to /portal/ingresar');
+        window.location.href = '/portal/ingresar';
+        return;
+      }
+      dlog('[DEBUG] No token. Using password session cookie.');
     }
 
-    dlog('[DEBUG] Access token present:', token.substring(0, 10) + '...');
+    if (token) {
+      dlog('[DEBUG] Access token present:', token.substring(0, 10) + '...');
+    }
 
-    const headers = { Authorization: `Bearer ${token}` };
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     portalAuthHeaders = headers;
 
     // 2. Parallelized Initial Data Fetching
@@ -1786,6 +1799,8 @@ installmentsList?.addEventListener('click', (event) => {
 logoutBtn?.addEventListener('click', async () => {
   logoutBtn.disabled = true;
   logoutBtn.textContent = 'Saliendo...';
+  try { localStorage.removeItem(PORTAL_PASSWORD_MODE_KEY); } catch {}
+  portalPasswordModeActive = false;
 
   // Guarantee redirect happens within 1 second, even if cleanup hangs
   const redirectTimer = setTimeout(() => {
@@ -2046,77 +2061,35 @@ async function initDashboard() {
   if (data?.session && !dashboardLoaded) {
     dlog('[DEBUG] Session found immediately via getSession');
     dashboardLoaded = true;
-
     cleanupAuthRedirect();
-
+    try { localStorage.removeItem(PORTAL_PASSWORD_MODE_KEY); } catch {}
+    portalPasswordModeActive = false;
     await fetchDashboardData(data.session);
-  } else if (!data?.session) {
-    dlog('[DEBUG] No Supabase session. Auth state:', getAuthRedirectState());
+    return;
+  }
 
-    const authState = getAuthRedirectState();
-    dlog('No session from getSession. Auth state:', authState);
-    // No session found immediately.
-
-    if (!authState.isAuthRedirect) {
-      // No hash, no session -> Redirect after grace period
-      setTimeout(() => {
-        if (!dashboardLoaded) window.location.href = '/portal/ingresar';
-      }, 1000); // Reduced to 1s
-    } else {
-      // Auth redirect, show waiting feedback
-      if (loadingEl) {
-        const p = loadingEl.querySelector('p');
-        if (p) {
-          if (authState.hasError) {
-            const description = authState.url.searchParams.get('error_description');
-            p.textContent = description ? decodeURIComponent(description.replace(/\+/g, ' ')) : 'El enlace no es válido.';
-          } else {
-            p.textContent = 'Verificando enlace...';
-          }
-        }
-      }
-
-      if (authState.hasError) {
-        setTimeout(() => window.location.href = '/portal/ingresar', 2500);
-        return;
-      }
-
-      // Active Polling Fallback (in case listener misses)
-      const pollInterval = setInterval(async () => {
-        if (dashboardLoaded) {
-          clearInterval(pollInterval);
+  // 2. Password-mode fallback (superadmin)
+  if (!data?.session && portalPasswordModeActive) {
+    try {
+      const pwRes = await fetch('/api/portal/password-session');
+      if (pwRes.ok) {
+        const pwData = await pwRes.json();
+        if (pwData.ok) {
+          dashboardLoaded = true;
+          await fetchDashboardData(null);
           return;
         }
-        dlog('Polling for session...');
-        try {
-          // Correct cleanup for polling
-          const { data: pollData } = await supabase.auth.getSession();
-          if (pollData?.session) {
-            dlog('Session found via Polling!');
-            clearInterval(pollInterval);
-            dashboardLoaded = true;
-            if (window.location.hash && window.location.hash.includes('access_token')) {
-              cleanupAuthRedirect();
-            }
-            fetchDashboardData(pollData.session);
-          }
-        } catch (e) {
-          dwarn('Polling error', e);
-        }
-      }, 500);
-
-      // Timeout Safety
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        if (!dashboardLoaded) {
-          if (loadingEl) {
-            const p = loadingEl.querySelector('p');
-            if (p) p.textContent = 'El enlace no es válido o expiró. Redirigiendo...';
-          }
-          setTimeout(() => window.location.href = '/portal/ingresar', 2000);
-        }
-      }, 12000);
+      }
+    } catch (err) {
+      dwarn('[DEBUG] Password session check failed', err);
     }
+  }
+
+  // 3. Simple redirect if no session
+  if (!data?.session) {
+    try { localStorage.removeItem(PORTAL_PASSWORD_MODE_KEY); } catch {}
+    portalPasswordModeActive = false;
+    window.location.href = '/portal/ingresar';
   }
 }
 
