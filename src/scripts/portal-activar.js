@@ -25,6 +25,38 @@ const guard = document.getElementById('activate-guard');
 const retryBtn = document.getElementById('activate-retry');
 let hasRecoveryContext = false;
 
+function resetTurnstile() {
+  if (window.turnstile && typeof window.turnstile.reset === 'function') {
+    window.turnstile.reset();
+  }
+}
+
+async function verifyTurnstileIfPresent() {
+  const widget = document.querySelector('.cf-turnstile');
+  if (!widget) return { ok: true, bypass: true, token: '' };
+
+  const token = window.turnstile?.getResponse?.() || '';
+  if (!token) {
+    return { ok: false, error: 'Completa la verificación antes de continuar.' };
+  }
+
+  try {
+    const res = await fetch('/api/turnstile/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ turnstileToken: token }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok) {
+      return { ok: false, error: data?.error || 'Captcha inválido. Intenta de nuevo.' };
+    }
+    return { ok: true, token };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: 'No pudimos validar el captcha. Intenta de nuevo.' };
+  }
+}
+
 function showStatus(msg, type = 'loading') {
   if (!status || !statusContainer || !statusWrapper || !statusIcon) return;
   statusContainer.classList.remove('hidden');
@@ -277,6 +309,14 @@ form?.addEventListener('submit', async (event) => {
     showStatus('Debes abrir el enlace de recuperación para cambiar la contraseña.', 'error');
     return;
   }
+
+  const captcha = await verifyTurnstileIfPresent();
+  if (!captcha.ok) {
+    showStatus(captcha.error || 'Captcha inválido.', 'error');
+    resetTurnstile();
+    return;
+  }
+
   setFormDisabled(true);
   showStatus('Guardando contraseña...', 'loading');
 

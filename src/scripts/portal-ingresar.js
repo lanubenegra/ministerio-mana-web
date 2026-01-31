@@ -32,6 +32,43 @@ const statusEl = document.getElementById('login-status');
 const statusIcon = document.getElementById('login-status-icon');
 const statusWrapper = document.getElementById('login-status-wrapper');
 
+function resetTurnstile() {
+  if (window.turnstile && typeof window.turnstile.reset === 'function') {
+    window.turnstile.reset();
+  }
+}
+
+function getTurnstileTokenIfRequired() {
+  const widget = document.querySelector('.cf-turnstile');
+  if (!widget) return { ok: true, bypass: true, token: '' };
+
+  const token = window.turnstile?.getResponse?.() || '';
+  if (!token) {
+    return { ok: false, error: 'Completa la verificación antes de continuar.' };
+  }
+
+  return { ok: true, token };
+}
+
+async function verifyTurnstileToken(token) {
+  if (!token) return { ok: false, error: 'Captcha requerido.' };
+  try {
+    const res = await fetch('/api/turnstile/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ turnstileToken: token }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok) {
+      return { ok: false, error: data?.error || 'Captcha inválido. Intenta de nuevo.' };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: 'No pudimos validar el captcha. Intenta de nuevo.' };
+  }
+}
+
 function showStatus(msg, type = 'loading') {
   if (!statusContainer || !statusEl || !statusIcon || !statusWrapper) return;
   statusContainer.classList.remove('hidden');
@@ -98,6 +135,13 @@ magicForm?.addEventListener('submit', async (e) => {
   const email = magicEmailInput?.value?.trim();
   if (!email) return;
 
+  const captcha = getTurnstileTokenIfRequired();
+  if (!captcha.ok) {
+    showStatus(captcha.error || 'Captcha inválido.', 'error');
+    resetTurnstile();
+    return;
+  }
+
   showStatus('Enviando enlace de restablecimiento...', 'loading');
   const btn = document.getElementById('btn-submit-magic');
   if (btn) {
@@ -110,7 +154,7 @@ magicForm?.addEventListener('submit', async (e) => {
     const res = await fetch('/api/auth/send-link', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, kind: 'recovery', redirectTo }),
+      body: JSON.stringify({ email, kind: 'recovery', redirectTo, turnstileToken: captcha.token, enforceTurnstile: true }),
     });
     const payload = await res.json();
     if (!res.ok || !payload?.ok) throw new Error(payload?.error || 'Error al enviar enlace.');
@@ -119,6 +163,7 @@ magicForm?.addEventListener('submit', async (e) => {
     magicEmailInput.value = '';
   } catch (err) {
     showStatus(err?.message || 'Error al enviar enlace.', 'error');
+    resetTurnstile();
     if (btn) {
       btn.disabled = false;
       btn.classList.remove('opacity-50');
@@ -132,6 +177,13 @@ passwordForm?.addEventListener('submit', async (e) => {
   const password = passwordInput?.value?.trim();
   if (!email || !password) return;
 
+  const captcha = getTurnstileTokenIfRequired();
+  if (!captcha.ok) {
+    showStatus(captcha.error || 'Captcha inválido.', 'error');
+    resetTurnstile();
+    return;
+  }
+
   showStatus('Validando contraseña...', 'loading');
   const btn = document.getElementById('btn-submit-password');
   if (btn) {
@@ -143,7 +195,7 @@ passwordForm?.addEventListener('submit', async (e) => {
     if (!supabase) {
       // Fallback directly to API if Supabase client is missing
       console.warn('Supabase client missing, trying API login directly.');
-      await tryApiLogin(email, password);
+      await tryApiLogin(email, password, captcha.token);
       return;
     }
 
@@ -151,7 +203,19 @@ passwordForm?.addEventListener('submit', async (e) => {
 
     if (error) {
       console.warn('Supabase login failed, trying API fallback...', error.message);
-      await tryApiLogin(email, password);
+      await tryApiLogin(email, password, captcha.token);
+      return;
+    }
+
+    const captchaCheck = await verifyTurnstileToken(captcha.token);
+    if (!captchaCheck.ok) {
+      await supabase.auth.signOut({ scope: 'local' });
+      showStatus(captchaCheck.error || 'Captcha inválido.', 'error');
+      resetTurnstile();
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+      }
       return;
     }
 
@@ -160,6 +224,7 @@ passwordForm?.addEventListener('submit', async (e) => {
   } catch (err) {
     console.error(err);
     showStatus('Contraseña incorrecta o usuario no encontrado.', 'error');
+    resetTurnstile();
     if (btn) {
       btn.disabled = false;
       btn.classList.remove('opacity-50');
@@ -167,11 +232,11 @@ passwordForm?.addEventListener('submit', async (e) => {
   }
 });
 
-async function tryApiLogin(email, password) {
+async function tryApiLogin(email, password, token) {
   const res = await fetch('/api/portal/password-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password, turnstileToken: token || '' })
   });
 
   const data = await res.json();
@@ -187,6 +252,18 @@ async function tryApiLogin(email, password) {
 passkeyBtn?.addEventListener('click', async () => {
   showStatus('Verificando soporte de Passkeys...', 'loading');
   try {
+    const captcha = getTurnstileTokenIfRequired();
+    if (!captcha.ok) {
+      showStatus(captcha.error || 'Captcha inválido.', 'error');
+      resetTurnstile();
+      return;
+    }
+    const captchaCheck = await verifyTurnstileToken(captcha.token);
+    if (!captchaCheck.ok) {
+      showStatus(captchaCheck.error || 'Captcha inválido.', 'error');
+      resetTurnstile();
+      return;
+    }
     if (!supabase) {
       throw new Error('El portal no está configurado.');
     }

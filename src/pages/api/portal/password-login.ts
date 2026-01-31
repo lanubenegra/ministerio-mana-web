@@ -1,8 +1,14 @@
 import type { APIRoute } from 'astro';
 import { createPasswordSessionToken, buildSessionCookie } from '@lib/portalPasswordSession';
+import { verifyTurnstile } from '@lib/turnstile';
 
 function env(key: string): string | undefined {
   return import.meta.env?.[key] ?? process.env?.[key];
+}
+
+function isProduction(): boolean {
+  const runtimeEnv = env('VERCEL_ENV') ?? env('NODE_ENV') ?? 'development';
+  return runtimeEnv === 'production';
 }
 
 function parseEmails(raw?: string | null): Set<string> {
@@ -15,7 +21,7 @@ function parseEmails(raw?: string | null): Set<string> {
   );
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   let payload: any = {};
   try {
     payload = await request.json();
@@ -28,11 +34,29 @@ export const POST: APIRoute = async ({ request }) => {
 
   const email = String(payload.email || '').trim().toLowerCase();
   const password = String(payload.password || '');
+  const captchaToken = String(payload.turnstileToken || payload['cf-turnstile-response'] || '');
   if (!email || !password) {
     return new Response(JSON.stringify({ ok: false, error: 'Email y contraseña requeridos' }), {
       status: 400,
       headers: { 'content-type': 'application/json' },
     });
+  }
+
+  const hasSecret = Boolean(env('TURNSTILE_SECRET_KEY'));
+  if (isProduction() && hasSecret) {
+    if (!captchaToken) {
+      return new Response(JSON.stringify({ ok: false, error: 'Captcha requerido' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    const okCaptcha = await verifyTurnstile(captchaToken, clientAddress);
+    if (!okCaptcha) {
+      return new Response(JSON.stringify({ ok: false, error: 'Captcha invalido' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
   }
 
   const allowed = parseEmails(env('PORTAL_SUPERADMIN_EMAILS')).has(email);
