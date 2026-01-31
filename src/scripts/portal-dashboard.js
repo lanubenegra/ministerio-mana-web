@@ -4,14 +4,6 @@ import { gsap } from 'gsap';
 const DEBUG = import.meta.env?.DEV === true;
 const dlog = (...args) => { if (DEBUG) console.log(...args); };
 const dwarn = (...args) => { if (DEBUG) console.warn(...args); };
-const PORTAL_PASSWORD_MODE_KEY = 'portal_password_mode';
-let portalPasswordModeActive = false;
-
-try {
-  portalPasswordModeActive = localStorage.getItem(PORTAL_PASSWORD_MODE_KEY) === '1';
-} catch {
-  portalPasswordModeActive = false;
-}
 
 async function clearStaleServiceWorkersOnce() {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return false;
@@ -247,11 +239,6 @@ async function fetchDashboardData(session) {
     }
 
     if (!token) {
-      if (!portalPasswordModeActive) {
-        dwarn('[DEBUG] No session token. Redirecting to /portal/ingresar');
-        window.location.href = '/portal/ingresar';
-        return;
-      }
       dlog('[DEBUG] No token. Using password session cookie.');
     }
 
@@ -1799,8 +1786,6 @@ installmentsList?.addEventListener('click', (event) => {
 logoutBtn?.addEventListener('click', async () => {
   logoutBtn.disabled = true;
   logoutBtn.textContent = 'Saliendo...';
-  try { localStorage.removeItem(PORTAL_PASSWORD_MODE_KEY); } catch {}
-  portalPasswordModeActive = false;
 
   // Guarantee redirect happens within 1 second, even if cleanup hangs
   const redirectTimer = setTimeout(() => {
@@ -2062,14 +2047,12 @@ async function initDashboard() {
     dlog('[DEBUG] Session found immediately via getSession');
     dashboardLoaded = true;
     cleanupAuthRedirect();
-    try { localStorage.removeItem(PORTAL_PASSWORD_MODE_KEY); } catch {}
-    portalPasswordModeActive = false;
     await fetchDashboardData(data.session);
     return;
   }
 
   // 2. Password-mode fallback (superadmin)
-  if (!data?.session && portalPasswordModeActive) {
+  if (!data?.session) {
     try {
       const pwRes = await fetch('/api/portal/password-session');
       if (pwRes.ok) {
@@ -2087,8 +2070,6 @@ async function initDashboard() {
 
   // 3. Simple redirect if no session
   if (!data?.session) {
-    try { localStorage.removeItem(PORTAL_PASSWORD_MODE_KEY); } catch {}
-    portalPasswordModeActive = false;
     window.location.href = '/portal/ingresar';
   }
 }

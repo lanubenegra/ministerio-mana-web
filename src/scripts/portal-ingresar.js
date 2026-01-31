@@ -60,7 +60,6 @@ function showStatus(msg, type = 'loading') {
 }
 
 let supabase = null;
-const PORTAL_PASSWORD_MODE_KEY = 'portal_password_mode';
 try {
   supabase = getSupabaseBrowserClient();
 } catch (err) {
@@ -71,7 +70,6 @@ try {
 supabase?.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     showStatus('¡Sesión iniciada! Entrando...', 'success');
-    try { localStorage.removeItem(PORTAL_PASSWORD_MODE_KEY); } catch {}
     window.location.href = '/portal';
   }
 });
@@ -158,7 +156,6 @@ passwordForm?.addEventListener('submit', async (e) => {
     }
 
     showStatus('Acceso correcto. Entrando...', 'success');
-    try { localStorage.removeItem(PORTAL_PASSWORD_MODE_KEY); } catch {}
     window.location.href = '/portal';
   } catch (err) {
     console.error(err);
@@ -183,7 +180,6 @@ async function tryApiLogin(email, password) {
   }
 
   showStatus('Acceso administrativo correcto. Entrando...', 'success');
-  try { localStorage.setItem(PORTAL_PASSWORD_MODE_KEY, '1'); } catch {}
   // Force reload to ensure cookie is picked up
   setTimeout(() => window.location.href = '/portal', 500);
 }
