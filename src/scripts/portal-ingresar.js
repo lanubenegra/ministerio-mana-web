@@ -226,16 +226,19 @@ passwordForm?.addEventListener('submit', async (e) => {
       return;
     }
 
-    const captchaCheck = await verifyTurnstileToken(captcha.token);
-    if (!captchaCheck.ok) {
-      await supabase.auth.signOut({ scope: 'local' });
-      showStatus(captchaCheck.error || 'Captcha inválido.', 'error');
-      resetTurnstile();
-      if (btn) {
-        btn.disabled = false;
-        btn.classList.remove('opacity-50');
+    // Only verify Turnstile token if we actually have one (widget rendered)
+    if (captcha.token && !captcha.bypass) {
+      const captchaCheck = await verifyTurnstileToken(captcha.token);
+      if (!captchaCheck.ok) {
+        await supabase.auth.signOut({ scope: 'local' });
+        showStatus(captchaCheck.error || 'Captcha inválido.', 'error');
+        resetTurnstile();
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+        }
+        return;
       }
-      return;
     }
 
     showStatus('Acceso correcto. Entrando...', 'success');
