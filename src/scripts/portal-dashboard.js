@@ -1801,7 +1801,7 @@ logoutBtn?.addEventListener('click', async () => {
           await supabase.auth.signOut({ scope: 'local' });
         }
         if (authMode === 'password') {
-          await fetch('/api/portal/password-logout', { method: 'POST' });
+          await fetch('/api/portal/password-logout', { method: 'POST', credentials: 'include' });
         }
       } catch (err) {
         console.error('Logout cleanup error:', err);
@@ -2055,7 +2055,7 @@ async function initDashboard() {
   // 2. Password-mode fallback (superadmin)
   if (!data?.session) {
     try {
-      const pwRes = await fetch('/api/portal/password-session');
+      const pwRes = await fetch('/api/portal/password-session', { credentials: 'include' });
       if (pwRes.ok) {
         const pwData = await pwRes.json();
         if (pwData.ok) {
