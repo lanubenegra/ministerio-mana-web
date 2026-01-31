@@ -52,7 +52,15 @@ function getTurnstileTokenIfRequired() {
     return { ok: true, bypass: true, token: '' };
   }
 
-  // Widget is configured, so validation is required
+  // If widget has a key but Cloudflare failed to render it (401 error, wrong domain, etc.)
+  // The iframe won't be created. Bypass instead of blocking.
+  const iframe = widget.querySelector('iframe');
+  if (!iframe) {
+    console.warn('[Turnstile] Widget has site key but failed to render. Cloudflare error (401?). Bypassing validation.');
+    return { ok: true, bypass: true, token: '' };
+  }
+
+  // Widget is configured AND rendered, so validation is required
   const token = window.turnstile?.getResponse?.() || '';
   if (!token) {
     return { ok: false, error: 'Completa la verificación antes de continuar.' };
