@@ -10,11 +10,10 @@ interface Props {
 
 const { appearance = 'always', theme = 'auto', id } = Astro.props as Props;
 
-// Site key must be public for Astro SSG (visible in HTML anyway, so it's safe)
+// Buscamos la llave en locals o en .env (ahora PUBLIC para que esté disponible en build-time)
 const siteKey =
   Astro.locals?.turnstile?.siteKey ??
-  import.meta.env?.PUBLIC_TURNSTILE_SITE_KEY ??
-  import.meta.env?.TURNSTILE_SITE_KEY;  // Fallback for local dev
+  import.meta.env?.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 
 {siteKey && (
