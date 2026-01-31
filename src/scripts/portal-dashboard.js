@@ -1975,20 +1975,7 @@ async function initDashboard() {
   }
 
   if (!supabase) {
-    console.error('[DEBUG] Supabase not initialized, attempting password-only dashboard load');
-    try {
-      const pwRes = await fetch('/api/portal/password-session');
-      if (pwRes.ok) {
-        const pwData = await pwRes.json();
-        if (pwData.ok) {
-          await fetchDashboardData(null);
-          return;
-        }
-      }
-    } catch (err) {
-      dwarn('[DEBUG] Password session fallback failed', err);
-    }
-
+    console.error('[DEBUG] Supabase not initialized. Redirecting to login.');
     if (loadingEl && !loadingEl.classList.contains('hidden')) {
       loadingEl.classList.add('hidden');
     }
@@ -2039,33 +2026,7 @@ async function initDashboard() {
 
     await fetchDashboardData(data.session);
   } else if (!data?.session) {
-    dlog('[DEBUG] No Supabase session. Checking password fallback...');
-
-    // 2. Fallback: Check Password Session (Cookies)
-    let passwordSessionFound = false;
-    try {
-      // Only check password session if NOT handling an auth redirect hash/code
-      const checkState = getAuthRedirectState();
-      if (!checkState.isAuthRedirect) {
-        const pwRes = await fetch('/api/portal/password-session');
-        if (pwRes.ok) {
-          const pwData = await pwRes.json();
-          if (pwData.ok) {
-            dlog('[DEBUG] Found Password Session (Fallback)');
-            dashboardLoaded = true;
-            passwordSessionFound = true;
-            await fetchDashboardData(null); // Load with cookie auth
-            return;
-          }
-        }
-      }
-    } catch (e) {
-      dwarn('[DEBUG] Password session check failed', e);
-    }
-
-    if (passwordSessionFound) return;
-
-    dlog('[DEBUG] No session from getSession or Fallback. Auth state:', getAuthRedirectState());
+    dlog('[DEBUG] No Supabase session. Auth state:', getAuthRedirectState());
 
     const authState = getAuthRedirectState();
     dlog('No session from getSession. Auth state:', authState);
