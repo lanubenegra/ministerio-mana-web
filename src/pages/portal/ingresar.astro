@@ -61,6 +61,8 @@ import TurnstileWidget from '@components/TurnstileWidget.astro';
                   </button>
                 </div>
               </div>
+              <button type="submit" id="btn-submit-password" class="w-full bg-[#293C74] text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-[#293C74]/20 hover:-translate-y-0.5 transition-all">
+                Iniciar Sesión
               </button>
               
               <p class="text-center text-xs text-slate-500 mt-4">
@@ -76,13 +78,13 @@ import TurnstileWidget from '@components/TurnstileWidget.astro';
             </div>
           </form>
 
-          <div class="relative py-2">
+          <div class="relative py-2 hidden">
             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
             <div class="relative flex justify-center"><span class="bg-white px-4 text-xs font-bold text-slate-300 uppercase tracking-widest">O</span></div>
           </div>
 
           <!-- Secondary Options -->
-           <button type="button" id="btn-passkey" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all group mb-4" title="Ingresar con FaceID / TouchID">
+           <button type="button" id="btn-passkey" class="hidden w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all group mb-4" title="Ingresar con FaceID / TouchID">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 group-hover:text-[#293C74]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 8m8.363 12.18c.201-.06.401-.123.6-.192" /></svg>
               <span class="text-xs font-bold text-slate-600 group-hover:text-[#293C74]">Ingresar con Passkey (Huella / Rostro)</span>
            </button>
