@@ -31,7 +31,9 @@ export class ChurchSelector {
         this.noResults = document.getElementById('church-no-results');
         this.loading = document.getElementById('church-loading');
         this.closeBtn = document.getElementById('close-church-selector');
-        this.specialBtns = document.querySelectorAll('.special-church-btn');
+        this.manualChurchContainer = document.getElementById('manual-church-container');
+        this.manualChurchInput = document.getElementById('manual-church-input');
+        this.manualChurchConfirm = document.getElementById('manual-church-confirm');
     }
 
     bindEvents() {
@@ -50,9 +52,28 @@ export class ChurchSelector {
         this.specialBtns?.forEach(btn => {
             btn.addEventListener('click', () => {
                 const specialId = btn.dataset.special;
-                const special = this.specialOptions.find(s => s.id === specialId);
-                if (special) this.selectChurch(special);
+
+                if (specialId === 'other') {
+                    // Show manual input
+                    if (this.manualChurchContainer) {
+                        this.manualChurchContainer.classList.remove('hidden');
+                        this.manualChurchInput?.focus();
+                    }
+                } else {
+                    // Hide manual input for other options
+                    if (this.manualChurchContainer) {
+                        this.manualChurchContainer.classList.add('hidden');
+                    }
+                    const special = this.specialOptions.find(s => s.id === specialId);
+                    if (special) this.selectChurch(special);
+                }
             });
+        });
+
+        // Manual Church Confirm
+        this.manualChurchConfirm?.addEventListener('click', () => this.handleManualSubmit());
+        this.manualChurchInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.handleManualSubmit();
         });
 
         // Close
@@ -60,6 +81,33 @@ export class ChurchSelector {
         this.modal?.addEventListener('click', (e) => {
             if (e.target === this.modal) this.close();
         });
+    }
+
+    handleManualSubmit() {
+        const value = this.manualChurchInput?.value?.trim();
+        if (!value) {
+            // Visual feedback for empty input
+            if (this.manualChurchInput) {
+                this.manualChurchInput.classList.add('border-red-400', 'bg-red-500/10');
+                setTimeout(() => {
+                    this.manualChurchInput.classList.remove('border-red-400', 'bg-red-500/10');
+                }, 2000);
+                this.manualChurchInput.focus();
+            }
+            return;
+        }
+
+        const manualChurch = {
+            id: 'MANUAL',
+            name: value, // Use the raw value as name for display
+            city: 'Manual',
+            country: 'Manual',
+            isSpecial: true,
+            isManual: true,
+            manual_name: value
+        };
+
+        this.selectChurch(manualChurch);
     }
 
     populateFilters() {

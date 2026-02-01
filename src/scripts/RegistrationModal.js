@@ -617,7 +617,8 @@ export class RegistrationModal {
         const leaderPhone = document.getElementById('reg-leader-phone')?.value || '';
 
         return {
-            church_id: this.selectedChurch?.id,
+            church_id: this.selectedChurch?.id === 'MANUAL' ? null : this.selectedChurch?.id,
+            manual_church_name: this.selectedChurch?.id === 'MANUAL' ? (this.selectedChurch.manual_name || this.selectedChurch.name) : null,
             country: document.getElementById('reg-country')?.value || 'Colombia',
             city: document.getElementById('reg-city')?.value || '',
             participants: this.participants.map(p => {
@@ -682,7 +683,11 @@ export class RegistrationModal {
     setChurch(church) {
         this.selectedChurch = church;
         if (this.selectedChurchDisplay) {
-            this.selectedChurchDisplay.textContent = `${church.name} - ${church.city}`;
+            if (church.id === 'MANUAL') {
+                this.selectedChurchDisplay.textContent = `Manual: ${church.manual_name || church.name}`;
+            } else {
+                this.selectedChurchDisplay.textContent = `${church.name} - ${church.city}`;
+            }
             this.selectedChurchDisplay.classList.remove('text-slate-400');
             this.selectedChurchDisplay.classList.add('text-[#293C74]', 'font-medium');
         }
@@ -691,9 +696,11 @@ export class RegistrationModal {
         }
 
         // Auto-fill city and country
-        const cityInput = document.getElementById('reg-city');
-        const countryInput = document.getElementById('reg-country');
-        if (cityInput && church.city) cityInput.value = church.city;
-        if (countryInput && church.country) countryInput.value = church.country;
+        if (church.id !== 'MANUAL') {
+            const cityInput = document.getElementById('reg-city');
+            const countryInput = document.getElementById('reg-country');
+            if (cityInput && church.city) cityInput.value = church.city;
+            if (countryInput && church.country) countryInput.value = church.country;
+        }
     }
 }

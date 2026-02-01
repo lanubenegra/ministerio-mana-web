@@ -54,6 +54,22 @@
           ➕ Otra iglesia
         </button>
       </div>
+      
+      <!-- Manual Input (Hidden by default) -->
+      <div id="manual-church-container" class="hidden mt-3">
+        <div class="flex gap-2">
+          <input 
+            type="text" 
+            id="manual-church-input" 
+            placeholder="Escribe el nombre de tu iglesia (Ej. París, Madrid...)" 
+            class="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/40 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/50 outline-none transition-all text-sm capitalize"
+          >
+          <button id="manual-church-confirm" class="px-4 py-2 bg-brand-teal text-white font-bold rounded-xl text-xs hover:bg-brand-teal/80 transition-colors">
+            Confirmar
+          </button>
+        </div>
+        <p class="text-[10px] text-white/40 mt-1 ml-1">Escribe solo la ciudad o el nombre principal (nosotros lo estandarizamos)</p>
+      </div>
     </div>
 
     <!-- Results List (Virtual Scroll) -->

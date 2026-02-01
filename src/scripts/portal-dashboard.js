@@ -358,6 +358,23 @@ async function loadDashboardData(authResult) {
       planHighlight.classList.remove('hidden');
       highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
       highlightDate.textContent = formatDate(activePlan.next_due_date);
+
+      // Dynamic Context
+      const highlightHeader = document.getElementById('highlight-header');
+      const highlightContext = document.getElementById('highlight-context');
+
+      const relatedBooking = payload.bookings?.find(b => b.id === activePlan.booking_id);
+      // Default concept
+      let concept = 'Cumbre Mundial 2026';
+      let type = 'Abono';
+
+      // Future-proofing for other types
+      if (relatedBooking?.event_name) {
+        concept = relatedBooking.event_name;
+      }
+
+      if (highlightHeader) highlightHeader.textContent = `${type} - ${concept}`;
+      if (highlightContext) highlightContext.textContent = concept;
     }
 
     renderBookings(payload.bookings || []);
