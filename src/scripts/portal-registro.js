@@ -9,6 +9,14 @@ const form = document.getElementById('register-form');
 const btnSubmit = document.getElementById('btn-submit-register');
 const statusEl = document.getElementById('register-status');
 const starsContainer = document.getElementById('stars-container');
+const passwordInput = document.getElementById('reg-password');
+const toggleBtn = document.getElementById('toggle-password-reg');
+
+// Password Toggle
+toggleBtn?.addEventListener('click', () => {
+    const type = passwordInput.type === 'password' ? 'text' : 'password';
+    passwordInput.type = type;
+});
 
 // Background Animation (simplified)
 if (starsContainer) {
@@ -54,6 +62,7 @@ form?.addEventListener('submit', async (e) => {
             email,
             password,
             options: {
+                emailRedirectTo: window.location.origin + '/portal',
                 data: {
                     first_name: name,
                     last_name: lastname,
@@ -62,32 +71,46 @@ form?.addEventListener('submit', async (e) => {
             }
         });
 
-        if (error) throw error;
+        if (error) {
+            // Handle common errors
+            if (error.message.includes('Email rate limit')) {
+                throw new Error('Demasiados intentos. Por favor espera unos minutos.');
+            }
+            throw error;
+        }
 
         if (data?.user && data.user.identities?.length === 0) {
-            throw new Error('Este correo ya está registrado.');
+            throw new Error('Este correo ya está registrado. Por favor inicia sesión.');
         }
 
         // Success
-        statusEl.classList.remove('hidden', 'bg-red-50', 'text-red-600');
+        statusEl.classList.remove('hidden', 'bg-red-50', 'text-red-600', 'text-red-800');
         statusEl.classList.add('bg-green-50', 'text-green-600');
+        form.reset();
 
         if (data?.session) {
-            statusEl.textContent = '¡Cuenta creada! Redirigiendo...';
+            // Auto-logged in
+            statusEl.textContent = '¡Cuenta creada exitosamente! Redirigiendo...';
             setTimeout(() => {
                 window.location.href = '/portal';
             }, 1500);
         } else {
-            statusEl.textContent = '¡Cuenta creada! Por favor revisa tu correo para confirmar.';
-            btnSubmit.textContent = 'Verificar Correo';
+            // Email confirmation required
+            statusEl.innerHTML = `
+                <strong>¡Cuenta creada!</strong><br>
+                <span class="text-sm">Revisa tu correo <strong>${email}</strong> para activar tu cuenta.</span>
+             `;
+            btnSubmit.textContent = 'Ir a Login';
+            btnSubmit.disabled = false;
+            btnSubmit.onclick = () => window.location.href = '/portal/ingresar';
         }
 
     } catch (err) {
-        console.error(err);
+        console.error('Registration error:', err);
         if (statusEl) {
             statusEl.classList.remove('hidden', 'bg-green-50', 'text-green-600');
             statusEl.classList.add('bg-red-50', 'text-red-800');
-            statusEl.textContent = err.message || 'Error al registrarse.';
+            statusEl.textContent = err.message || 'Error al registrarse. Intenta nuevamente.';
         }
         btnSubmit.textContent = originalText;
         btnSubmit.disabled = false;

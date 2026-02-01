@@ -16,8 +16,16 @@ const btnCancel = document.getElementById('btn-cancel-create');
 const form = document.getElementById('create-user-form');
 const btnSubmit = document.getElementById('btn-submit-create');
 const roleSelect = document.getElementById('user-role-select');
+const passwordInput = document.getElementById('user-password-input');
+const togglePasswordBtn = document.getElementById('toggle-password-user');
 
 let currentUserRole = 'user';
+
+// Password Toggle
+togglePasswordBtn?.addEventListener('click', () => {
+    const type = passwordInput.type === 'password' ? 'text' : 'password';
+    passwordInput.type = type;
+});
 
 async function init() {
     const { data: { session } } = await supabase.auth.getSession();
