@@ -41,6 +41,7 @@ export class RegistrationModal {
         this.leaderName = document.getElementById('reg-leader-name');
         this.leaderAge = document.getElementById('reg-leader-age');
         this.leaderPackage = document.getElementById('reg-leader-package');
+        this.leaderMenu = document.getElementById('reg-leader-menu');
 
         // Companion form
         this.btnAddCompanion = document.getElementById('btn-add-companion');
@@ -48,6 +49,7 @@ export class RegistrationModal {
         this.companionName = document.getElementById('companion-name');
         this.companionAge = document.getElementById('companion-age');
         this.companionPackage = document.getElementById('companion-package');
+        this.companionMenu = document.getElementById('companion-menu');
         this.companionPackageContainer = document.getElementById('companion-package-container');
         this.btnSaveCompanion = document.getElementById('btn-save-companion');
         this.btnCancelCompanion = document.getElementById('btn-cancel-companion');
@@ -76,6 +78,14 @@ export class RegistrationModal {
 
         // Status
         this.statusMsg = document.getElementById('manual-reg-status');
+
+        // Alert Modal
+        this.alertModal = document.getElementById('custom-alert-modal');
+        this.alertTitle = document.getElementById('alert-title');
+        this.alertMessage = document.getElementById('alert-message');
+        this.alertIconError = document.getElementById('alert-icon-error');
+        this.alertIconSuccess = document.getElementById('alert-icon-success');
+        this.btnCloseAlert = document.getElementById('btn-close-alert');
     }
 
     bindEvents() {
@@ -83,19 +93,42 @@ export class RegistrationModal {
         this.closeBtn?.addEventListener('click', () => this.close());
         this.cancelBtn?.addEventListener('click', () => this.close());
         this.modal?.addEventListener('click', (e) => {
-            if (e.target === this.modal) this.close();
+            if (e.target === this.modal) this.close(); // Close only if clicking clicking the backdrop
+        });
+
+        // Alert controls
+        this.btnCloseAlert?.addEventListener('click', () => this.closeAlert());
+        this.alertModal?.addEventListener('click', (e) => {
+            // Allow closing by clicking outside the white box
+            if (e.target === this.alertModal) this.closeAlert();
         });
 
         // Leader updates
         this.leaderName?.addEventListener('input', () => this.updateLeaderParticipant());
-        this.leaderAge?.addEventListener('input', () => this.updateLeaderParticipant());
+        this.leaderAge?.addEventListener('input', () => {
+            this.handleAgeChange(this.leaderAge, this.leaderMenu, this.leaderPackage);
+            this.updateLeaderParticipant();
+        });
         this.leaderPackage?.addEventListener('change', () => this.updateLeaderParticipant());
+        this.leaderMenu?.addEventListener('change', () => this.updateLeaderParticipant());
 
         // Companion form
-        this.btnAddCompanion?.addEventListener('click', () => this.showCompanionForm());
-        this.btnCancelCompanion?.addEventListener('click', () => this.hideCompanionForm());
-        this.btnSaveCompanion?.addEventListener('click', () => this.saveCompanion());
-        this.companionAge?.addEventListener('input', () => this.updateCompanionPackageVisibility());
+        this.btnAddCompanion?.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent accidental form submit
+            this.showCompanionForm();
+        });
+        this.btnCancelCompanion?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.hideCompanionForm();
+        });
+        this.btnSaveCompanion?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.saveCompanion();
+        });
+        this.companionAge?.addEventListener('input', () => {
+            this.handleAgeChange(this.companionAge, this.companionMenu, this.companionPackage);
+            this.updateCompanionPackageVisibility();
+        });
 
         // Payment options
         this.paymentOptions?.forEach(input => {
@@ -110,11 +143,61 @@ export class RegistrationModal {
         this.form?.addEventListener('submit', (e) => this.handleSubmit(e));
     }
 
+    // --- Alert System ---
+    showAlert(message, type = 'error', title = null) {
+        if (!this.alertModal) {
+            alert(message); // Fallback
+            return;
+        }
+
+        this.alertMessage.textContent = message;
+        this.alertTitle.textContent = title || (type === 'error' ? 'Atención' : '¡Éxito!');
+
+        if (type === 'success') {
+            this.alertIconError?.classList.add('hidden');
+            this.alertIconSuccess?.classList.remove('hidden');
+        } else {
+            this.alertIconError?.classList.remove('hidden');
+            this.alertIconSuccess?.classList.add('hidden');
+        }
+
+        this.alertModal.classList.remove('hidden');
+        this.alertModal.classList.add('flex');
+        // We don't disable body scroll here because the main modal already does it
+    }
+
+    closeAlert() {
+        this.alertModal?.classList.add('hidden');
+        this.alertModal?.classList.remove('flex');
+    }
+
+    // --- Smart Logic ---
+    handleAgeChange(ageInput, menuSelect, packageSelect) {
+        const age = this.parseAge(ageInput?.value);
+
+        if (age !== null && age <= 10) {
+            // Auto-select Kids Menu
+            if (menuSelect) {
+                menuSelect.value = 'kids';
+                // Optional: lock it? For now just auto-select is enough
+            }
+
+            // Auto-calculate package type logic is handled in getPackageTypeFromAge
+        } else {
+            // If age increased above 10, maybe revert to general? 
+            // Only if it was previously Kids
+            if (menuSelect && menuSelect.value === 'kids') {
+                menuSelect.value = 'general';
+            }
+        }
+    }
+
     // Participant Management
     updateLeaderParticipant() {
         const name = this.leaderName?.value?.trim();
         const age = this.parseAge(this.leaderAge?.value);
         const packageChoice = this.leaderPackage?.value || 'lodging';
+        const menuChoice = this.leaderMenu?.value || 'general';
 
         if (!name) return;
 
@@ -125,12 +208,14 @@ export class RegistrationModal {
             existing.name = name;
             existing.age = age;
             existing.packageType = packageType;
+            existing.menu = menuChoice;
         } else {
             this.participants.unshift({
                 id: this.leaderId,
                 name,
                 age,
                 packageType,
+                menu: menuChoice,
                 isLeader: true
             });
         }
@@ -142,7 +227,8 @@ export class RegistrationModal {
     showCompanionForm() {
         this.addCompanionForm?.classList.remove('hidden');
         this.btnAddCompanion?.classList.add('hidden');
-        this.companionName?.focus();
+        // Wait for display change before focus
+        setTimeout(() => this.companionName?.focus(), 50);
     }
 
     hideCompanionForm() {
@@ -155,6 +241,8 @@ export class RegistrationModal {
         if (this.companionName) this.companionName.value = '';
         if (this.companionAge) this.companionAge.value = '';
         if (this.companionPackage) this.companionPackage.value = 'lodging';
+        if (this.companionMenu) this.companionMenu.value = 'general';
+        this.updateCompanionPackageVisibility(); // Reset visibility
     }
 
     updateCompanionPackageVisibility() {
@@ -163,9 +251,9 @@ export class RegistrationModal {
 
         if (this.companionPackageContainer) {
             this.companionPackageContainer.style.opacity = isChild ? '0.5' : '1';
-        }
-        if (this.companionPackage) {
-            this.companionPackage.disabled = isChild;
+            // Disable select for UX clarity
+            const select = this.companionPackageContainer.querySelector('select');
+            if (select) select.disabled = isChild;
         }
     }
 
@@ -173,14 +261,15 @@ export class RegistrationModal {
         const name = this.companionName?.value?.trim();
         const age = this.parseAge(this.companionAge?.value);
         const packageChoice = this.companionPackage?.value || 'lodging';
+        const menuChoice = this.companionMenu?.value || 'general';
 
         if (!name) {
-            alert('Ingresa el nombre del acompañante');
+            this.showAlert('Ingresa el nombre del acompañante');
             return;
         }
 
         if (age === null || age < 0 || age > 120) {
-            alert('Ingresa una edad válida');
+            this.showAlert('Ingresa una edad válida para el acompañante');
             return;
         }
 
@@ -191,6 +280,7 @@ export class RegistrationModal {
             name,
             age,
             packageType,
+            menu: menuChoice,
             isLeader: false
         });
 
@@ -238,12 +328,13 @@ export class RegistrationModal {
     renderParticipantItem(p) {
         const price = this.getPrice(p.packageType);
         const ageLabel = p.age !== null ? ` · ${p.age} años` : '';
+        const menuLabel = p.menu !== 'general' ? ` · 🍽️ ${p.menu}` : '';
 
         return `
       <div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
         <div class="flex-1">
           <div class="font-bold text-[#293C74] text-sm">${p.name}</div>
-          <div class="text-xs text-slate-500">${this.getTypeLabel(p.packageType)}${ageLabel}</div>
+          <div class="text-xs text-slate-500">${this.getTypeLabel(p.packageType)}${ageLabel}${menuLabel}</div>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm font-bold text-[#293C74]">${this.formatPrice(price)}</span>
@@ -381,12 +472,12 @@ export class RegistrationModal {
         e.preventDefault();
 
         if (this.participants.length === 0) {
-            alert('Debes agregar al menos un participante (el responsable)');
+            this.showAlert('Debes agregar al menos un participante (el responsable)');
             return;
         }
 
         if (!this.selectedChurch) {
-            alert('Selecciona una iglesia');
+            this.showAlert('Selecciona una iglesia para continuar');
             return;
         }
 
@@ -412,6 +503,8 @@ export class RegistrationModal {
                 throw new Error(result.error || 'Error al registrar el grupo');
             }
 
+            this.showAlert('Grupo registrado exitosamente', 'success', '¡Registro Exitoso!');
+
             if (this.statusMsg) {
                 this.statusMsg.textContent = '✓ Grupo registrado exitosamente';
                 this.statusMsg.className = 'mt-4 text-sm text-center text-green-400 font-bold';
@@ -420,10 +513,11 @@ export class RegistrationModal {
             setTimeout(() => {
                 this.close();
                 window.location.reload(); // Refresh to show new registrations
-            }, 1500);
+            }, 2000);
 
         } catch (error) {
             console.error('Registration error:', error);
+            this.showAlert(`Error al registrar: ${error.message}`);
             if (this.statusMsg) {
                 this.statusMsg.textContent = `Error: ${error.message}`;
                 this.statusMsg.className = 'mt-4 text-sm text-center text-red-400';
