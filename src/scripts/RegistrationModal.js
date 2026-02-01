@@ -29,6 +29,10 @@ export class RegistrationModal {
         this.cacheDOM();
         this.bindEvents();
         this.updateSummary();
+
+        // Set initial menu states
+        this.updateMenuOptions(this.leaderMenu, null);
+        this.updateMenuOptions(this.companionMenu, null);
     }
 
     cacheDOM() {
@@ -106,17 +110,25 @@ export class RegistrationModal {
         // Leader updates
         this.leaderName?.addEventListener('input', () => this.updateLeaderParticipant());
         this.leaderAge?.addEventListener('input', () => {
-            this.handleAgeChange(this.leaderAge, this.leaderMenu, this.leaderPackage);
+            const age = this.parseAge(this.leaderAge?.value);
+            this.updateMenuOptions(this.leaderMenu, age);
             this.updateLeaderParticipant();
         });
         this.leaderPackage?.addEventListener('change', () => this.updateLeaderParticipant());
         this.leaderMenu?.addEventListener('change', () => this.updateLeaderParticipant());
 
         // Companion form
-        this.btnAddCompanion?.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent accidental form submit
-            this.showCompanionForm();
-        });
+        if (this.btnAddCompanion) {
+            this.btnAddCompanion.addEventListener('click', (e) => {
+                // Prevent default submit behavior
+                e.preventDefault();
+                e.stopPropagation();
+                this.showCompanionForm();
+            });
+        } else {
+            console.warn('RegistrationModal: btnAddCompanion not found in DOM');
+        }
+
         this.btnCancelCompanion?.addEventListener('click', (e) => {
             e.preventDefault();
             this.hideCompanionForm();
@@ -126,7 +138,8 @@ export class RegistrationModal {
             this.saveCompanion();
         });
         this.companionAge?.addEventListener('input', () => {
-            this.handleAgeChange(this.companionAge, this.companionMenu, this.companionPackage);
+            const age = this.parseAge(this.companionAge?.value);
+            this.updateMenuOptions(this.companionMenu, age);
             this.updateCompanionPackageVisibility();
         });
 
@@ -163,7 +176,6 @@ export class RegistrationModal {
 
         this.alertModal.classList.remove('hidden');
         this.alertModal.classList.add('flex');
-        // We don't disable body scroll here because the main modal already does it
     }
 
     closeAlert() {
@@ -172,22 +184,32 @@ export class RegistrationModal {
     }
 
     // --- Smart Logic ---
-    handleAgeChange(ageInput, menuSelect, packageSelect) {
-        const age = this.parseAge(ageInput?.value);
+    updateMenuOptions(selectElement, age) {
+        if (!selectElement) return;
+
+        // Use current value to restore if possible
+        const currentValue = selectElement.value;
+
+        // Rule: Age <= 10 -> Only "Menú Infantil"
+        // Rule: Age > 10 or null -> "Menú General", "Vegetariano"
 
         if (age !== null && age <= 10) {
-            // Auto-select Kids Menu
-            if (menuSelect) {
-                menuSelect.value = 'kids';
-                // Optional: lock it? For now just auto-select is enough
-            }
-
-            // Auto-calculate package type logic is handled in getPackageTypeFromAge
+            selectElement.innerHTML = `
+        <option value="kids">Menú Infantil</option>
+      `;
+            // Always select kids
+            selectElement.value = 'kids';
         } else {
-            // If age increased above 10, maybe revert to general? 
-            // Only if it was previously Kids
-            if (menuSelect && menuSelect.value === 'kids') {
-                menuSelect.value = 'general';
+            selectElement.innerHTML = `
+        <option value="general">Menú General</option>
+        <option value="vegetarian">Vegetariano</option>
+      `;
+            // Restore previous value if it matches one of the new options
+            // Unless previous was 'kids', then switch to 'general'
+            if (currentValue === 'vegetarian') {
+                selectElement.value = 'vegetarian';
+            } else {
+                selectElement.value = 'general';
             }
         }
     }
@@ -225,24 +247,36 @@ export class RegistrationModal {
     }
 
     showCompanionForm() {
-        this.addCompanionForm?.classList.remove('hidden');
-        this.btnAddCompanion?.classList.add('hidden');
+        if (this.addCompanionForm) this.addCompanionForm.classList.remove('hidden');
+        if (this.btnAddCompanion) this.btnAddCompanion.classList.add('hidden');
+
         // Wait for display change before focus
-        setTimeout(() => this.companionName?.focus(), 50);
+        setTimeout(() => {
+            if (this.companionName) this.companionName.focus();
+        }, 50);
     }
 
     hideCompanionForm() {
-        this.addCompanionForm?.classList.add('hidden');
-        this.btnAddCompanion?.classList.remove('hidden');
+        if (this.addCompanionForm) this.addCompanionForm.classList.add('hidden');
+        if (this.btnAddCompanion) this.btnAddCompanion.classList.remove('hidden');
         this.clearCompanionForm();
     }
 
     clearCompanionForm() {
         if (this.companionName) this.companionName.value = '';
         if (this.companionAge) this.companionAge.value = '';
-        if (this.companionPackage) this.companionPackage.value = 'lodging';
-        if (this.companionMenu) this.companionMenu.value = 'general';
-        this.updateCompanionPackageVisibility(); // Reset visibility
+
+        // Reset package options
+        if (this.companionPackage) {
+            this.companionPackage.disabled = false;
+            this.companionPackage.value = 'lodging';
+        }
+        if (this.companionPackageContainer) this.companionPackageContainer.style.opacity = '1';
+
+        // Reset menu
+        if (this.companionMenu) {
+            this.updateMenuOptions(this.companionMenu, null); // Reset to adult options
+        }
     }
 
     updateCompanionPackageVisibility() {
@@ -568,6 +602,11 @@ export class RegistrationModal {
         this.participants = [];
         this.selectedChurch = null;
         this.form?.reset();
+
+        // Reset menus
+        this.updateMenuOptions(this.leaderMenu, null);
+        this.updateMenuOptions(this.companionMenu, null);
+
         this.renderParticipants();
         this.updateSummary();
         if (this.statusMsg) this.statusMsg.textContent = '';
