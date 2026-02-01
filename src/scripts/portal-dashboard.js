@@ -198,9 +198,16 @@ function cleanupAuthRedirect() {
 
 // Tabs Navigation
 navLinks.forEach(link => {
-  link.addEventListener('click', () => {
+  link.addEventListener('click', (e) => {
     const targetTab = link.dataset.tab;
-    switchTab(targetTab);
+    if (targetTab) {
+      e.preventDefault();
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('tab', targetTab);
+      history.pushState({}, '', url);
+      switchTab(targetTab);
+    }
   });
 });
 
@@ -2210,6 +2217,13 @@ async function initDashboard() {
 
   // 2. Load Dashboard
   await loadDashboardData(auth);
+
+  // 3. Handle Deep Linking (Tab Restore)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tab = urlParams.get('tab');
+  if (tab) {
+    switchTab(tab);
+  }
 }
 
 initDashboard();
