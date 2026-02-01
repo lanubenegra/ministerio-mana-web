@@ -2078,6 +2078,9 @@ manualModal?.addEventListener('click', (e) => {
 });
 
 // Manual Registration Form Submit
+// NOTE: manualRegCompanions is a global array managed by modal UI (add/remove logic elsewhere)
+let manualRegCompanions = [];
+
 const manualRegForm = document.getElementById('manual-registration-form');
 manualRegForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -2088,74 +2091,99 @@ manualRegForm?.addEventListener('submit', async (e) => {
   if (submitBtn) submitBtn.disabled = true;
 
   try {
-    const payload = {
-      // Identity & Location
-      docType: document.getElementById('reg-doc-type').value,
-      docNumber: document.getElementById('reg-doc-number').value.trim(),
-      country: document.getElementById('reg-country').value.trim(),
-      city: document.getElementById('reg-city').value.trim(),
+    // Collect LEADER data
+    const leaderDocType = document.getElementById('reg-leader-doc-type')?.value || 'CC';
+    const leaderDocNumber = document.getElementById('reg-leader-doc-number')?.value?.trim();
+    const leaderName = document.getElementById('reg-leader-name')?.value?.trim();
+    const leaderEmail = document.getElementById('reg-leader-email')?.value?.trim();
+    const leaderPhone = document.getElementById('reg-leader-phone')?.value?.trim();
+    const leaderAge = parseInt(document.getElementById('reg-leader-age')?.value) || null;
+    const leaderMenu = document.getElementById('reg-leader-menu')?.value || 'general';
+    const leaderPackage = document.getElementById('reg-leader-package')?.value || 'lodging';
 
-      // Personal
-      fullName: document.getElementById('reg-name').value.trim(),
-      email: document.getElementById('reg-email').value.trim(),
-      phone: document.getElementById('reg-phone').value.trim(),
-      gender: document.getElementById('reg-gender').value,
-
-      // Event Details
-      churchName: document.getElementById('reg-church').value.trim(),
-      dietaryPreference: document.getElementById('reg-menu').value,
-      registrationType: document.getElementById('reg-type').value,
-
-      // Payment
-      paymentMode: document.getElementById('reg-payment-mode').value,
-      paymentAmount: parseFloat(document.getElementById('reg-amount').value) || 0,
-
-      // Context (using existing)
-      churchId: churchSelectorInput?.value || null
-    };
-
-    // Basic validation
-    if (!payload.docNumber || !payload.fullName || !payload.email) {
-      throw new Error('Por favor completa los campos obligatorios (Documento, Nombre, Email).');
+    // Validation
+    if (!leaderDocNumber || !leaderName) {
+      throw new Error('Completa al menos Documento y Nombre del responsable');
     }
 
-    const endpoint = '/api/portal/iglesia/manual-register'; // Mapping to existing endpoint logic or we may need to adapt it
+    // Get selected church
+    const selectedChurchId = churchSelectorInput?.value || portalSelectedChurchId;
+    if (!selectedChurchId) {
+      throw new Error('Selecciona una iglesia antes de registrar');
+    }
 
-    // NOTE: Sending to existing endpoint structure first, adapting payload keys if needed
-    // The previous implementation used contactName, contactEmail etc.
-    // Let's map to what the server likely expects based on previous code or just send clean new payload
+    // Build participants array (leader + companions)
+    const participants = [
+      {
+        name: leaderName,
+        document_type: leaderDocType,
+        document_number: leaderDocNumber,
+        email: leaderEmail || null,
+        phone: leaderPhone || null,
+        age: leaderAge,
+        packageType: leaderPackage,
+        isLeader: true
+      },
+      ...manualRegCompanions  // Add companions (if any)
+    ];
 
-    const res = await fetch(endpoint, {
+    // Determine payment option (FULL, DEPOSIT, INSTALLMENTS)
+    const paymentOption = document.getElementById('reg-payment-option')?.value || 'FULL';
+
+    // Calculate total amount based on all participants
+    const currency = 'COP'; // TODO: Make dynamic if needed
+    const priceMap = { lodging: 850000, no_lodging: 660000, child_0_7: 300000, child_7_13: 550000 };
+
+    const totalAmount = participants.reduce((sum, p) => {
+      let pkg = p.packageType;
+      // Auto-adjust package for children
+      if (p.age && p.age < 7) pkg = 'child_0_7';
+      else if (p.age && p.age >= 7 && p.age < 14) pkg = 'child_7_13';
+      return sum + (priceMap[pkg] || 0);
+    }, 0);
+
+    const payload = {
+      church_id: selectedChurchId,
+      country: 'Colombia', // TODO: Extract from church data if available
+      city: '', // TODO: Extract from church data if available
+      participants,
+      payment_option: paymentOption,
+      installment_frequency: paymentOption === 'INSTALLMENTS' ? 'MONTHLY' : null,
+      total_amount: totalAmount,
+      currency
+    };
+
+    const res = await fetch('/api/portal/iglesia/register-group', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...portalAuthHeaders },
       body: JSON.stringify(payload)
     });
 
     const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'Error al registrar.');
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Error al registrar');
 
     if (statusEl) {
-      statusEl.textContent = '¡Registro exitoso!';
-      statusEl.className = 'text-sm text-green-600 font-bold';
+      statusEl.textContent = `✅ ¡${participants.length} persona${participants.length > 1 ? 's' : ''} registrada${participants.length > 1 ? 's' : ''}!`;
+      statusEl.className = 'mt-4 text-sm text-center text-white/70';
     }
 
-    // Refresh lists
-    loadChurchBookings(portalAuthHeaders);
+    // Refresh church bookings
+    await loadChurchBookings(portalAuthHeaders);
 
+    // Reset form and close modal after delay
     setTimeout(() => {
+      manualRegForm.reset();
+      manualRegCompanions = []; // Clear companions
       closeManualModal();
       if (submitBtn) submitBtn.disabled = false;
-      if (statusEl) {
-        statusEl.textContent = '';
-        statusEl.className = 'text-sm text-slate-500';
-      }
-    }, 1500);
+      if (statusEl) statusEl.textContent = '';
+    }, 2000);
 
   } catch (err) {
-    console.error(err);
+    console.error('Manual registration error:', err);
     if (statusEl) {
-      statusEl.textContent = err.message;
-      statusEl.className = 'text-sm text-red-500 font-bold';
+      statusEl.textContent = `❌ ${err.message}`;
+      statusEl.className = 'mt-4 text-sm text-center text-red-400 font-bold';
     }
     if (submitBtn) submitBtn.disabled = false;
   }
