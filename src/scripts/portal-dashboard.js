@@ -1741,12 +1741,14 @@ const churchFormContainer = document.getElementById('church-manual-form-containe
 const churchFormCloseBtn = document.getElementById('church-form-close');
 const inviteToggleBtn = document.getElementById('btn-toggle-invite');
 
+// Manual Registration Modal Trigger
+// Variable declared at top is 'churchFormToggle'
 churchFormToggle?.addEventListener('click', () => {
-  if (!churchFormContainer) return;
+  console.log('[DEBUG] Open manual registration modal clicked');
+
+  // Validation: Check if admin has selected a church
   if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
-    if (churchFormStatus) {
-      churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
-    }
+    alert('Por favor selecciona una iglesia en el panel superior antes de registrar.');
     return;
   }
 
@@ -1755,6 +1757,8 @@ churchFormToggle?.addEventListener('click', () => {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
+  } else {
+    console.error('[DEBUG] Modal manual-registration-modal not found');
   }
 });
 
