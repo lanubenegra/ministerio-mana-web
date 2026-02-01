@@ -87,14 +87,18 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const isRecurring = ['true', '1', 'on', 'yes'].includes(recurringFlag);
 
     const baseUrl = resolveBaseUrl(request);
-    const redirectUrl = `${baseUrl}/donaciones/gracias`;
-
     const reference = buildDonationReference();
+    const redirect = new URL(`${baseUrl}/donaciones/gracias`);
+    redirect.searchParams.set('ref', reference);
+    redirect.searchParams.set('provider', 'wompi');
+    redirect.searchParams.set('recurring', isRecurring ? '1' : '0');
+    redirect.searchParams.set('type', donorInfo.donationType);
+    redirect.searchParams.set('amount', String(amountCop));
     const { url } = buildWompiCheckoutUrl({
       amountInCents: amountCop * 100,
       currency: 'COP',
       description,
-      redirectUrl,
+      redirectUrl: redirect.toString(),
       reference,
       email: donorInfo.email,
       customerData: {

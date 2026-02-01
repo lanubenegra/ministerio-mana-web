@@ -532,4 +532,37 @@ const cspNonce = Astro.locals?.cspNonce;
 
   wompiForm?.addEventListener('submit', () => saveProfileFromDonation(wompiForm));
   stripeForm?.addEventListener('submit', () => saveProfileFromDonation(stripeForm));
+
+  function formatCop(value) {
+    return String(value).replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  function applyQueryPrefill() {
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get('type');
+    const amount = params.get('amount');
+    const recurring = params.get('recurring');
+
+    if (type === 'diezmos' || type === 'diezmo') {
+      const diezmoBtn = document.querySelector('.tab-btn[data-target="diezmo"]');
+      diezmoBtn?.dispatchEvent(new Event('click'));
+    }
+
+    if (amount && wompiForm) {
+      const display = document.getElementById('wompi-amount-display');
+      const real = document.getElementById('wompi-amount-real');
+      const numeric = String(amount).replace(/\D/g, '');
+      if (display && real && numeric) {
+        display.value = formatCop(numeric);
+        real.value = numeric;
+      }
+    }
+
+    if (recurring === '1' && wompiForm) {
+      const checkbox = document.getElementById('wompi-recurring');
+      if (checkbox) checkbox.checked = true;
+    }
+  }
+
+  applyQueryPrefill();
 </script>

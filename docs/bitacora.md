@@ -24,6 +24,19 @@
 - Pendientes:
   - Definir flujo de certificados y requisito de documento para eventos internacionales.
 
+### 2026-02-01 (Recordatorios de diezmo manual Wompi)
+- Responsable: Codex
+- Cambios:
+  - Donaciones: se agrega opt-in de recordatorio mensual en `/donaciones/gracias` para diezmos Wompi recurrentes.
+  - Se crea tabla de suscripciones y logs de recordatorios (`docs/sql/donation_reminders.sql`).
+  - API de recordatorios: opt-in y cron para envíos por email/WhatsApp.
+  - Primicias: soporta prefill por query (`type`, `amount`, `recurring`) para enlaces de recordatorio.
+  - Wompi checkout: agrega referencia en redirect para validar recordatorio.
+- Pruebas: N/A
+- Pendientes:
+  - Configurar `DONATION_REMINDER_CRON_SECRET` y programar el cron.
+  - Validar `WHATSAPP_WEBHOOK_URL` en producción si se usará WhatsApp.
+
 ### 2026-01-28 (Portal logout fiable)
 - Responsable: Codex
 - Cambios:
