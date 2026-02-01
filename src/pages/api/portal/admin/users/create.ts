@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
+import { sendAuthLink } from '@lib/authMailer';
 
 export const POST: APIRoute = async ({ request }) => {
     if (!supabaseAdmin) return new Response(JSON.stringify({ ok: false, error: 'Server Config Error' }), { status: 500 });
@@ -54,8 +55,6 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Create/Update Profile
-    // Note: Trigger might create it, but we want to set Role + Church immediately
-    // We use upsert just in case trigger fired
     const { error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .upsert({
@@ -63,14 +62,29 @@ export const POST: APIRoute = async ({ request }) => {
             email: email,
             first_name: firstName,
             last_name: lastName,
-            role: role || 'user', // Default to 'user', Pastor can create 'leader'
+            role: role || 'user',
             church_id: targetChurchId,
             updated_at: new Date().toISOString()
         });
 
     if (profileError) {
         console.error('Profile Error', profileError);
-        // Don't fail the request, but warn? Auth user exists.
+    }
+
+    // Send Welcome Email via SendGrid
+    try {
+        const emailResult = await sendAuthLink({
+            kind: 'invite',
+            email: email,
+            redirectTo: `${new URL(request.url).origin}/portal`
+        });
+
+        if (!emailResult.ok) {
+            console.warn('[create-user] Email not sent:', emailResult.error);
+        }
+    } catch (emailErr) {
+        console.error('[create-user] Email error:', emailErr);
+        // Don't fail the request if email fails
     }
 
     return new Response(JSON.stringify({ ok: true, userId: authData.user.id }), { status: 200 });
