@@ -1,5 +1,4 @@
 import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
-import { ensureAuthenticated, redirectToLogin } from '@lib/portalAuthClient';
 import { gsap } from 'gsap';
 
 const DEBUG = import.meta.env?.DEV === true;
@@ -227,29 +226,35 @@ function switchTab(tabId) {
 }
 
 // Core Dashboard Logic - Reactive Auth
-async function loadDashboardData(authResult) {
-  dlog('[DEBUG] loadDashboardData called with mode:', authResult.mode);
+async function fetchDashboardData(session) {
+  dlog('[DEBUG] fetchDashboardData called with session:', session ? 'Present' : 'Null');
 
   try {
-    const token = authResult.token;
-    const sessionUser = authResult.user;
+    let token = session?.access_token;
 
-    // Update global state
-    authMode = authResult.mode;
-    if (sessionUser) {
-      portalProfile = sessionUser;
+    if (!token && supabase) {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) dwarn('[DEBUG] getSession error:', error);
+      token = data?.session?.access_token || null;
+    }
+
+    if (!token) {
+      dlog('[DEBUG] No token. Using password session cookie.');
+    }
+
+    if (token) {
+      dlog('[DEBUG] Access token present:', token.substring(0, 10) + '...');
     }
 
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     portalAuthHeaders = headers;
+
     // 2. Parallelized Initial Data Fetching
 
     dlog('[DEBUG] Starting Promise.all for API requests...');
 
     const promises = [
       fetch('/api/portal/session', { headers, credentials: 'include' }),
-      fetch('/api/portal/churches', { headers, credentials: 'include' }), // Fetch Catalog
-
       fetch('/api/cuenta/resumen', { headers, credentials: 'include' })
     ];
 
@@ -259,16 +264,10 @@ async function loadDashboardData(authResult) {
       promises.push(Promise.resolve({ data: { user: null } })); // Mock for no-token
     }
 
-    const [sessionRes, churchesRes, resumenRes, { data: userData }] = await Promise.all(promises);
+    const [sessionRes, resumenRes, { data: userData }] = await Promise.all(promises);
     dlog('[DEBUG] Promise.all completed.');
-
-    // Handle Church Catalog
-    if (churchesRes.ok) {
-      portalChurchesCatalog = await churchesRes.json();
-      populateChurchesUI(portalChurchesCatalog);
-    }
-
     dlog('[DEBUG] sessionRes status:', sessionRes.status);
+    dlog('[DEBUG] resumenRes status:', resumenRes.status);
     dlog('[DEBUG] userData:', userData);
 
     if (!sessionRes.ok) {
@@ -334,12 +333,6 @@ async function loadDashboardData(authResult) {
       if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Eventos';
       if (iglesiaTitle) iglesiaTitle.textContent = 'Cumbre Mundial 2026';
       if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general del evento para gestión de sedes y registros físicos.';
-
-      const adminUsersCard = document.getElementById('admin-users-card');
-      const syncWrapper = document.getElementById('admin-sync-wrapper');
-      adminUsersCard?.classList.remove('hidden');
-      syncWrapper?.classList.remove('hidden');
-      loadAdminUsers();
     }
 
     // Calculations for highlights
@@ -1755,136 +1748,25 @@ const churchFormContainer = document.getElementById('church-manual-form-containe
 const churchFormCloseBtn = document.getElementById('church-form-close');
 const inviteToggleBtn = document.getElementById('btn-toggle-invite');
 
-// Manual Registration Modal Trigger
-// Variable declared at top is 'churchFormToggle'
 churchFormToggle?.addEventListener('click', () => {
-  console.log('[DEBUG] Open manual registration modal clicked');
-
-  // Validation: Check if admin has selected a church
+  if (!churchFormContainer) return;
   if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
-    alert('Por favor selecciona una iglesia en el panel superior antes de registrar.');
+    if (churchFormStatus) {
+      churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
+    }
     return;
   }
 
-  const modal = document.getElementById('manual-registration-modal');
-  if (modal) {
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-  } else {
-    console.error('[DEBUG] Modal manual-registration-modal not found');
-  }
+  churchFormContainer.classList.remove('hidden');
+  churchForm?.classList.remove('hidden');
+  // Scroll to form
+  churchFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
-// Manual Modal Close Handlers
-const manualModalCloseBtn = document.getElementById('btn-close-manual-modal');
-const manualModalCancelBtn = document.getElementById('btn-cancel-manual-reg');
-const manualModal = document.getElementById('manual-registration-modal');
-
-function closeManualModal() {
-  if (manualModal) {
-    manualModal.classList.add('hidden');
-    manualModal.classList.remove('flex');
-    document.body.style.overflow = '';
-    // Reset form
-    document.getElementById('manual-registration-form')?.reset();
-    document.getElementById('manual-reg-status').textContent = '';
-  }
-}
-
-manualModalCloseBtn?.addEventListener('click', closeManualModal);
-manualModalCancelBtn?.addEventListener('click', closeManualModal);
-
-// Close on click outside
-manualModal?.addEventListener('click', (e) => {
-  if (e.target === manualModal) closeManualModal();
+churchFormCloseBtn?.addEventListener('click', () => {
+  if (!churchFormContainer) return;
+  churchFormContainer.classList.add('hidden');
 });
-
-// Manual Registration Form Submit
-const manualRegForm = document.getElementById('manual-registration-form');
-manualRegForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const statusEl = document.getElementById('manual-reg-status');
-  const submitBtn = manualRegForm.querySelector('button[type="submit"]');
-
-  if (statusEl) statusEl.textContent = 'Procesando...';
-  if (submitBtn) submitBtn.disabled = true;
-
-  try {
-    const payload = {
-      // Identity & Location
-      docType: document.getElementById('reg-doc-type').value,
-      docNumber: document.getElementById('reg-doc-number').value.trim(),
-      country: document.getElementById('reg-country').value.trim(),
-      city: document.getElementById('reg-city').value.trim(),
-
-      // Personal
-      fullName: document.getElementById('reg-name').value.trim(),
-      email: document.getElementById('reg-email').value.trim(),
-      phone: document.getElementById('reg-phone').value.trim(),
-      gender: document.getElementById('reg-gender').value,
-
-      // Event Details
-      churchName: document.getElementById('reg-church').value.trim(),
-      dietaryPreference: document.getElementById('reg-menu').value,
-      registrationType: document.getElementById('reg-type').value,
-
-      // Payment
-      paymentMode: document.getElementById('reg-payment-mode').value,
-      paymentAmount: parseFloat(document.getElementById('reg-amount').value) || 0,
-
-      // Context (using existing)
-      churchId: churchSelectorInput?.value || null
-    };
-
-    // Basic validation
-    if (!payload.docNumber || !payload.fullName || !payload.email) {
-      throw new Error('Por favor completa los campos obligatorios (Documento, Nombre, Email).');
-    }
-
-    const endpoint = '/api/portal/iglesia/manual-register'; // Mapping to existing endpoint logic or we may need to adapt it
-
-    // NOTE: Sending to existing endpoint structure first, adapting payload keys if needed
-    // The previous implementation used contactName, contactEmail etc.
-    // Let's map to what the server likely expects based on previous code or just send clean new payload
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'Error al registrar.');
-
-    if (statusEl) {
-      statusEl.textContent = '¡Registro exitoso!';
-      statusEl.className = 'text-sm text-green-600 font-bold';
-    }
-
-    // Refresh lists
-    loadChurchBookings(portalAuthHeaders);
-
-    setTimeout(() => {
-      closeManualModal();
-      if (submitBtn) submitBtn.disabled = false;
-      if (statusEl) {
-        statusEl.textContent = '';
-        statusEl.className = 'text-sm text-slate-500';
-      }
-    }, 1500);
-
-  } catch (err) {
-    console.error(err);
-    if (statusEl) {
-      statusEl.textContent = err.message;
-      statusEl.className = 'text-sm text-red-500 font-bold';
-    }
-    if (submitBtn) submitBtn.disabled = false;
-  }
-});
-
-
 
 inviteToggleBtn?.addEventListener('click', () => {
   if (!inviteCard) return;
@@ -1919,7 +1801,7 @@ logoutBtn?.addEventListener('click', async () => {
           await supabase.auth.signOut({ scope: 'local' });
         }
         if (authMode === 'password') {
-          await fetch('/api/portal/password-logout', { method: 'POST', credentials: 'include' });
+          await fetch('/api/portal/password-logout', { method: 'POST' });
         }
       } catch (err) {
         console.error('Logout cleanup error:', err);
@@ -2077,7 +1959,25 @@ registerPasskeyBtn?.addEventListener('click', async () => {
   }
 });
 
+async function getSessionSoftTimeout(ms = 8000) {
+  if (!supabase) {
+    return { data: { session: null }, error: null, timedOut: true };
+  }
 
+  let timeoutId;
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutId = setTimeout(() => resolve({ data: { session: null }, error: null, timedOut: true }), ms);
+  });
+
+  const sessionPromise = supabase.auth
+    .getSession()
+    .then((result) => ({ ...result, timedOut: false }))
+    .catch((error) => ({ data: { session: null }, error, timedOut: false }));
+
+  const result = await Promise.race([sessionPromise, timeoutPromise]);
+  clearTimeout(timeoutId);
+  return result;
+}
 
 // Init Dashboard with Reactive Auth
 // Init Dashboard with Reactive Auth
@@ -2089,114 +1989,92 @@ async function initDashboard() {
     return;
   }
 
-  // 1. Clean Slate Auth Check
-  dlog('[DEBUG] Starting Clean Auth Check...');
-  const auth = await ensureAuthenticated();
+  let dashboardLoaded = false;
 
-  if (!auth.isAuthenticated) {
-    console.warn('[DEBUG] Not authenticated. Redirecting...');
-    if (loadingEl) loadingEl.classList.add('hidden');
-    // Allow a brief moment for any pending logs/events? No, fail fast.
-    redirectToLogin();
+  // 0. Fix Malformed Hash (if present)
+  // Supabase expects #access_token=... but sometimes we get #/access_token=...
+  if (window.location.hash && window.location.hash.startsWith('#/')) {
+    dlog('Fixing malformed hash:', window.location.hash);
+    const cleanHash = window.location.hash.replace('#/', '#');
+    window.history.replaceState(null, '', window.location.pathname + cleanHash);
+    dlog('Cleaned hash:', window.location.hash);
+  }
+
+  if (!supabase) {
+    console.error('[DEBUG] Supabase not initialized. Redirecting to login.');
+    if (loadingEl && !loadingEl.classList.contains('hidden')) {
+      loadingEl.classList.add('hidden');
+    }
+    if (errorEl) {
+      errorEl.classList.remove('hidden');
+    }
+    setTimeout(() => {
+      window.location.href = '/portal/ingresar';
+    }, 1200);
+    return;
+  }
+  dlog('[DEBUG] Setting up onAuthStateChange listener...');
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    dlog('[DEBUG] Auth State Change:', event, session ? 'Session OK' : 'No Session');
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+      if (session && !dashboardLoaded) {
+        dlog('[DEBUG] Auth Event Triggered Load:', event);
+        dashboardLoaded = true;
+
+        cleanupAuthRedirect();
+
+        await fetchDashboardData(session);
+      } else if (!session) {
+        dwarn('[DEBUG] Event', event, 'but no session present');
+      } else if (dashboardLoaded) {
+        dlog('[DEBUG] Event', event, 'ignored (dashboard already loaded)');
+      }
+    }
+  });
+
+  // 2. Immediate State Check (Handle Pre-processed Sessions)
+  // Supabase might have already processed the hash before this script ran.
+  // We check getSession() immediately with a soft timeout.
+  dlog('[DEBUG] Calling supabase.auth.getSession() with soft timeout...');
+
+  const { data, error, timedOut } = await getSessionSoftTimeout(8000);
+  if (error) dwarn('[DEBUG] getSession error:', error);
+  if (timedOut) dlog('[DEBUG] getSession timed out (soft).');
+  dlog('[DEBUG] getSession result:', data, 'Error:', error);
+
+  // 1. Valid Supabase Session
+  if (data?.session && !dashboardLoaded) {
+    dlog('[DEBUG] Session found immediately via getSession');
+    dashboardLoaded = true;
+    cleanupAuthRedirect();
+    await fetchDashboardData(data.session);
     return;
   }
 
-  dlog('[DEBUG] Authenticated!', auth);
-  cleanupAuthRedirect(); // Clean URL hash/params if present
+  // 2. Password-mode fallback (superadmin)
+  if (!data?.session) {
+    try {
+      const pwRes = await fetch('/api/portal/password-session');
+      if (pwRes.ok) {
+        const pwData = await pwRes.json();
+        if (pwData.ok) {
+          dashboardLoaded = true;
+          await fetchDashboardData(null);
+          return;
+        }
+      }
+    } catch (err) {
+      dwarn('[DEBUG] Password session check failed', err);
+    }
+  }
 
-  // 2. Load Dashboard
-  await loadDashboardData(auth);
+  // 3. Simple redirect if no session
+  if (!data?.session) {
+    window.location.href = '/portal/ingresar';
+  }
 }
 
 initDashboard();
 initChurchManualForm();
 initInviteForm();
-
-// Church Catalog Helpers
-function populateChurchesUI(catalog) {
-  if (!catalog || !catalog.length) return;
-
-  // Populate Datalist for Manual Registration
-  const dataList = document.getElementById('churches-list');
-  if (dataList) {
-    dataList.innerHTML = catalog.map(c => `<option value="${c.name} - ${c.city}">${c.address || ''}</option>`).join('');
-  }
-
-  // Populate Admin Selector (if empty or just placeholder)
-  if (churchSelectorInput) {
-    // Keep the first option if it's a placeholder
-    const placeholder = churchSelectorInput.firstElementChild;
-    churchSelectorInput.innerHTML = '';
-    if (placeholder) churchSelectorInput.appendChild(placeholder);
-
-    catalog.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = `${c.city} - ${c.name}`;
-      churchSelectorInput.appendChild(opt);
-    });
-  }
-}
-
-// Church Input Logic (Auto-fill city/country)
-const regChurchInput = document.getElementById('reg-church');
-regChurchInput?.addEventListener('input', (e) => { // 'input' event triggers on autocomplete selection too usually
-  const val = e.target.value;
-  if (!portalChurchesCatalog) return;
-
-  // Try to find by "Name - City" format or just Name
-  const found = portalChurchesCatalog.find(c => `${c.name} - ${c.city}` === val || c.name === val);
-
-  if (found) {
-    const cityInput = document.getElementById('reg-city');
-    const countryInput = document.getElementById('reg-country');
-    // Only auto-fill if empty or explicit override? let's override for convenience
-    if (cityInput) cityInput.value = found.city;
-    if (countryInput) countryInput.value = found.country || 'Colombia';
-  }
-});
-// Admin Sync Logic
-const syncBtn = document.getElementById('btn-sync-churches');
-const syncWrapper = document.getElementById('admin-sync-wrapper');
-
-if (syncBtn) {
-  syncBtn.addEventListener('click', async () => {
-    const statusEl = document.getElementById('sync-status');
-    const originalText = syncBtn.innerHTML;
-
-    syncBtn.disabled = true;
-    syncBtn.textContent = 'Sincronizando...';
-    if (statusEl) statusEl.textContent = 'Conectando con base de datos...';
-
-    try {
-      const res = await fetch('/api/portal/admin/seed-churches', {
-        method: 'POST',
-        headers: portalAuthHeaders
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Error al sincronizar');
-
-      if (statusEl) {
-        statusEl.textContent = data.message;
-        statusEl.className = 'text-[10px] text-center text-green-500 font-bold mt-1';
-      }
-      setTimeout(() => {
-        syncBtn.disabled = false;
-        syncBtn.innerHTML = originalText;
-        // Reload catalog to reflect changes immediately
-        window.location.reload();
-      }, 2000);
-
-    } catch (err) {
-      console.error(err);
-      syncBtn.disabled = false;
-      syncBtn.innerHTML = originalText;
-      if (statusEl) {
-        statusEl.textContent = err.message;
-        statusEl.className = 'text-[10px] text-center text-red-500 font-bold mt-1';
-      }
-    }
-  });
-}
