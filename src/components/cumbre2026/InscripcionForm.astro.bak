@@ -176,6 +176,9 @@ const formatTestAmount = (value, currency) =>
                         <button type="button" id="leader-signup-btn" class="px-4 py-2 rounded-full bg-brand-navy text-white text-xs font-bold hover:brightness-110 transition-all">
                            Crear cuenta
                         </button>
+                        <button type="button" id="leader-auth-btn" class="px-4 py-2 rounded-full border border-brand-navy/30 text-brand-navy text-xs font-bold hover:bg-brand-navy/5 transition-all">
+                           Enviar enlace
+                        </button>
                      </div>
                   </div>
                   <div class="grid md:grid-cols-2 gap-3">

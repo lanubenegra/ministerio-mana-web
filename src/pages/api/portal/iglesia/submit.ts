@@ -341,6 +341,8 @@ export const POST: APIRoute = async ({ request }) => {
         is_recurring: false,
         donor_country: contactCountry || null,
         donor_city: contactCity || null,
+        donation_description: null,
+        need_certificate: false,
         source: 'portal-iglesia',
         cumbre_booking_id: booking.id,
         raw_event: null,

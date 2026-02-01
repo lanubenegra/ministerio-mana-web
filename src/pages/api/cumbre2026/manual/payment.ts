@@ -100,6 +100,8 @@ export const POST: APIRoute = async ({ request }) => {
     is_recurring: false,
     donor_country: booking.contact_country ?? null,
     donor_city: booking.contact_city ?? null,
+    donation_description: null,
+    need_certificate: false,
     source: 'cumbre-manual',
     cumbre_booking_id: bookingId,
     raw_event: null,

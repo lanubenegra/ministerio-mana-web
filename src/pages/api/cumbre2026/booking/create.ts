@@ -56,6 +56,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         contactName: form.get('contactName'),
         email: form.get('email'),
         phone: form.get('phone'),
+        contactDocumentType: form.get('contactDocumentType'),
+        contactDocumentNumber: form.get('contactDocumentNumber'),
         countryGroup: form.get('countryGroup'),
         participants: form.get('participants'),
         turnstile: form.get('cf-turnstile-response'),
@@ -112,6 +114,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const contactName = sanitizePlainText(payload.contactName, 120);
     const email = (payload.email || '').toString().trim().toLowerCase();
     const phone = sanitizePlainText(payload.phone, 30);
+    const contactDocumentType = sanitizePlainText(payload.contactDocumentType, 40);
+    const contactDocumentNumber = sanitizePlainText(payload.contactDocumentNumber, 40);
 
     if (containsBlockedSequence(contactName) || containsBlockedSequence(email) || containsBlockedSequence(phone)) {
       return new Response(JSON.stringify({ ok: false, error: 'Datos invalidos' }), {
@@ -178,6 +182,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         contact_name: contactName || null,
         contact_email: email || null,
         contact_phone: phone || null,
+        contact_document_type: contactDocumentType || null,
+        contact_document_number: contactDocumentNumber || null,
         country_group: countryGroup,
         currency,
         total_amount: totalAmount,

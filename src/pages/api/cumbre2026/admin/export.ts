@@ -49,7 +49,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   const { data: bookings, error: bookingsError } = await supabaseAdmin
     .from('cumbre_bookings')
-    .select('id, contact_name, contact_email, contact_phone, country_group, currency, total_amount, total_paid, status, deposit_threshold, created_at')
+    .select('id, contact_name, contact_email, contact_phone, contact_document_type, contact_document_number, contact_country, contact_city, contact_church, church_id, source, created_by, country_group, currency, total_amount, total_paid, status, deposit_threshold, created_at')
     .order('created_at', { ascending: false });
 
   if (bookingsError) {
@@ -65,6 +65,14 @@ export const GET: APIRoute = async ({ request }) => {
     'contact_name',
     'contact_email',
     'contact_phone',
+    'contact_document_type',
+    'contact_document_number',
+    'contact_country',
+    'contact_city',
+    'contact_church',
+    'booking_church_id',
+    'booking_source',
+    'booking_created_by',
     'country_group',
     'currency',
     'total_amount',
@@ -124,7 +132,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   const { data: payments } = await supabaseAdmin
     .from('cumbre_payments')
-    .select('booking_id, amount, status, created_at')
+    .select('id, booking_id, reference, provider, amount, currency, status, installment_id, raw_event, created_at')
     .in('booking_id', bookingIds)
     .order('created_at', { ascending: false });
 
@@ -160,6 +168,14 @@ export const GET: APIRoute = async ({ request }) => {
         csvEscape(booking?.contact_name),
         csvEscape(booking?.contact_email),
         csvEscape(booking?.contact_phone),
+        csvEscape(booking?.contact_document_type),
+        csvEscape(booking?.contact_document_number),
+        csvEscape(booking?.contact_country),
+        csvEscape(booking?.contact_city),
+        csvEscape(booking?.contact_church),
+        csvEscape(booking?.church_id),
+        csvEscape(booking?.source),
+        csvEscape(booking?.created_by),
         csvEscape(booking?.country_group),
         csvEscape(booking?.currency),
         csvEscape(booking?.total_amount),
@@ -214,6 +230,14 @@ export const GET: APIRoute = async ({ request }) => {
         csvEscape(booking?.contact_name),
         csvEscape(booking?.contact_email),
         csvEscape(booking?.contact_phone),
+        csvEscape(booking?.contact_document_type),
+        csvEscape(booking?.contact_document_number),
+        csvEscape(booking?.contact_country),
+        csvEscape(booking?.contact_city),
+        csvEscape(booking?.contact_church),
+        csvEscape(booking?.church_id),
+        csvEscape(booking?.source),
+        csvEscape(booking?.created_by),
         csvEscape(booking?.country_group),
         csvEscape(booking?.currency),
         csvEscape(booking?.total_amount),

@@ -100,6 +100,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     }
     const recurringFlag = String(data.get('isRecurring') || '').toLowerCase();
     const isRecurring = ['true', '1', 'on', 'yes'].includes(recurringFlag);
+    const certificateFlag = String(data.get('needCertificate') || '').toLowerCase();
+    const needCertificate = ['true', '1', 'on', 'yes'].includes(certificateFlag);
 
     const baseUrl = resolveBaseUrl(request);
     const successUrl = (import.meta.env?.STRIPE_SUCCESS_URL ?? process.env.STRIPE_SUCCESS_URL) || `${baseUrl}/donaciones/gracias`;
@@ -128,6 +130,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       is_recurring: isRecurring,
       donor_country: donorInfo.country,
       donor_city: donorInfo.city,
+      donation_description: description,
+      need_certificate: needCertificate,
       source: 'donaciones-stripe',
       cumbre_booking_id: null,
       raw_event: null,

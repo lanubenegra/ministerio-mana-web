@@ -99,6 +99,9 @@ export const GET = async ({ request }: APIContext) => {
     'donor_document_number',
     'donor_country',
     'donor_city',
+    'is_recurring',
+    'donation_description',
+    'need_certificate',
     'source',
     'cumbre_booking_id',
   ];
@@ -126,6 +129,9 @@ export const GET = async ({ request }: APIContext) => {
     csvEscape(row.donor_document_number),
     csvEscape(row.donor_country),
     csvEscape(row.donor_city),
+    csvEscape(row.is_recurring),
+    csvEscape(row.donation_description),
+    csvEscape(row.need_certificate),
     csvEscape(row.source),
     csvEscape(row.cumbre_booking_id),
   ]);

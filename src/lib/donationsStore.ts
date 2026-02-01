@@ -26,6 +26,8 @@ export type DonationRecord = {
   is_recurring: boolean | null;
   donor_country: string | null;
   donor_city: string | null;
+  donation_description: string | null;
+  need_certificate: boolean | null;
   source: string | null;
   cumbre_booking_id: string | null;
   raw_event?: unknown;
@@ -75,6 +77,8 @@ export async function createDonation(payload: Omit<DonationRecord, 'id'>): Promi
       is_recurring: payload.is_recurring ?? null,
       donor_country: payload.donor_country ?? null,
       donor_city: payload.donor_city ?? null,
+      donation_description: payload.donation_description ?? null,
+      need_certificate: payload.need_certificate ?? null,
       source: payload.source ?? null,
       cumbre_booking_id: payload.cumbre_booking_id ?? null,
       raw_event: payload.raw_event ?? null,

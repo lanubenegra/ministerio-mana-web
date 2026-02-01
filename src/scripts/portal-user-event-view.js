@@ -283,19 +283,80 @@ function renderNotEnrolledView() {
   if (!statusEl) return;
 
   statusEl.innerHTML = `
-    <div class="bg-white rounded-[3rem] p-12 text-center border border-slate-200">
-      <div class="w-20 h-20 bg-yellow-100 rounded-full mx-auto mb-6 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
+    <div class="space-y-6">
+      <!-- Promo Card -->
+      <div class="bg-gradient-to-br from-[#293C74] to-[#1e2b58] rounded-[3rem] p-10 text-white text-center shadow-2xl">
+        <div class="w-20 h-20 bg-brand-teal/20 rounded-full mx-auto mb-6 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <h3 class="text-3xl font-bold mb-3">¡Aún no estás inscrito!</h3>
+        <p class="text-white/80 mb-2 text-lg">Cumbre Mundial 2026</p>
+        <p class="text-brand-teal text-xl font-bold mb-6">Junio 6-8 • La Unión, Valle del Cauca</p>
+        
+        <div class="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-8 text-sm">
+          <div class="bg-white/10 backdrop-blur rounded-xl p-4">
+            <div class="text-2xl mb-2">🙏</div>
+            <div class="font-semibold">3 días de adoración</div>
+          </div>
+          <div class="bg-white/10 backdrop-blur rounded-xl p-4">
+            <div class="text-2xl mb-2">📖</div>
+            <div class="font-semibold">Enseñanza bíblica</div>
+          </div>
+          <div class="bg-white/10 backdrop-blur rounded-xl p-4">
+            <div class="text-2xl mb-2">👥</div>
+            <div class="font-semibold">Comunidad internacional</div>
+          </div>
+        </div>
+        
+        <a href="/eventos/cumbre-mundial-2026/inscripcion" 
+           class="inline-flex items-center gap-3 bg-brand-teal hover:bg-[#2dd4bf] text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-2xl shadow-brand-teal/30 hover:scale-105 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Inscribirme ahora
+        </a>
+        
+        <p class="text-white/50 text-xs mt-6 max-w-lg mx-auto">
+          Reserva tu lugar y el de tu familia. Pago completo o en cuotas disponible.
+        </p>
       </div>
-      <h3 class="text-2xl font-bold text-[#293C74] mb-3">Aún no estás inscrito</h3>
-      <p class="text-slate-500 mb-8 max-w-md mx-auto">
-        Contacta a tu pastor o líder de célula para registrarte en la Cumbre Mundial 2026
-      </p>
-      <a href="#whatsapp" class="inline-flex items-center gap-2 bg-brand-teal text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105">
-        Hablar con mi Pastor
-      </a>
+      
+      <!-- Info adicional -->
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl p-6 border border-slate-100">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-[#293C74] mb-1">¿Necesitas más información?</h4>
+              <p class="text-sm text-slate-600">
+                Visita la <a href="/eventos/cumbre-mundial-2026" class="text-brand-teal underline font-semibold">página del evento</a> para conocer todos los detalles.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-6 border border-slate-100">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-bold text-[#293C74] mb-1">Inscripción grupal</h4>
+              <p class="text-sm text-slate-600">
+                Puedes inscribir a tu familia o grupo completo en un solo proceso.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
