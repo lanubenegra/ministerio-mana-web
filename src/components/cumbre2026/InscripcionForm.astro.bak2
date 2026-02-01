@@ -161,104 +161,126 @@ const formatTestAmount = (value, currency) =>
                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
             </div>
 
-<div
-    class="rounded-3xl border-2 border-brand-teal/30 bg-gradient-to-br from-brand-teal/5 via-white to-brand-navy/5 p-6 shadow-lg shadow-brand-teal/10">
-    <div id="leader-auth-logged" class="hidden">
-        <p class="text-xs font-bold text-brand-teal uppercase tracking-widest">Cuenta del responsable</p>
-        <p class="text-sm text-slate-700 mt-2">Sesión activa. Usaremos tus datos guardados para completar el formulario.
-        </p>
-    </div>
-    <div id="leader-auth-guest" class="space-y-5">
-        <div class="flex items-start gap-4">
-            <div
-                class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-teal to-brand-navy flex items-center justify-center flex-shrink-0 shadow-lg shadow-brand-teal/30">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+               <div id="leader-auth-logged" class="hidden">
+                  <p class="text-[10px] font-bold text-brand-navy uppercase tracking-widest">Cuenta del responsable</p>
+                  <p class="text-xs text-slate-500 mt-1">Sesión activa. Usaremos tus datos guardados para completar el formulario.</p>
+               </div>
+               <div id="leader-auth-guest" class="space-y-4">
+                  <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                     <div>
+                        <p class="text-[10px] font-bold text-brand-navy uppercase tracking-widest">Cuenta del responsable</p>
+                        <p class="text-xs text-slate-500">Crea tu acceso antes del pago para gestionar tu reserva.</p>
+                     </div>
+                     <div class="flex flex-col sm:flex-row gap-2">
+                        <button type="button" id="leader-signup-btn" class="px-4 py-2 rounded-full bg-brand-navy text-white text-xs font-bold hover:brightness-110 transition-all">
+                           Crear cuenta
+                        </button>
+                     </div>
+                  </div>
+                  <div class="grid md:grid-cols-2 gap-3">
+                     <div>
+                        <label class="block text-[10px] font-bold text-brand-navy uppercase tracking-widest ml-1 mb-1">Contraseña</label>
+                        <div class="relative">
+                           <input type="password" id="leader-password" minlength="6"
+                              class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-brand-dark pr-12"
+                              placeholder="••••••••">
+                           <button type="button" id="leader-password-toggle" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-navy transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                           </button>
+                        </div>
+                     </div>
+                     <div>
+                        <label class="block text-[10px] font-bold text-brand-navy uppercase tracking-widest ml-1 mb-1">Confirmar contraseña</label>
+                        <div class="relative">
+                           <input type="password" id="leader-password-confirm" minlength="6"
+                              class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-brand-dark pr-12"
+                              placeholder="••••••••">
+                           <button type="button" id="leader-password-confirm-toggle" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-navy transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <p id="leader-auth-status" class="text-xs text-slate-500 mt-3"></p>
+               <p id="leader-auth-note" class="text-[11px] text-slate-500 mt-2"></p>
             </div>
-            <div class="flex-1">
-                <p class="text-base font-bold text-brand-navy flex items-center gap-2">
-                    Crea tu acceso al portal
-                    <button type="button" id="leader-signup-btn"
-                        class="ml-auto px-5 py-2 rounded-full bg-gradient-to-r from-brand-teal to-brand-navy text-white text-sm font-bold hover:brightness-110 transition-all shadow-md hover:shadow-lg hover:scale-105">
-                        Crear cuenta
-                    </button>
-                </p>
-                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Con tu cuenta podrás gestionar tu reserva y ver
-                    el estado de tu pago en tiempo real.</p>
+             
+             <div class="space-y-1">
+               <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Celular / WhatsApp</label>
+               <input type="tel" name="leader_phone" required placeholder="+57 300..."
+                  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark placeholder:text-slate-400 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all">
             </div>
-        </div>
+            <div class="space-y-1">
+                  <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Tipo de asistencia</label>
+                  <select name="leader_package" id="leader-package" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-brand-dark outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy transition-all">
+                     <option value="lodging">Con alojamiento (evento + alimentación)</option>
+                     <option value="no_lodging">Sin alojamiento (evento + alimentación)</option>
+                  </select>
+               </div>
+         </div>
 
-        <div class="grid md:grid-cols-2 gap-4">
-            <div>
-                <label
-                    class="block text-xs font-bold text-brand-navy uppercase tracking-wider ml-1 mb-2 flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-brand-teal" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    Contraseña
-                </label>
-                <div class="relative group">
-                    <input type="password" id="leader-password" minlength="6"
-                        class="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3.5 text-brand-dark pr-12 focus:border-brand-teal focus:ring-4 focus:ring-brand-teal/20 outline-none transition-all"
-                        placeholder="Mínimo 6 caracteres">
-                    <button type="button" id="leader-password-toggle"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-teal transition-colors focus:outline-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div>
-                <label
-                    class="block text-xs font-bold text-brand-navy uppercase tracking-wider ml-1 mb-2 flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-brand-teal" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Confirmar contraseña
-                </label>
-                <div class="relative group">
-                    <input type="password" id="leader-password-confirm" minlength="6"
-                        class="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3.5 text-brand-dark pr-12 focus:border-brand-teal focus:ring-4 focus:ring-brand-teal/20 outline-none transition-all"
-                        placeholder="Repite la contraseña">
-                    <button type="button" id="leader-password-confirm-toggle"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-teal transition-colors focus:outline-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
+         <div class="pt-4 flex justify-end">
+            <button type="button" class="btn-next bg-brand-teal text-white px-8 py-3 rounded-xl font-bold hover:brightness-110 transition-all">
+               Siguiente &rarr;
+            </button>
+         </div>
+      </div>
 
-        <div class="bg-blue-50/50 border border-blue-200 rounded-xl p-3 flex items-start gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p class="text-[11px] text-blue-800 leading-relaxed">Tu cuenta se activará automáticamente al completar el
-                pago. Podrás acceder al portal para gestionar tu reserva.</p>
-        </div>
-    </div>
-    <p id="leader-auth-status" class="text-xs text-slate-600 mt-3"></p>
-    <p id="leader-auth-note" class="text-xs text-slate-500 mt-2"></p>
-</div>               <button type="button" id="btn-add-person" class="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-white/10">
+      <!-- STEP 2: Group & Companions -->
+      <div id="step-2" class="step-content hidden space-y-8">
+         <h2 class="text-2xl font-bold text-white">Grupo y Acompañantes</h2>
+
+         <!-- Group Mode Selection -->
+         <div class="space-y-4">
+            <h3 class="text-sm font-bold text-white/50 uppercase tracking-wider">¿Vienes solo o acompañado?</h3>
+            <div class="grid grid-cols-2 gap-4">
+               <label class="cursor-pointer">
+                  <input type="radio" name="groupMode" value="SOLO" class="peer sr-only" checked>
+                  <div class="bg-brand-navy/40 border border-white/10 rounded-2xl p-4 text-center hover:bg-white/5 peer-checked:bg-brand-teal peer-checked:text-white peer-checked:border-brand-teal transition-all">
+                     <span class="block text-2xl mb-2">👤</span>
+                     <span class="font-bold">Voy solo</span>
+                  </div>
+               </label>
+               <label class="cursor-pointer">
+                  <input type="radio" name="groupMode" value="GROUP" class="peer sr-only">
+                  <div class="bg-brand-navy/40 border border-white/10 rounded-2xl p-4 text-center hover:bg-white/5 peer-checked:bg-brand-teal peer-checked:text-white peer-checked:border-brand-teal transition-all">
+                     <span class="block text-2xl mb-2">👥</span>
+                     <span class="font-bold">Con grupo / familia</span>
+                  </div>
+               </label>
+            </div>
+         </div>
+
+         <!-- Add Person Form -->
+         <div id="add-person-box" class="space-y-4 hidden pt-6 border-t border-white/10">
+            <h3 class="text-lg font-semibold text-white">Agregar Acompañante</h3>
+            
+            <div class="bg-black/20 border border-white/10 rounded-2xl p-6 space-y-4">
+               <div class="grid md:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Nombre</label>
+                     <input type="text" id="input-name" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all placeholder:text-sm" placeholder="Nombre del acompañante">
+                  </div>
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Edad</label>
+                     <input type="number" id="input-age" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all placeholder:text-sm" placeholder="Años">
+                  </div>
+               </div>
+               
+               <div class="space-y-1 transition-opacity duration-300">
+                   <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Tipo de asistencia</label>
+                   <select id="input-lodging" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-brand-teal focus:ring-1 focus:ring-brand-teal transition-all">
+                      <option value="lodging" class="text-black">Con alojamiento (evento + alimentación)</option>
+                      <option value="no_lodging" class="text-black">Sin alojamiento (evento + alimentación)</option>
+                   </select>
+                   <p class="text-xs text-white/40 mt-1 pl-1">
+                      * Niños hasta 13 años se calculan automáticamente.
+                   </p>
+               </div>
+
+               <button type="button" id="btn-add-person" class="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-white/10">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>

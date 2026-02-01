@@ -99,6 +99,20 @@ curl -L "https://TU-DOMINIO/api/cumbre2026/admin/export?token=TU_SECRETO" \
   -o cumbre-admin.csv
 ```
 
+## Export Todo-en-Uno (reservas + participantes + pagos + cuotas)
+
+Endpoint:
+- `GET /api/cumbre2026/admin/export-all`
+- Header requerido: `x-export-secret: <CUMBRE_ADMIN_EXPORT_SECRET>`
+- Alternativa: `?token=<CUMBRE_ADMIN_EXPORT_SECRET>`
+
+Ejemplo:
+
+```bash
+curl -L "https://TU-DOMINIO/api/cumbre2026/admin/export-all?token=TU_SECRETO" \
+  -o cumbre-admin-all.csv
+```
+
 ## Formulario manual (pagos físicos)
 
 Ruta:
