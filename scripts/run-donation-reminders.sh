@@ -9,4 +9,5 @@ if [[ -z "$SECRET" ]]; then
   exit 1
 fi
 
-curl -sS -X POST "$BASE_URL/api/donations/reminders/run?token=$SECRET"
+curl -sS -X POST "$BASE_URL/api/donations/reminders/run?token=$SECRET" \
+  -H "Origin: $BASE_URL"

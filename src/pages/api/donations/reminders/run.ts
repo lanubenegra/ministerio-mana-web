@@ -80,7 +80,7 @@ function isManualPaymentMethod(method: string | null | undefined): boolean {
   return value !== 'CARD';
 }
 
-export const POST: APIRoute = async ({ request }) => {
+async function handleRun(request: Request): Promise<Response> {
   if (!validateCron(request)) {
     void logSecurityEvent({
       type: 'webhook_invalid',
@@ -205,4 +205,7 @@ export const POST: APIRoute = async ({ request }) => {
     status: 200,
     headers: { 'content-type': 'application/json' },
   });
-};
+}
+
+export const POST: APIRoute = async ({ request }) => handleRun(request);
+export const GET: APIRoute = async ({ request }) => handleRun(request);

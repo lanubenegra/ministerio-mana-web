@@ -330,11 +330,28 @@ async function loadDashboardData(authResult) {
     const myRole = portalProfile?.role || 'user';
     const allowedDashboardRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator', 'church_admin'];
 
-    // STRICT: Remove or Hide "Gestión Sede" tab for regular users
-    if (!allowedDashboardRoles.includes(myRole) && tabIglesia) {
-      tabIglesia.remove(); // Completely remove from DOM
-      const navLinkIglesia = document.querySelector('[data-tab="iglesia"]');
-      if (navLinkIglesia) navLinkIglesia.style.display = 'none';
+    // Tab Iglesia (Eventos) - Show to ALL users, but content varies by role
+    const isManagementRole = allowedDashboardRoles.includes(myRole);
+
+
+    if (tabIglesia) {
+      if (isManagementRole) {
+        // Pastors/Admins: Show management view (church selector + booking list)
+        const churchDashboardUser = document.getElementById('church-dashboard-user');
+        if (churchDashboardUser) churchDashboardUser.classList.add('hidden');
+      } else {
+        // Regular users: Show personal event info (countdown, payment status, group)
+        const churchDashboardManagement = document.getElementById('church-dashboard-management');
+        if (churchDashboardManagement) churchDashboardManagement.classList.add('hidden');
+
+        const churchDashboardUser = document.getElementById('church-dashboard-user');
+        if (churchDashboardUser) churchDashboardUser.classList.remove('hidden');
+
+        // Load user's own event data
+        if (typeof loadMyEventInfo === 'function') {
+          loadMyEventInfo(portalAuthHeaders);
+        }
+      }
     }
 
     // Gestión de Eventos: Only Pastors and Admins (can create local/national events)

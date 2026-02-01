@@ -321,14 +321,31 @@ import Sidebar from '@components/portal/Sidebar.astro';
                 </div>
               </header>
 
-              <!-- Global Empty State (When no church selected) -->
-              <div id="church-dashboard-empty" class="py-20 text-center bg-white border border-slate-100 rounded-[3rem] shadow-sm">
-                  <div class="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                  </div>
-                  <h3 class="text-xl font-bold text-[#293C74] mb-2">Selecciona una iglesia</h3>
-                  <p class="text-slate-500 max-w-sm mx-auto">Para ver estadísticas, inscritos y gestionar eventos, selecciona una sede en el menú superior.</p>
+              <!-- USER VIEW: Personal Event Info (For Regular Users) -->
+              <div id="church-dashboard-user" class="hidden space-y-6">
+                <!-- Countdown -->
+                <div id="event-countdown"></div>
+                
+                <!-- Payment Status / Enrollment Info -->
+                <div id="my-payment-status"></div>
+                
+                <!-- My Group Members -->
+                <div id="my-group-members"></div>
+                
+                <!-- WhatsApp Help Button -->
+                <div id="event-whatsapp"></div>
               </div>
+
+              <!-- MANAGEMENT VIEW: Church Management (For Pastors/Admins) -->
+              <div id="church-dashboard-management">
+                <!-- Global Empty State (When no church selected) -->
+                <div id="church-dashboard-empty" class="py-20 text-center bg-white border border-slate-100 rounded-[3rem] shadow-sm">
+                    <div class="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-[#293C74] mb-2">Selecciona una iglesia</h3>
+                    <p class="text-slate-500 max-w-sm mx-auto">Para ver estadísticas, inscritos y gestionar eventos, selecciona una sede en el menú superior.</p>
+                </div>
 
               <!-- Dashboard Details Content (Hidden until church selected) -->
               <div id="church-dashboard-content" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -500,6 +517,8 @@ import Sidebar from '@components/portal/Sidebar.astro';
 
                 </div>
               </div>
+              <!-- /church-dashboard-management -->
+            </div>
 
             </div>
 
@@ -592,5 +611,9 @@ import Sidebar from '@components/portal/Sidebar.astro';
 
   <script>
     import '@scripts/portal-dashboard.js';
+    import '@scripts/portal-user-event-view.js';
   </script>
 </BaseLayout>
+
+</body>
+</html>
