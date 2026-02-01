@@ -57,9 +57,10 @@ export const POST: APIRoute = async ({ request }) => {
         }
 
         // Send welcome email via SendGrid
+        // Since user is already created, we use 'magiclink' instead of 'invite'
         try {
             const emailResult = await sendAuthLink({
-                kind: 'invite',
+                kind: 'magiclink',
                 email: email,
                 redirectTo: `${new URL(request.url).origin}/portal`
             });
