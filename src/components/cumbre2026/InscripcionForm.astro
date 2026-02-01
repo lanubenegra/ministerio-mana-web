@@ -1191,3 +1191,33 @@ const formatTestAmount = (value, currency) =>
   window.addEventListener('DOMContentLoaded', () => APP.init());
 
 </script>
+<script>
+  // Password toggle functionality
+  const initPasswordToggles = () => {
+    const pwdToggle = document.getElementById('leader-password-toggle');
+    const pwdInput = document.getElementById('leader-password');
+    
+    if (pwdToggle && pwdInput) {
+      pwdToggle.addEventListener('click', () => {
+        const isPassword = pwdInput.type === 'password';
+        pwdInput.type = isPassword ? 'text' : 'password';
+      });
+    }
+    
+    const pwdConfirmToggle = document.getElementById('leader-password-confirm-toggle');
+    const pwdConfirmInput = document.getElementById('leader-password-confirm');
+    
+    if (pwdConfirmToggle && pwdConfirmInput) {
+      pwdConfirmToggle.addEventListener('click', () => {
+        const isPassword = pwdConfirmInput.type === 'password';
+        pwdConfirmInput.type = isPassword ? 'text' : 'password';
+      });
+    }
+  };
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPasswordToggles);
+  } else {
+    initPasswordToggles();
+  }
+</script>
