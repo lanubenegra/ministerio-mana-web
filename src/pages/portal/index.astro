@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import ChurchSelector from '@components/portal/ChurchSelector.astro';
+import RegistrationModal from '@components/portal/RegistrationModal.astro';
 ---
 
 <BaseLayout title="Portal Maná | Ministerio Maná" description="Gestiona tus aportes y eventos en el Portal Maná." hideHeader hideFooter>
@@ -549,152 +551,11 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       </div>
     </div>
 
-    <!-- Manual Registration Modal -->
-    <div id="manual-registration-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
-      <div class="w-full max-w-4xl bg-white rounded-[2rem] shadow-2xl border border-slate-100 my-8 relative flex flex-col max-h-[90vh]">
-        <!-- Modal Header -->
-        <div class="p-8 border-b border-slate-100 flex items-start justify-between sticky top-0 bg-white z-10 rounded-t-[2rem]">
-          <div>
-            <p class="text-[10px] font-bold text-[#293C74] uppercase tracking-[0.3em]">Nueva Inscripción</p>
-            <h2 class="text-2xl font-display font-bold text-[#293C74]">Registrar Participante</h2>
-          </div>
-          <button id="btn-close-manual-modal" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
+    <!-- Church Selector Modal -->
+    <ChurchSelector />
 
-        <!-- Modal Body (Scrollable) -->
-        <div class="p-8 overflow-y-auto">
-          <form id="manual-registration-form" class="space-y-8">
-            
-            <!-- Section 1: Identificación y Ubicación -->
-            <div class="space-y-4">
-              <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
-                <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">1</span>
-                Identificación y Ubicación
-              </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo Doc</label>
-                    <select id="reg-doc-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
-                      <option value="CC">Cédula (CC)</option>
-                      <option value="TI">Tarjeta Identidad (TI)</option>
-                      <option value="PA">Pasaporte (PA)</option>
-                      <option value="CE">Cédula Extranjería (CE)</option>
-                    </select>
-                 </div>
-                 <div class="space-y-1 lg:col-span-3">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Número de Documento</label>
-                    <input type="text" id="reg-doc-number" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Número de identificación">
-                 </div>
-                 <div class="space-y-1 lg:col-span-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">País</label>
-                    <input type="text" id="reg-country" value="Colombia" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
-                 </div>
-                 <div class="space-y-1 lg:col-span-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Ciudad</label>
-                    <input type="text" id="reg-city" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Ciudad de residencia">
-                 </div>
-              </div>
-            </div>
-
-            <hr class="border-slate-100">
-
-            <!-- Section 2: Datos Personales -->
-             <div class="space-y-4">
-              <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
-                <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">2</span>
-                Datos Personales
-              </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre Completo</label>
-                    <input type="text" id="reg-name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Nombres y Apellidos">
-                 </div>
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Email</label>
-                    <input type="email" id="reg-email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="correo@ejemplo.com">
-                 </div>
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Teléfono</label>
-                    <input type="tel" id="reg-phone" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="+57 300...">
-                 </div>
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Género</label>
-                    <select id="reg-gender" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
-                      <option value="">Seleccionar</option>
-                      <option value="M">Masculino</option>
-                      <option value="F">Femenino</option>
-                    </select>
-                 </div>
-              </div>
-            </div>
-
-            <hr class="border-slate-100">
-
-            <!-- Section 3: Detalles del Evento -->
-            <div class="space-y-4">
-              <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
-                <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">3</span>
-                Detalles de Inscripción
-              </h3>
-               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Iglesia / Sede</label>
-                    <!-- This input will be auto-filled if the user is a church admin, otherwise manual -->
-                    <input type="text" id="reg-church" list="churches-list" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Escribe para buscar...">
-                    <datalist id="churches-list"></datalist>
-                 </div>
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preferencia Alimentaria</label>
-                    <select id="reg-menu" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
-                      <option value="general">Menú General</option>
-                      <option value="vegetarian">Vegetariano</option>
-                      <option value="vegan">Vegano</option>
-                      <option value="kids">Menú Infantil</option>
-                    </select>
-                 </div>
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo de Registro</label>
-                    <select id="reg-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
-                      <option value="full_access">Completo (Con Alojamiento)</option>
-                      <option value="day_pass">Solo Entrada (Sin Alojamiento)</option>
-                    </select>
-                 </div>
-                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Modo de Pago</label>
-                    <select id="reg-payment-mode" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
-                      <option value="FULL">Pago Total Inmediato</option>
-                      <option value="INSTALLMENTS">Pago a Cuotas</option>
-                      <option value="DEPOSIT">Solo Abono Inicial</option>
-                    </select>
-                 </div>
-              </div>
-            </div>
-          
-            <!-- Payment Amount Highlight -->
-            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div>
-                 <p class="text-xs font-bold text-slate-500 uppercase">Monto a registrar hoy</p>
-                 <p class="text-xs text-slate-400">Si es abono, ingresa solo lo recibido.</p>
-              </div>
-              <div class="relative w-full md:w-auto">
-                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#293C74] font-bold">$</span>
-                 <input type="number" id="reg-amount" class="w-full md:w-48 pl-8 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xl font-bold text-[#293C74] outline-none focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74]" placeholder="0">
-              </div>
-            </div>
-
-            <div class="pt-4 flex items-center justify-end gap-4">
-               <span id="manual-reg-status" class="text-sm text-slate-500"></span>
-               <button type="button" id="btn-cancel-manual-reg" class="px-6 py-3 rounded-xl text-slate-500 font-bold hover:bg-slate-100 transition-colors">Cancelar</button>
-               <button type="submit" class="bg-brand-teal text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all">Registrar Participante</button>
-            </div>
-
-          </form>
-        </div>
-        
-      </div>
-    </div>
+    <!-- Advanced Registration Modal -->
+    <RegistrationModal />
   </main>
 
   <style>

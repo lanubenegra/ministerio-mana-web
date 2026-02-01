@@ -2200,3 +2200,56 @@ if (syncBtn) {
     }
   });
 }
+
+// ======================================
+// Advanced Registration Modal & Church Selector Initialization
+// ======================================
+import { ChurchSelector } from './ChurchSelector.js';
+import { RegistrationModal } from './RegistrationModal.js';
+
+let advancedChurchSelector;
+let advancedRegistrationModal;
+
+// Initialize components when DOM is ready
+function initAdvancedComponents() {
+  // Initialize Church Selector
+  churchSelector = new ChurchSelector(portalChurchesCatalog || []);
+
+  // Initialize Registration Modal
+  registrationModal = new RegistrationModal();
+
+  // Connect church selector button
+  const btnOpenChurchSelector = document.getElementById('btn-open-church-selector');
+  if (btnOpenChurchSelector) {
+    btnOpenChurchSelector.addEventListener('click', () => {
+      advancedChurchSelector.open();
+    });
+  }
+
+  // When a church is selected, pass it to the registration modal
+  advancedChurchSelector.onSelect((church) => {
+    advancedRegistrationModal.setChurch(church);
+  });
+
+  // Update church selector data when catalog is loaded
+  if (portalChurchesCatalog && portalChurchesCatalog.length > 0) {
+    advancedChurchSelector.setChurches(portalChurchesCatalog);
+  }
+
+  // Connect the "Registrar Participante" button to open the new modal
+  const churchFormToggle = document.getElementById('church-form-toggle');
+  if (churchFormToggle) {
+    churchFormToggle.addEventListener('click', () => {
+      advancedRegistrationModal.open();
+    });
+  }
+}
+
+// Call after loadDashboardData completes
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initAdvancedComponents, 500); // Give time for data to load
+  });
+} else {
+  setTimeout(initAdvancedComponents, 500);
+}
