@@ -2212,16 +2212,33 @@ let advancedRegistrationModal;
 
 // Initialize components when DOM is ready
 function initAdvancedComponents() {
+  const modalElement = document.getElementById('manual-registration-modal');
+
+  // If modal not found yet, retry in a moment
+  if (!modalElement) {
+    // console.log('Waiting for Registration Modal DOM...');
+    setTimeout(initAdvancedComponents, 200);
+    return;
+  }
+
   // Initialize Church Selector
-  churchSelector = new ChurchSelector(portalChurchesCatalog || []);
+  if (!advancedChurchSelector) {
+    advancedChurchSelector = new ChurchSelector(portalChurchesCatalog || []);
+  }
 
   // Initialize Registration Modal
-  registrationModal = new RegistrationModal();
+  if (!advancedRegistrationModal) {
+    advancedRegistrationModal = new RegistrationModal();
+  }
 
   // Connect church selector button
   const btnOpenChurchSelector = document.getElementById('btn-open-church-selector');
   if (btnOpenChurchSelector) {
-    btnOpenChurchSelector.addEventListener('click', () => {
+    // Clone to remove old listeners
+    const newBtn = btnOpenChurchSelector.cloneNode(true);
+    btnOpenChurchSelector.parentNode.replaceChild(newBtn, btnOpenChurchSelector);
+
+    newBtn.addEventListener('click', () => {
       advancedChurchSelector.open();
     });
   }
@@ -2239,7 +2256,11 @@ function initAdvancedComponents() {
   // Connect the "Registrar Participante" button to open the new modal
   const churchFormToggle = document.getElementById('church-form-toggle');
   if (churchFormToggle) {
-    churchFormToggle.addEventListener('click', () => {
+    // Clone to remove old listeners
+    const newToggle = churchFormToggle.cloneNode(true);
+    churchFormToggle.parentNode.replaceChild(newToggle, churchFormToggle);
+
+    newToggle.addEventListener('click', () => {
       advancedRegistrationModal.open();
     });
   }
