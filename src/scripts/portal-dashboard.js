@@ -266,6 +266,11 @@ async function loadDashboardData(authResult) {
     if (churchesRes.ok) {
       portalChurchesCatalog = await churchesRes.json();
       populateChurchesUI(portalChurchesCatalog);
+
+      // Update advanced church selector if it exists
+      if (window.advancedChurchSelector && portalChurchesCatalog.length > 0) {
+        window.advancedChurchSelector.setChurches(portalChurchesCatalog);
+      }
     }
 
     dlog('[DEBUG] sessionRes status:', sessionRes.status);
@@ -503,6 +508,11 @@ async function loadChurchSelector(headers = {}) {
 
     const churches = payload.churches || [];
     portalChurchesCatalog = churches;
+
+    // Update advanced church selector if it exists
+    if (window.advancedChurchSelector && churches.length > 0) {
+      window.advancedChurchSelector.setChurches(churches);
+    }
     const isAdmin = Boolean(payload.isAdmin);
     churchSelectorInput.innerHTML = '<option value="">Selecciona una iglesia</option>';
     churches.forEach((church) => {
@@ -2224,6 +2234,8 @@ function initAdvancedComponents() {
   // Initialize Church Selector
   if (!advancedChurchSelector) {
     advancedChurchSelector = new ChurchSelector(portalChurchesCatalog || []);
+    // Make it accessible globally for data syncing
+    window.advancedChurchSelector = advancedChurchSelector;
   }
 
   // Initialize Registration Modal
