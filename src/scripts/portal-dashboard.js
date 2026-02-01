@@ -238,6 +238,26 @@ async function fetchDashboardData(session) {
       token = data?.session?.access_token || null;
     }
 
+    // Fallback: Try to read from localStorage directly if SDK failed but token exists
+    if (!token) {
+      try {
+        const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (key) {
+          const sessionStr = localStorage.getItem(key);
+          if (sessionStr) {
+            const sessionObj = JSON.parse(sessionStr);
+            // Check expiry if possible, but backend will validate anyway
+            if (sessionObj.access_token) {
+              dlog('[DEBUG] Recovered token from localStorage fallback');
+              token = sessionObj.access_token;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[DEBUG] LocalStorage fallback error', e);
+      }
+    }
+
     if (!token) {
       dlog('[DEBUG] No token. Using password session cookie.');
     }
