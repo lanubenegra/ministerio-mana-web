@@ -1,0 +1,285 @@
+---
+// Advanced Registration Modal Component
+---
+
+<!-- Manual Registration Modal -->
+<div id="manual-registration-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+  <div class="w-full max-w-6xl bg-white rounded-[2rem] shadow-2xl border border-slate-100 my-8 relative flex flex-col max-h-[90vh]">
+    
+    <!-- Modal Header -->
+    <div class="p-6 md:p-8 border-b border-slate-100 flex items-start justify-between sticky top-0 bg-white z-10 rounded-t-[2rem]">
+      <div>
+        <p class="text-[10px] font-bold text-[#293C74] uppercase tracking-[0.3em]">Nueva Inscripción</p>
+        <h2 class="text-2xl font-display font-bold text-[#293C74]">Registrar Participante</h2>
+      </div>
+      <button id="btn-close-manual-modal" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+
+    <!-- Modal Body (Scrollable) -->
+    <div class="p-6 md:p-8 overflow-y-auto flex-1">
+      <form id="manual-registration-form" class="grid lg:grid-cols-[2fr_1fr] gap-8">
+        
+        <!-- Left Column: Form Fields -->
+        <div class="space-y-8">
+          
+          <!-- Step 1: Responsable del Grupo -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">1</span>
+                Responsable del Grupo
+              </h3>
+              <p class="text-xs text-slate-400">El responsable se agrega automáticamente</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo Doc</label>
+                <select id="reg-leader-doc-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                  <option value="CC">Cédula (CC)</option>
+                  <option value="TI">Tarjeta Identidad (TI)</option>
+                  <option value="PA">Pasaporte (PA)</option>
+                  <option value="CE">Cédula Extranjería (CE)</option>
+                </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Número de Documento</label>
+                <input type="text" id="reg-leader-doc-number" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Número de identificación">
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre Completo</label>
+              <input type="text" id="reg-leader-name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Nombres y Apellidos">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Email (Opcional)</label>
+                <input type="email" id="reg-leader-email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="correo@ejemplo.com">
+                <p class="text-xs text-slate-400 ml-1">Para enviar bienvenida y acceso al portal</p>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Celular / WhatsApp</label>
+                <input type="tel" id="reg-leader-phone" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="+57 300...">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Edad</label>
+                <input type="number" id="reg-leader-age" min="0" max="120" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Años">
+              </div>
+              <div class="space-y-1 md:col-span-2">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo de Asistencia</label>
+                <select id="reg-leader-package" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                  <option value="lodging">Con Alojamiento (Evento + Alimentación)</option>
+                  <option value="no_lodging">Sin Alojamiento (Evento + Alimentación)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-slate-100">
+
+          <!-- Step 2: Acompañantes -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">2</span>
+                Acompañantes (Opcional)
+              </h3>
+              <button type="button" id="btn-add-companion" class="px-4 py-2 bg-brand-teal/10 text-brand-teal rounded-xl text-xs font-bold hover:bg-brand-teal hover:text-white transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                Añadir Persona
+              </button>
+            </div>
+
+            <!-- Add Companion Form (Hidden by default) -->
+            <div id="add-companion-form" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre</label>
+                  <input type="text" id="companion-name" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Nombre del acompañante">
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Edad</label>
+                  <input type="number" id="companion-age" min="0" max="120" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Años">
+                  <p class="text-xs text-slate-400 ml-1">El precio se calcula automáticamente según la edad</p>
+                </div>
+              </div>
+              <div class="space-y-1" id="companion-package-container">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo de Asistencia</label>
+                <select id="companion-package" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                  <option value="lodging">Con Alojamiento</option>
+                  <option value="no_lodging">Sin Alojamiento</option>
+                </select>
+              </div>
+              <div class="flex justify-end gap-2">
+                <button type="button" id="btn-cancel-companion" class="px-4 py-2 text-slate-500 hover:bg-slate-200 rounded-xl text-xs font-bold transition-colors">Cancelar</button>
+                <button type="button" id="btn-save-companion" class="px-4 py-2 bg-brand-teal text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all">Agregar a la Lista</button>
+              </div>
+            </div>
+
+            <!-- Companions List -->
+            <div id="companions-list" class="space-y-2">
+              <!-- Populated dynamically -->
+            </div>
+            <div id="companions-empty" class="text-center py-6 text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              No hay acompañantes agregados
+            </div>
+          </div>
+
+          <hr class="border-slate-100">
+
+          <!-- Step 3: Detalles de Inscripción -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">3</span>
+              Detalles de Inscripción
+            </h3>
+            
+            <div class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Iglesia / Sede</label>
+              <button type="button" id="btn-open-church-selector" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-left text-[#293C74] hover:border-brand-teal transition-colors flex items-center justify-between">
+                <span id="selected-church-display" class="text-slate-400">Seleccionar iglesia...</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <input type="hidden" id="selected-church-id">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">País</label>
+                <input type="text" id="reg-country" value="Colombia" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Ciudad</label>
+                <input type="text" id="reg-city" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Ciudad">
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-slate-100">
+
+          <!-- Step 4: Método de Pago -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">4</span>
+              Método de Pago
+            </h3>
+            
+            <div class="grid gap-3">
+              <!-- Full Payment -->
+              <label class="cursor-pointer">
+                <input type="radio" name="payment_option" value="FULL" class="peer sr-only" checked>
+                <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 peer-checked:border-brand-teal peer-checked:bg-brand-teal/5 transition-all">
+                  <span class="text-2xl">💳</span>
+                  <div class="flex-1">
+                    <span class="block font-bold text-[#293C74]">Pago Total (Efectivo)</span>
+                    <span class="block text-xs text-slate-500">El participante pagó el 100% en efectivo</span>
+                  </div>
+                </div>
+              </label>
+              
+              <!-- Deposit -->
+              <label class="cursor-pointer">
+                <input type="radio" name="payment_option" value="DEPOSIT" class="peer sr-only">
+                <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 peer-checked:border-brand-teal peer-checked:bg-brand-teal/5 transition-all">
+                  <span class="text-2xl">🏦</span>
+                  <div class="flex-1">
+                    <span class="block font-bold text-[#293C74]">Abono Inicial (50%)</span>
+                    <span class="block text-xs text-slate-500">Paga <span id="deposit-amount-label" class="font-bold text-brand-teal">$0</span> para reservar</span>
+                  </div>
+                </div>
+              </label>
+
+              <!-- Installments -->
+              <label class="cursor-pointer">
+                <input type="radio" name="payment_option" value="INSTALLMENTS" class="peer sr-only">
+                <div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 peer-checked:border-brand-teal peer-checked:bg-brand-teal/5 transition-all">
+                  <span class="text-2xl">📅</span>
+                  <div class="flex-1">
+                    <span class="block font-bold text-[#293C74]">Plan de Cuotas</span>
+                    <span class="block text-xs text-slate-500">Paga mes a mes hasta Mayo 2026</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <!-- Installment Details (Hidden by default) -->
+            <div id="installment-details" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+              <h4 class="font-bold text-[#293C74] text-sm">Configurar Cuotas</h4>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="installment_frequency" value="MONTHLY" class="text-brand-teal focus:ring-brand-teal" checked>
+                  <span class="text-sm text-[#293C74]">Mensual</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="installment_frequency" value="BIWEEKLY" class="text-brand-teal focus:ring-brand-teal">
+                  <span class="text-sm text-[#293C74]">Quincenal</span>
+                </label>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                <div class="bg-white p-3 rounded-lg border border-slate-200">
+                  <span class="block text-xs text-slate-400 uppercase">Cuotas</span>
+                  <span class="block font-bold text-[#293C74] text-lg" id="installment-count">1</span>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-slate-200">
+                  <span class="block text-xs text-slate-400 uppercase">Valor Aprox</span>
+                  <span class="block font-bold text-[#293C74] text-lg" id="installment-amount">$0</span>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-slate-200">
+                  <span class="block text-xs text-slate-400 uppercase">Finaliza</span>
+                  <span class="block font-bold text-[#293C74] text-lg">Mayo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Summary Sticky -->
+        <div class="lg:sticky lg:top-8 h-fit">
+          <div class="bg-gradient-to-br from-[#293C74] to-[#1e2b58] rounded-2xl p-6 shadow-xl border border-white/10">
+            <h3 class="text-xs font-bold text-brand-teal uppercase tracking-widest mb-4">Resumen de Inscripción</h3>
+            
+            <div id="summary-list" class="space-y-2 mb-6 min-h-[60px]">
+              <p class="italic text-white/30 text-xs">Agrega participantes...</p>
+            </div>
+
+            <div class="border-t border-white/10 pt-4 space-y-2">
+              <div class="flex justify-between text-white/60 text-sm">
+                <span>Subtotal</span>
+                <span id="summary-subtotal">$0</span>
+              </div>
+              <div class="flex justify-between text-white text-xl font-bold">
+                <span>Total</span>
+                <span id="summary-total">$0</span>
+              </div>
+            </div>
+            
+            <div class="mt-6 p-3 bg-brand-teal/10 rounded-lg border border-brand-teal/20">
+              <p class="text-[10px] text-white/70 text-center leading-tight">
+                * Los precios se calculan automáticamente según edad y tipo de alojamiento
+              </p>
+            </div>
+
+            <div class="mt-6 space-y-3">
+              <button type="button" id="btn-cancel-manual-reg" class="w-full py-3 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-colors font-bold">Cancelar</button>
+              <button type="submit" class="w-full bg-gradient-to-r from-brand-teal to-[#4CC9E0] text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:brightness-110 transition-transform hover:-translate-y-0.5">
+                Registrar Grupo
+              </button>
+            </div>
+            
+            <div id="manual-reg-status" class="mt-4 text-sm text-center text-white/60"></div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+</div>
