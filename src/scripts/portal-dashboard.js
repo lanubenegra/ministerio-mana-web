@@ -230,158 +230,159 @@ function switchTab(tabId) {
 async function loadDashboardData(authResult) {
   dlog('[DEBUG] loadDashboardData called with mode:', authResult.mode);
 
-  const token = authResult.token;
-  const sessionUser = authResult.user;
+  try {
+    const token = authResult.token;
+    const sessionUser = authResult.user;
 
-  // Update global state
-  authMode = authResult.mode;
-  if (sessionUser) {
-    portalProfile = sessionUser;
-  }
-
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  portalAuthHeaders = headers;
-  // 2. Parallelized Initial Data Fetching
-
-  dlog('[DEBUG] Starting Promise.all for API requests...');
-
-  const promises = [
-    fetch('/api/portal/session', { headers, credentials: 'include' }),
-    fetch('/api/cuenta/resumen', { headers, credentials: 'include' })
-  ];
-
-  if (token && supabase) {
-    promises.push(supabase.auth.getUser());
-  } else {
-    promises.push(Promise.resolve({ data: { user: null } })); // Mock for no-token
-  }
-
-  const [sessionRes, resumenRes, { data: userData }] = await Promise.all(promises);
-  dlog('[DEBUG] Promise.all completed.');
-  dlog('[DEBUG] sessionRes status:', sessionRes.status);
-  dlog('[DEBUG] resumenRes status:', resumenRes.status);
-  dlog('[DEBUG] userData:', userData);
-
-  if (!sessionRes.ok) {
-    console.error('[DEBUG] /api/portal/session failed:', sessionRes.status, sessionRes.statusText);
-    const text = await sessionRes.text();
-    console.error('[DEBUG] /api/portal/session body:', text);
-    throw new Error(`Session API error: ${sessionRes.status}`);
-  }
-
-  const sessionPayload = await sessionRes.json();
-  dlog('[DEBUG] sessionPayload:', sessionPayload);
-  if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
-
-  let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
-  const resData = await resumenRes.json();
-  dlog('[DEBUG] resData (resumen):', resData);
-  if (!resumenRes.ok || !resData.ok) {
-    // Optional: Log error but continue with minimal profile?
-    dwarn('Could not load resumen:', resData.error);
-  } else {
-    payload = resData;
-  }
-
-  authMode = sessionPayload.mode || 'supabase';
-  portalProfile = sessionPayload.profile || {};
-  portalMemberships = sessionPayload.memberships || [];
-  portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
-  portalIsSuperadmin = portalProfile?.role === 'superadmin';
-
-  dlog('[DEBUG] Data loaded. Profile:', portalProfile);
-
-  const hasChurchRole = (portalMemberships || []).some(
-    (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
-  );
-  const hasChurchAccess = portalIsAdmin || hasChurchRole;
-  const membershipChurch = portalMemberships.find((item) => item?.church?.id)?.church || null;
-
-  if (!portalSelectedChurchId && membershipChurch?.id) {
-    portalSelectedChurchId = membershipChurch.id;
-  }
-  if (churchNameInput && membershipChurch?.name && !portalIsAdmin) {
-    churchNameInput.value = membershipChurch.name;
-    churchNameInput.setAttribute('readonly', 'readonly');
-    churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
-  }
-
-  const user = userData?.user;
-
-  const activeUser = payload.user || {};
-  const name = activeUser.fullName || user?.user_metadata?.full_name || 'Usuario';
-  profileName.value = name;
-  welcomeName.textContent = name.split(' ')[0];
-  profileEmail.value = activeUser.email || user?.email || '';
-  if (profileRole) profileRole.value = portalProfile?.role || 'user';
-  profilePhone.value = portalProfile.phone || '';
-  profileCity.value = portalProfile.city || '';
-  profileCountry.value = portalProfile.country || '';
-  profileAffiliation.value = portalProfile.affiliation_type || '';
-  profileChurchName.value = portalProfile.church_name || '';
-  toggleChurchField(profileAffiliation.value);
-
-  if (portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin') {
-    if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Eventos';
-    if (iglesiaTitle) iglesiaTitle.textContent = 'Cumbre Mundial 2026';
-    if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general del evento para gestión de sedes y registros físicos.';
-  }
-
-  // Calculations for highlights
-  let totalPaidAll = 0;
-  payload.bookings?.forEach(b => totalPaidAll += (b.total_paid || 0));
-  statTotalPaid.textContent = formatCurrency(totalPaidAll, payload.bookings?.[0]?.currency);
-
-  const activePlan = payload.plans?.find(p => p.status === 'ACTIVE');
-  if (activePlan) {
-    statNextDue.textContent = formatDate(activePlan.next_due_date);
-    planHighlight.classList.remove('hidden');
-    highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
-    highlightDate.textContent = formatDate(activePlan.next_due_date);
-  }
-
-  renderBookings(payload.bookings || []);
-  renderPlans(payload.plans || [], payload.bookings || []);
-  renderInstallments(payload.installments || [], payload.plans || [], payload.bookings || []);
-  renderPayments(payload.payments || []);
-  renderMemberships(portalMemberships);
-  setupInviteAccess();
-  initAdminInvite();
-  // 5. Reveal Dashboard (Eager Loading)
-  loadingEl.classList.add('hidden');
-  contentEl.classList.remove('hidden');
-  gsap.from(contentEl, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
-
-  // 6. Background Initialization (Parallelized)
-  const backgroundTasks = [];
-  if (hasChurchAccess) {
-    backgroundTasks.push(loadChurchSelector(headers));
-    backgroundTasks.push(loadChurchBookings(headers));
-    backgroundTasks.push(loadChurchPayments(headers));
-    backgroundTasks.push(loadChurchInstallments(headers));
-    backgroundTasks.push(loadChurchMembers(headers));
-  }
-  backgroundTasks.push(loadAdminUsers(headers));
-  backgroundTasks.push(loadChurchDraft());
-
-  await Promise.all(backgroundTasks);
-
-  if (authMode === 'password') {
-    if (onboardingModal) onboardingModal.classList.add('hidden');
-    if (saveProfileBtn) {
-      saveProfileBtn.disabled = true;
-      saveProfileBtn.classList.add('opacity-40', 'cursor-not-allowed');
+    // Update global state
+    authMode = authResult.mode;
+    if (sessionUser) {
+      portalProfile = sessionUser;
     }
-  } else if (!portalProfile?.full_name || !portalProfile?.affiliation_type) {
-    showOnboarding();
-  }
-} catch (err) {
-  console.error(err);
-  if (!loadingEl.classList.contains('hidden')) {
+
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    portalAuthHeaders = headers;
+    // 2. Parallelized Initial Data Fetching
+
+    dlog('[DEBUG] Starting Promise.all for API requests...');
+
+    const promises = [
+      fetch('/api/portal/session', { headers, credentials: 'include' }),
+      fetch('/api/cuenta/resumen', { headers, credentials: 'include' })
+    ];
+
+    if (token && supabase) {
+      promises.push(supabase.auth.getUser());
+    } else {
+      promises.push(Promise.resolve({ data: { user: null } })); // Mock for no-token
+    }
+
+    const [sessionRes, resumenRes, { data: userData }] = await Promise.all(promises);
+    dlog('[DEBUG] Promise.all completed.');
+    dlog('[DEBUG] sessionRes status:', sessionRes.status);
+    dlog('[DEBUG] resumenRes status:', resumenRes.status);
+    dlog('[DEBUG] userData:', userData);
+
+    if (!sessionRes.ok) {
+      console.error('[DEBUG] /api/portal/session failed:', sessionRes.status, sessionRes.statusText);
+      const text = await sessionRes.text();
+      console.error('[DEBUG] /api/portal/session body:', text);
+      throw new Error(`Session API error: ${sessionRes.status}`);
+    }
+
+    const sessionPayload = await sessionRes.json();
+    dlog('[DEBUG] sessionPayload:', sessionPayload);
+    if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
+
+    let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
+    const resData = await resumenRes.json();
+    dlog('[DEBUG] resData (resumen):', resData);
+    if (!resumenRes.ok || !resData.ok) {
+      // Optional: Log error but continue with minimal profile?
+      dwarn('Could not load resumen:', resData.error);
+    } else {
+      payload = resData;
+    }
+
+    authMode = sessionPayload.mode || 'supabase';
+    portalProfile = sessionPayload.profile || {};
+    portalMemberships = sessionPayload.memberships || [];
+    portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
+    portalIsSuperadmin = portalProfile?.role === 'superadmin';
+
+    dlog('[DEBUG] Data loaded. Profile:', portalProfile);
+
+    const hasChurchRole = (portalMemberships || []).some(
+      (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
+    );
+    const hasChurchAccess = portalIsAdmin || hasChurchRole;
+    const membershipChurch = portalMemberships.find((item) => item?.church?.id)?.church || null;
+
+    if (!portalSelectedChurchId && membershipChurch?.id) {
+      portalSelectedChurchId = membershipChurch.id;
+    }
+    if (churchNameInput && membershipChurch?.name && !portalIsAdmin) {
+      churchNameInput.value = membershipChurch.name;
+      churchNameInput.setAttribute('readonly', 'readonly');
+      churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+    }
+
+    const user = userData?.user;
+
+    const activeUser = payload.user || {};
+    const name = activeUser.fullName || user?.user_metadata?.full_name || 'Usuario';
+    profileName.value = name;
+    welcomeName.textContent = name.split(' ')[0];
+    profileEmail.value = activeUser.email || user?.email || '';
+    if (profileRole) profileRole.value = portalProfile?.role || 'user';
+    profilePhone.value = portalProfile.phone || '';
+    profileCity.value = portalProfile.city || '';
+    profileCountry.value = portalProfile.country || '';
+    profileAffiliation.value = portalProfile.affiliation_type || '';
+    profileChurchName.value = portalProfile.church_name || '';
+    toggleChurchField(profileAffiliation.value);
+
+    if (portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin') {
+      if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Eventos';
+      if (iglesiaTitle) iglesiaTitle.textContent = 'Cumbre Mundial 2026';
+      if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general del evento para gestión de sedes y registros físicos.';
+    }
+
+    // Calculations for highlights
+    let totalPaidAll = 0;
+    payload.bookings?.forEach(b => totalPaidAll += (b.total_paid || 0));
+    statTotalPaid.textContent = formatCurrency(totalPaidAll, payload.bookings?.[0]?.currency);
+
+    const activePlan = payload.plans?.find(p => p.status === 'ACTIVE');
+    if (activePlan) {
+      statNextDue.textContent = formatDate(activePlan.next_due_date);
+      planHighlight.classList.remove('hidden');
+      highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
+      highlightDate.textContent = formatDate(activePlan.next_due_date);
+    }
+
+    renderBookings(payload.bookings || []);
+    renderPlans(payload.plans || [], payload.bookings || []);
+    renderInstallments(payload.installments || [], payload.plans || [], payload.bookings || []);
+    renderPayments(payload.payments || []);
+    renderMemberships(portalMemberships);
+    setupInviteAccess();
+    initAdminInvite();
+    // 5. Reveal Dashboard (Eager Loading)
     loadingEl.classList.add('hidden');
-    errorEl.classList.remove('hidden');
+    contentEl.classList.remove('hidden');
+    gsap.from(contentEl, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
+
+    // 6. Background Initialization (Parallelized)
+    const backgroundTasks = [];
+    if (hasChurchAccess) {
+      backgroundTasks.push(loadChurchSelector(headers));
+      backgroundTasks.push(loadChurchBookings(headers));
+      backgroundTasks.push(loadChurchPayments(headers));
+      backgroundTasks.push(loadChurchInstallments(headers));
+      backgroundTasks.push(loadChurchMembers(headers));
+    }
+    backgroundTasks.push(loadAdminUsers(headers));
+    backgroundTasks.push(loadChurchDraft());
+
+    await Promise.all(backgroundTasks);
+
+    if (authMode === 'password') {
+      if (onboardingModal) onboardingModal.classList.add('hidden');
+      if (saveProfileBtn) {
+        saveProfileBtn.disabled = true;
+        saveProfileBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      }
+    } else if (!portalProfile?.full_name || !portalProfile?.affiliation_type) {
+      showOnboarding();
+    }
+  } catch (err) {
+    console.error(err);
+    if (!loadingEl.classList.contains('hidden')) {
+      loadingEl.classList.add('hidden');
+      errorEl.classList.remove('hidden');
+    }
   }
-}
 }
 
 function setupInviteAccess() {
