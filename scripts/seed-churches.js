@@ -5,17 +5,24 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Load env vars
-dotenv.config({ path: '.env.local' });
-dotenv.config(); // Fallback to .env if needed or overlay
+// unexpected behavior with relative paths in different execution contexts
+const envPath = path.resolve(process.cwd(), '.env.local');
+const envPathDefault = path.resolve(process.cwd(), '.env');
+
+console.log('Loading env from:', envPath);
+dotenv.config({ path: envPath });
+dotenv.config({ path: envPathDefault });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY; // Need service key for writing to public table if RLS blocks or anon if policy allows
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env');
+    console.error('Error: Missing Supabase credentials.');
+    console.error('Checked for: PUBLIC_SUPABASE_URL, SUPABASE_URL');
+    console.error('Checked for: SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_KEY');
     process.exit(1);
 }
 
