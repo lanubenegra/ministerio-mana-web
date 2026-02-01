@@ -34,6 +34,8 @@ const profileRole = document.getElementById('profile-role');
 const profilePhone = document.getElementById('profile-phone');
 const profileCity = document.getElementById('profile-city');
 const profileCountry = document.getElementById('profile-country');
+const profileDocumentType = document.getElementById('profile-document-type');
+const profileDocumentNumber = document.getElementById('profile-document-number');
 const profileAffiliation = document.getElementById('profile-affiliation');
 const profileChurchWrapper = document.getElementById('profile-church-wrapper');
 const profileChurchName = document.getElementById('profile-church-name');
@@ -338,6 +340,8 @@ async function loadDashboardData(authResult) {
     profilePhone.value = portalProfile.phone || '';
     profileCity.value = portalProfile.city || '';
     profileCountry.value = portalProfile.country || '';
+    if (profileDocumentType) profileDocumentType.value = portalProfile.document_type || '';
+    if (profileDocumentNumber) profileDocumentNumber.value = portalProfile.document_number || '';
     profileAffiliation.value = portalProfile.affiliation_type || '';
     profileChurchName.value = portalProfile.church_name || '';
     toggleChurchField(profileAffiliation.value);
@@ -1603,8 +1607,8 @@ function renderMemberships(memberships) {
 }
 
 async function updateProfile() {
-  profileStatus.textContent = 'Guardando...';
-  profileStatus.className = 'text-sm font-medium text-white/40';
+    profileStatus.textContent = 'Guardando...';
+    profileStatus.className = 'text-sm font-medium text-white/40';
   try {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
@@ -1619,6 +1623,8 @@ async function updateProfile() {
         phone: profilePhone.value.trim(),
         city: profileCity.value.trim(),
         country: profileCountry.value.trim(),
+        documentType: profileDocumentType?.value || '',
+        documentNumber: profileDocumentNumber?.value?.trim() || '',
         affiliationType: profileAffiliation.value,
         churchName: profileChurchName.value.trim(),
       }),

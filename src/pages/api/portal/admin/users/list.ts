@@ -11,25 +11,45 @@ export const GET: APIRoute = async ({ request }) => {
     // Get Creator Profile
     const { data: creatorProfile } = await supabaseAdmin
         .from('user_profiles')
-        .select('church_id, role')
+        .select('church_id, role, country')
         .eq('user_id', user.id)
         .single();
 
-    if (!creatorProfile || (creatorProfile.role !== 'admin' && creatorProfile.role !== 'superadmin' && creatorProfile.role !== 'pastor')) {
+    if (!creatorProfile) {
+        return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 403 });
+    }
+
+    const { role: creatorRole, church_id: creatorChurchId, country: creatorCountry } = creatorProfile;
+
+    // Allowed roles to view list
+    const allowedViewers = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator'];
+    if (!allowedViewers.includes(creatorRole)) {
         return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 403 });
     }
 
     let query = supabaseAdmin
         .from('user_profiles')
-        .select('user_id, first_name, last_name, email, role, church_id, updated_at')
+        .select('user_id, first_name, last_name, email, role, church_id, updated_at, country')
         .order('updated_at', { ascending: false });
 
-    if (creatorProfile.role === 'pastor') {
-        if (!creatorProfile.church_id) {
+    // Scoping Logic
+    if (creatorRole === 'admin') {
+        // Admins cannot see Superadmins
+        query = query.neq('role', 'superadmin');
+    } else if (creatorRole === 'national_pastor') {
+        // Scope by Country
+        if (!creatorCountry) {
             return new Response(JSON.stringify({ ok: true, users: [] }), { status: 200 });
         }
-        query = query.eq('church_id', creatorProfile.church_id);
+        query = query.eq('country', creatorCountry);
+    } else if (creatorRole === 'pastor' || creatorRole === 'local_collaborator') {
+        // Scope by Church
+        if (!creatorChurchId) {
+            return new Response(JSON.stringify({ ok: true, users: [] }), { status: 200 });
+        }
+        query = query.eq('church_id', creatorChurchId);
     }
+    // Superadmin sees everything (no scope applied)
 
     const { data: users, error } = await query.limit(100);
 

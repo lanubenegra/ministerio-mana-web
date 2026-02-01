@@ -21,6 +21,17 @@ const togglePasswordBtn = document.getElementById('toggle-password-user');
 
 let currentUserRole = 'user';
 
+const roleTranslations = {
+    'superadmin': 'Super Admin',
+    'admin': 'Admin',
+    'national_pastor': 'Pastor Nacional',
+    'campus_missionary': 'Misionero Campus',
+    'pastor': 'Pastor Local',
+    'local_collaborator': 'Colaborador Local',
+    'leader': 'Líder (Legacy)',
+    'user': 'Usuario (Asistente)'
+};
+
 // Password Toggle
 togglePasswordBtn?.addEventListener('click', () => {
     const type = passwordInput.type === 'password' ? 'text' : 'password';
@@ -41,7 +52,13 @@ async function init() {
         const res = await fetch('/api/portal/profile', { headers: { 'Authorization': `Bearer ${token}` } });
         if (res.ok) {
             const profile = await res.json();
-            currentUserRole = profile.role;
+            currentUserRole = profile.role || 'user';
+
+            // Hide Create Button for Roles that cannot create users
+            if (currentUserRole === 'campus_missionary' || currentUserRole === 'user') {
+                if (btnOpen) btnOpen.style.display = 'none';
+            }
+
             if (currentUserRole === 'admin' || currentUserRole === 'superadmin') {
                 document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
             }
@@ -62,8 +79,8 @@ async function loadUsers(token) {
         });
 
         if (res.status === 403) {
-            alert('No tienes permiso para ver usuarios.');
-            window.location.href = '/portal';
+            // alert('No tienes permiso para ver usuarios.');
+            // window.location.href = '/portal';
             return;
         }
 
@@ -94,13 +111,13 @@ function renderTable(users) {
                 <td class="py-3 text-slate-500">${u.email}</td>
                 <td class="py-3">
                     <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                        ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                u.role === 'pastor' ? 'bg-blue-100 text-blue-700' :
-                    u.role === 'leader' ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-600'}">
-                        ${u.role}
+                        ${u.role === 'admin' || u.role === 'superadmin' ? 'bg-purple-100 text-purple-700' :
+                u.role === 'pastor' || u.role === 'national_pastor' ? 'bg-blue-100 text-blue-700' :
+                    u.role === 'local_collaborator' ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-600'}">
+                        ${roleTranslations[u.role] || u.role}
                     </span>
                 </td>
-                <td class="py-3 text-slate-400 text-xs">${new Date(u.updated_at).toLocaleDateString()}</td>
+                <td class="py-3 text-slate-400 text-xs">${new Date(u.updated_at || u.created_at).toLocaleDateString()}</td>
             </tr>
         `).join('');
     }
@@ -108,7 +125,40 @@ function renderTable(users) {
 
 function setupModal(token) {
     btnOpen?.addEventListener('click', () => {
+        // Validation: Campus Missionaries cannot create
+        if (currentUserRole === 'campus_missionary' || currentUserRole === 'user') {
+            alert('No tienes permisos para crear usuarios.');
+            return;
+        }
+
         modal?.classList.remove('hidden');
+
+        // Populate Roles dynamically
+        if (roleSelect) {
+            roleSelect.innerHTML = '';
+            let allowedRoles = [];
+
+            if (currentUserRole === 'superadmin') {
+                allowedRoles = ['admin', 'national_pastor', 'campus_missionary', 'pastor', 'local_collaborator', 'user'];
+            } else if (currentUserRole === 'admin') {
+                allowedRoles = ['national_pastor', 'campus_missionary', 'pastor', 'local_collaborator', 'user'];
+            } else if (currentUserRole === 'national_pastor') {
+                allowedRoles = ['campus_missionary', 'pastor', 'local_collaborator', 'user'];
+            } else if (currentUserRole === 'pastor') { // Local Pastor
+                allowedRoles = ['local_collaborator', 'user'];
+            } else if (currentUserRole === 'local_collaborator') {
+                allowedRoles = ['user'];
+            }
+
+            // Always allow creating 'user' as fallback if list is empty? No, logic above covers it.
+
+            allowedRoles.forEach(role => {
+                const opt = document.createElement('option');
+                opt.value = role;
+                opt.textContent = roleTranslations[role] || role;
+                roleSelect.appendChild(opt);
+            });
+        }
     });
 
     btnCancel?.addEventListener('click', () => {
