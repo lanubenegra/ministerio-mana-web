@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from '@lib/supabaseBrowser';
+import { ensureAuthenticated, redirectToLogin } from '@lib/portalAuthClient';
 import { gsap } from 'gsap';
 
 const DEBUG = import.meta.env?.DEV === true;
@@ -226,190 +227,161 @@ function switchTab(tabId) {
 }
 
 // Core Dashboard Logic - Reactive Auth
-async function fetchDashboardData(session) {
-  dlog('[DEBUG] fetchDashboardData called with session:', session ? 'Present' : 'Null');
+async function loadDashboardData(authResult) {
+  dlog('[DEBUG] loadDashboardData called with mode:', authResult.mode);
 
-  try {
-    let token = session?.access_token;
+  const token = authResult.token;
+  const sessionUser = authResult.user;
 
-    if (!token && supabase) {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) dwarn('[DEBUG] getSession error:', error);
-      token = data?.session?.access_token || null;
-    }
-
-    // Fallback: Try to read from localStorage directly if SDK failed but token exists
-    if (!token) {
-      try {
-        const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-        if (key) {
-          const sessionStr = localStorage.getItem(key);
-          if (sessionStr) {
-            const sessionObj = JSON.parse(sessionStr);
-            // Check expiry if possible, but backend will validate anyway
-            if (sessionObj.access_token) {
-              dlog('[DEBUG] Recovered token from localStorage fallback');
-              token = sessionObj.access_token;
-            }
-          }
-        }
-      } catch (e) {
-        console.error('[DEBUG] LocalStorage fallback error', e);
-      }
-    }
-
-    if (!token) {
-      dlog('[DEBUG] No token. Using password session cookie.');
-    }
-
-    if (token) {
-      dlog('[DEBUG] Access token present:', token.substring(0, 10) + '...');
-    }
-
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    portalAuthHeaders = headers;
-
-    // 2. Parallelized Initial Data Fetching
-
-    dlog('[DEBUG] Starting Promise.all for API requests...');
-
-    const promises = [
-      fetch('/api/portal/session', { headers, credentials: 'include' }),
-      fetch('/api/cuenta/resumen', { headers, credentials: 'include' })
-    ];
-
-    if (token && supabase) {
-      promises.push(supabase.auth.getUser());
-    } else {
-      promises.push(Promise.resolve({ data: { user: null } })); // Mock for no-token
-    }
-
-    const [sessionRes, resumenRes, { data: userData }] = await Promise.all(promises);
-    dlog('[DEBUG] Promise.all completed.');
-    dlog('[DEBUG] sessionRes status:', sessionRes.status);
-    dlog('[DEBUG] resumenRes status:', resumenRes.status);
-    dlog('[DEBUG] userData:', userData);
-
-    if (!sessionRes.ok) {
-      console.error('[DEBUG] /api/portal/session failed:', sessionRes.status, sessionRes.statusText);
-      const text = await sessionRes.text();
-      console.error('[DEBUG] /api/portal/session body:', text);
-      throw new Error(`Session API error: ${sessionRes.status}`);
-    }
-
-    const sessionPayload = await sessionRes.json();
-    dlog('[DEBUG] sessionPayload:', sessionPayload);
-    if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
-
-    let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
-    const resData = await resumenRes.json();
-    dlog('[DEBUG] resData (resumen):', resData);
-    if (!resumenRes.ok || !resData.ok) {
-      // Optional: Log error but continue with minimal profile?
-      dwarn('Could not load resumen:', resData.error);
-    } else {
-      payload = resData;
-    }
-
-    authMode = sessionPayload.mode || 'supabase';
-    portalProfile = sessionPayload.profile || {};
-    portalMemberships = sessionPayload.memberships || [];
-    portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
-    portalIsSuperadmin = portalProfile?.role === 'superadmin';
-
-    dlog('[DEBUG] Data loaded. Profile:', portalProfile);
-
-    const hasChurchRole = (portalMemberships || []).some(
-      (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
-    );
-    const hasChurchAccess = portalIsAdmin || hasChurchRole;
-    const membershipChurch = portalMemberships.find((item) => item?.church?.id)?.church || null;
-
-    if (!portalSelectedChurchId && membershipChurch?.id) {
-      portalSelectedChurchId = membershipChurch.id;
-    }
-    if (churchNameInput && membershipChurch?.name && !portalIsAdmin) {
-      churchNameInput.value = membershipChurch.name;
-      churchNameInput.setAttribute('readonly', 'readonly');
-      churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
-    }
-
-    const user = userData?.user;
-
-    const activeUser = payload.user || {};
-    const name = activeUser.fullName || user?.user_metadata?.full_name || 'Usuario';
-    profileName.value = name;
-    welcomeName.textContent = name.split(' ')[0];
-    profileEmail.value = activeUser.email || user?.email || '';
-    if (profileRole) profileRole.value = portalProfile?.role || 'user';
-    profilePhone.value = portalProfile.phone || '';
-    profileCity.value = portalProfile.city || '';
-    profileCountry.value = portalProfile.country || '';
-    profileAffiliation.value = portalProfile.affiliation_type || '';
-    profileChurchName.value = portalProfile.church_name || '';
-    toggleChurchField(profileAffiliation.value);
-
-    if (portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin') {
-      if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Eventos';
-      if (iglesiaTitle) iglesiaTitle.textContent = 'Cumbre Mundial 2026';
-      if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general del evento para gestión de sedes y registros físicos.';
-    }
-
-    // Calculations for highlights
-    let totalPaidAll = 0;
-    payload.bookings?.forEach(b => totalPaidAll += (b.total_paid || 0));
-    statTotalPaid.textContent = formatCurrency(totalPaidAll, payload.bookings?.[0]?.currency);
-
-    const activePlan = payload.plans?.find(p => p.status === 'ACTIVE');
-    if (activePlan) {
-      statNextDue.textContent = formatDate(activePlan.next_due_date);
-      planHighlight.classList.remove('hidden');
-      highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
-      highlightDate.textContent = formatDate(activePlan.next_due_date);
-    }
-
-    renderBookings(payload.bookings || []);
-    renderPlans(payload.plans || [], payload.bookings || []);
-    renderInstallments(payload.installments || [], payload.plans || [], payload.bookings || []);
-    renderPayments(payload.payments || []);
-    renderMemberships(portalMemberships);
-    setupInviteAccess();
-    initAdminInvite();
-    // 5. Reveal Dashboard (Eager Loading)
-    loadingEl.classList.add('hidden');
-    contentEl.classList.remove('hidden');
-    gsap.from(contentEl, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
-
-    // 6. Background Initialization (Parallelized)
-    const backgroundTasks = [];
-    if (hasChurchAccess) {
-      backgroundTasks.push(loadChurchSelector(headers));
-      backgroundTasks.push(loadChurchBookings(headers));
-      backgroundTasks.push(loadChurchPayments(headers));
-      backgroundTasks.push(loadChurchInstallments(headers));
-      backgroundTasks.push(loadChurchMembers(headers));
-    }
-    backgroundTasks.push(loadAdminUsers(headers));
-    backgroundTasks.push(loadChurchDraft());
-
-    await Promise.all(backgroundTasks);
-
-    if (authMode === 'password') {
-      if (onboardingModal) onboardingModal.classList.add('hidden');
-      if (saveProfileBtn) {
-        saveProfileBtn.disabled = true;
-        saveProfileBtn.classList.add('opacity-40', 'cursor-not-allowed');
-      }
-    } else if (!portalProfile?.full_name || !portalProfile?.affiliation_type) {
-      showOnboarding();
-    }
-  } catch (err) {
-    console.error(err);
-    if (!loadingEl.classList.contains('hidden')) {
-      loadingEl.classList.add('hidden');
-      errorEl.classList.remove('hidden');
-    }
+  // Update global state
+  authMode = authResult.mode;
+  if (sessionUser) {
+    portalProfile = sessionUser;
   }
+
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  portalAuthHeaders = headers;
+  // 2. Parallelized Initial Data Fetching
+
+  dlog('[DEBUG] Starting Promise.all for API requests...');
+
+  const promises = [
+    fetch('/api/portal/session', { headers, credentials: 'include' }),
+    fetch('/api/cuenta/resumen', { headers, credentials: 'include' })
+  ];
+
+  if (token && supabase) {
+    promises.push(supabase.auth.getUser());
+  } else {
+    promises.push(Promise.resolve({ data: { user: null } })); // Mock for no-token
+  }
+
+  const [sessionRes, resumenRes, { data: userData }] = await Promise.all(promises);
+  dlog('[DEBUG] Promise.all completed.');
+  dlog('[DEBUG] sessionRes status:', sessionRes.status);
+  dlog('[DEBUG] resumenRes status:', resumenRes.status);
+  dlog('[DEBUG] userData:', userData);
+
+  if (!sessionRes.ok) {
+    console.error('[DEBUG] /api/portal/session failed:', sessionRes.status, sessionRes.statusText);
+    const text = await sessionRes.text();
+    console.error('[DEBUG] /api/portal/session body:', text);
+    throw new Error(`Session API error: ${sessionRes.status}`);
+  }
+
+  const sessionPayload = await sessionRes.json();
+  dlog('[DEBUG] sessionPayload:', sessionPayload);
+  if (!sessionRes.ok || !sessionPayload.ok) throw new Error(sessionPayload.error || 'No se pudo cargar el perfil');
+
+  let payload = { ok: true, user: {}, bookings: [], plans: [], payments: [] };
+  const resData = await resumenRes.json();
+  dlog('[DEBUG] resData (resumen):', resData);
+  if (!resumenRes.ok || !resData.ok) {
+    // Optional: Log error but continue with minimal profile?
+    dwarn('Could not load resumen:', resData.error);
+  } else {
+    payload = resData;
+  }
+
+  authMode = sessionPayload.mode || 'supabase';
+  portalProfile = sessionPayload.profile || {};
+  portalMemberships = sessionPayload.memberships || [];
+  portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
+  portalIsSuperadmin = portalProfile?.role === 'superadmin';
+
+  dlog('[DEBUG] Data loaded. Profile:', portalProfile);
+
+  const hasChurchRole = (portalMemberships || []).some(
+    (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
+  );
+  const hasChurchAccess = portalIsAdmin || hasChurchRole;
+  const membershipChurch = portalMemberships.find((item) => item?.church?.id)?.church || null;
+
+  if (!portalSelectedChurchId && membershipChurch?.id) {
+    portalSelectedChurchId = membershipChurch.id;
+  }
+  if (churchNameInput && membershipChurch?.name && !portalIsAdmin) {
+    churchNameInput.value = membershipChurch.name;
+    churchNameInput.setAttribute('readonly', 'readonly');
+    churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+  }
+
+  const user = userData?.user;
+
+  const activeUser = payload.user || {};
+  const name = activeUser.fullName || user?.user_metadata?.full_name || 'Usuario';
+  profileName.value = name;
+  welcomeName.textContent = name.split(' ')[0];
+  profileEmail.value = activeUser.email || user?.email || '';
+  if (profileRole) profileRole.value = portalProfile?.role || 'user';
+  profilePhone.value = portalProfile.phone || '';
+  profileCity.value = portalProfile.city || '';
+  profileCountry.value = portalProfile.country || '';
+  profileAffiliation.value = portalProfile.affiliation_type || '';
+  profileChurchName.value = portalProfile.church_name || '';
+  toggleChurchField(profileAffiliation.value);
+
+  if (portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin') {
+    if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Eventos';
+    if (iglesiaTitle) iglesiaTitle.textContent = 'Cumbre Mundial 2026';
+    if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general del evento para gestión de sedes y registros físicos.';
+  }
+
+  // Calculations for highlights
+  let totalPaidAll = 0;
+  payload.bookings?.forEach(b => totalPaidAll += (b.total_paid || 0));
+  statTotalPaid.textContent = formatCurrency(totalPaidAll, payload.bookings?.[0]?.currency);
+
+  const activePlan = payload.plans?.find(p => p.status === 'ACTIVE');
+  if (activePlan) {
+    statNextDue.textContent = formatDate(activePlan.next_due_date);
+    planHighlight.classList.remove('hidden');
+    highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
+    highlightDate.textContent = formatDate(activePlan.next_due_date);
+  }
+
+  renderBookings(payload.bookings || []);
+  renderPlans(payload.plans || [], payload.bookings || []);
+  renderInstallments(payload.installments || [], payload.plans || [], payload.bookings || []);
+  renderPayments(payload.payments || []);
+  renderMemberships(portalMemberships);
+  setupInviteAccess();
+  initAdminInvite();
+  // 5. Reveal Dashboard (Eager Loading)
+  loadingEl.classList.add('hidden');
+  contentEl.classList.remove('hidden');
+  gsap.from(contentEl, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
+
+  // 6. Background Initialization (Parallelized)
+  const backgroundTasks = [];
+  if (hasChurchAccess) {
+    backgroundTasks.push(loadChurchSelector(headers));
+    backgroundTasks.push(loadChurchBookings(headers));
+    backgroundTasks.push(loadChurchPayments(headers));
+    backgroundTasks.push(loadChurchInstallments(headers));
+    backgroundTasks.push(loadChurchMembers(headers));
+  }
+  backgroundTasks.push(loadAdminUsers(headers));
+  backgroundTasks.push(loadChurchDraft());
+
+  await Promise.all(backgroundTasks);
+
+  if (authMode === 'password') {
+    if (onboardingModal) onboardingModal.classList.add('hidden');
+    if (saveProfileBtn) {
+      saveProfileBtn.disabled = true;
+      saveProfileBtn.classList.add('opacity-40', 'cursor-not-allowed');
+    }
+  } else if (!portalProfile?.full_name || !portalProfile?.affiliation_type) {
+    showOnboarding();
+  }
+} catch (err) {
+  console.error(err);
+  if (!loadingEl.classList.contains('hidden')) {
+    loadingEl.classList.add('hidden');
+    errorEl.classList.remove('hidden');
+  }
+}
 }
 
 function setupInviteAccess() {
@@ -1979,25 +1951,7 @@ registerPasskeyBtn?.addEventListener('click', async () => {
   }
 });
 
-async function getSessionSoftTimeout(ms = 8000) {
-  if (!supabase) {
-    return { data: { session: null }, error: null, timedOut: true };
-  }
 
-  let timeoutId;
-  const timeoutPromise = new Promise((resolve) => {
-    timeoutId = setTimeout(() => resolve({ data: { session: null }, error: null, timedOut: true }), ms);
-  });
-
-  const sessionPromise = supabase.auth
-    .getSession()
-    .then((result) => ({ ...result, timedOut: false }))
-    .catch((error) => ({ data: { session: null }, error, timedOut: false }));
-
-  const result = await Promise.race([sessionPromise, timeoutPromise]);
-  clearTimeout(timeoutId);
-  return result;
-}
 
 // Init Dashboard with Reactive Auth
 // Init Dashboard with Reactive Auth
@@ -2009,90 +1963,23 @@ async function initDashboard() {
     return;
   }
 
-  let dashboardLoaded = false;
+  // 1. Clean Slate Auth Check
+  dlog('[DEBUG] Starting Clean Auth Check...');
+  const auth = await ensureAuthenticated();
 
-  // 0. Fix Malformed Hash (if present)
-  // Supabase expects #access_token=... but sometimes we get #/access_token=...
-  if (window.location.hash && window.location.hash.startsWith('#/')) {
-    dlog('Fixing malformed hash:', window.location.hash);
-    const cleanHash = window.location.hash.replace('#/', '#');
-    window.history.replaceState(null, '', window.location.pathname + cleanHash);
-    dlog('Cleaned hash:', window.location.hash);
-  }
-
-  if (!supabase) {
-    console.error('[DEBUG] Supabase not initialized. Redirecting to login.');
-    if (loadingEl && !loadingEl.classList.contains('hidden')) {
-      loadingEl.classList.add('hidden');
-    }
-    if (errorEl) {
-      errorEl.classList.remove('hidden');
-    }
-    setTimeout(() => {
-      window.location.href = '/portal/ingresar';
-    }, 1200);
-    return;
-  }
-  dlog('[DEBUG] Setting up onAuthStateChange listener...');
-
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-    dlog('[DEBUG] Auth State Change:', event, session ? 'Session OK' : 'No Session');
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
-      if (session && !dashboardLoaded) {
-        dlog('[DEBUG] Auth Event Triggered Load:', event);
-        dashboardLoaded = true;
-
-        cleanupAuthRedirect();
-
-        await fetchDashboardData(session);
-      } else if (!session) {
-        dwarn('[DEBUG] Event', event, 'but no session present');
-      } else if (dashboardLoaded) {
-        dlog('[DEBUG] Event', event, 'ignored (dashboard already loaded)');
-      }
-    }
-  });
-
-  // 2. Immediate State Check (Handle Pre-processed Sessions)
-  // Supabase might have already processed the hash before this script ran.
-  // We check getSession() immediately with a soft timeout.
-  dlog('[DEBUG] Calling supabase.auth.getSession() with soft timeout...');
-
-  const { data, error, timedOut } = await getSessionSoftTimeout(8000);
-  if (error) dwarn('[DEBUG] getSession error:', error);
-  if (timedOut) dlog('[DEBUG] getSession timed out (soft).');
-  dlog('[DEBUG] getSession result:', data, 'Error:', error);
-
-  // 1. Valid Supabase Session
-  if (data?.session && !dashboardLoaded) {
-    dlog('[DEBUG] Session found immediately via getSession');
-    dashboardLoaded = true;
-    cleanupAuthRedirect();
-    await fetchDashboardData(data.session);
+  if (!auth.isAuthenticated) {
+    console.warn('[DEBUG] Not authenticated. Redirecting...');
+    if (loadingEl) loadingEl.classList.add('hidden');
+    // Allow a brief moment for any pending logs/events? No, fail fast.
+    redirectToLogin();
     return;
   }
 
-  // 2. Password-mode fallback (superadmin)
-  if (!data?.session) {
-    try {
-      const pwRes = await fetch('/api/portal/password-session', { credentials: 'include' });
-      if (pwRes.ok) {
-        const pwData = await pwRes.json();
-        if (pwData.ok) {
-          dashboardLoaded = true;
-          await fetchDashboardData(null);
-          return;
-        }
-      }
-    } catch (err) {
-      dwarn('[DEBUG] Password session check failed', err);
-    }
-  }
+  dlog('[DEBUG] Authenticated!', auth);
+  cleanupAuthRedirect(); // Clean URL hash/params if present
 
-  // 3. Simple redirect if no session
-  if (!data?.session) {
-    window.location.href = '/portal/ingresar';
-  }
+  // 2. Load Dashboard
+  await loadDashboardData(auth);
 }
 
 initDashboard();
