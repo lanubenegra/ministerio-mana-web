@@ -47,8 +47,8 @@ form?.addEventListener('submit', async (e) => {
     if (!btnSubmit) return;
 
     // Get values
-    const name = document.getElementById('reg-name').value;
-    const lastname = document.getElementById('reg-lastname').value;
+    const firstName = document.getElementById('reg-name').value;
+    const lastName = document.getElementById('reg-lastname').value;
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-password').value;
 
@@ -58,29 +58,17 @@ form?.addEventListener('submit', async (e) => {
     statusEl?.classList.add('hidden');
 
     try {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                emailRedirectTo: window.location.origin + '/portal',
-                data: {
-                    first_name: name,
-                    last_name: lastname,
-                    full_name: `${name} ${lastname}`.trim()
-                }
-            }
+        // Use our backend endpoint instead of Supabase Auth directly
+        const res = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, firstName, lastName })
         });
 
-        if (error) {
-            // Handle common errors
-            if (error.message.includes('Email rate limit')) {
-                throw new Error('Demasiados intentos. Por favor espera unos minutos.');
-            }
-            throw error;
-        }
+        const data = await res.json();
 
-        if (data?.user && data.user.identities?.length === 0) {
-            throw new Error('Este correo ya está registrado. Por favor inicia sesión.');
+        if (!data.ok) {
+            throw new Error(data.error || 'Error al registrarse');
         }
 
         // Success
@@ -88,22 +76,13 @@ form?.addEventListener('submit', async (e) => {
         statusEl.classList.add('bg-green-50', 'text-green-600');
         form.reset();
 
-        if (data?.session) {
-            // Auto-logged in
-            statusEl.textContent = '¡Cuenta creada exitosamente! Redirigiendo...';
-            setTimeout(() => {
-                window.location.href = '/portal';
-            }, 1500);
-        } else {
-            // Email confirmation required
-            statusEl.innerHTML = `
-                <strong>¡Cuenta creada!</strong><br>
-                <span class="text-sm">Revisa tu correo <strong>${email}</strong> para activar tu cuenta.</span>
-             `;
-            btnSubmit.textContent = 'Ir a Login';
-            btnSubmit.disabled = false;
-            btnSubmit.onclick = () => window.location.href = '/portal/ingresar';
-        }
+        statusEl.innerHTML = `
+            <strong>¡Cuenta creada!</strong><br>
+            <span class="text-sm">Revisa tu correo <strong>${email}</strong> para activar tu cuenta y establecer tu acceso.</span>
+        `;
+        btnSubmit.textContent = 'Ir a Login';
+        btnSubmit.disabled = false;
+        btnSubmit.onclick = () => window.location.href = '/portal/ingresar';
 
     } catch (err) {
         console.error('Registration error:', err);
