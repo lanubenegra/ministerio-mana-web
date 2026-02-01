@@ -11,6 +11,7 @@ interface Props {
 
 const { preferred = 'wompi', country = 'CO', rates } = Astro.props as Props;
 const isWompi = preferred === 'wompi';
+const cspNonce = Astro.locals?.cspNonce;
 
 // Si tienes snapshot de tasas, puedes sacar algo de ahí
 const copPerUsd: number | null =
@@ -606,3 +607,110 @@ const copPerUsd: number | null =
     }
   }
 </style>
+
+<script nonce={cspNonce}>
+  const wompiForm = document.querySelector('form[action="/api/wompi/checkout"]');
+  const stripeForm = document.querySelector('form[action="/api/stripe/checkout"]');
+  let portalProfileCache = null;
+
+  function getSupabaseAccessToken() {
+    try {
+      const key = Object.keys(localStorage).find((k) => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (!key) return null;
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const session = JSON.parse(raw);
+      return session?.access_token || null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function setValueIfEmpty(el, value) {
+    if (!el || !value) return;
+    if (el.value) return;
+    el.value = value;
+  }
+
+  function fillDonationForm(form, profile) {
+    if (!form || !profile) return;
+    setValueIfEmpty(form.querySelector('input[name="fullName"]'), profile.full_name);
+    setValueIfEmpty(form.querySelector('input[name="email"]'), profile.email);
+    setValueIfEmpty(form.querySelector('input[name="phone"]'), profile.phone);
+    setValueIfEmpty(form.querySelector('input[name="city"]'), profile.city);
+    setValueIfEmpty(form.querySelector('input[name="church"]'), profile.church_name);
+
+    const docType = form.querySelector('select[name="documentType"]');
+    if (docType && !docType.value && profile.document_type) {
+      docType.value = profile.document_type;
+    }
+    setValueIfEmpty(form.querySelector('input[name="documentNumber"]'), profile.document_number);
+
+    const countryInput = form.querySelector('input[name="country"]');
+    if (countryInput && !countryInput.value && profile.country) {
+      countryInput.value = profile.country;
+    }
+  }
+
+  function resolveValue(form, selector, fallback) {
+    const el = form?.querySelector(selector);
+    const value = el?.value?.trim();
+    return value || fallback || '';
+  }
+
+  function saveProfileFromDonation(form) {
+    if (!form || !portalProfileCache) return;
+    const token = getSupabaseAccessToken();
+    if (!token) return;
+
+    const payload = {
+      fullName: resolveValue(form, 'input[name="fullName"]', portalProfileCache.full_name),
+      phone: resolveValue(form, 'input[name="phone"]', portalProfileCache.phone),
+      city: resolveValue(form, 'input[name="city"]', portalProfileCache.city),
+      country: resolveValue(form, 'input[name="country"]', portalProfileCache.country),
+      documentType: resolveValue(form, 'select[name="documentType"]', portalProfileCache.document_type),
+      documentNumber: resolveValue(form, 'input[name="documentNumber"]', portalProfileCache.document_number),
+      churchName: resolveValue(form, 'input[name="church"]', portalProfileCache.church_name),
+      affiliationType: portalProfileCache.affiliation_type || '',
+      churchId: portalProfileCache.church_id || null,
+    };
+
+    try {
+      fetch('/api/portal/profile', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+        keepalive: true,
+        credentials: 'include',
+      }).catch(() => {});
+    } catch (err) {
+      // Non-blocking update; ignore errors here.
+    }
+  }
+
+  async function prefillFromPortalProfile() {
+    const token = getSupabaseAccessToken();
+    if (!token) return;
+    try {
+      const res = await fetch('/api/portal/session', {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || !payload?.ok) return;
+      const profile = payload.profile || {};
+      portalProfileCache = profile;
+      fillDonationForm(wompiForm, profile);
+      fillDonationForm(stripeForm, profile);
+    } catch (err) {
+      console.warn('[donaciones] No se pudo precargar perfil');
+    }
+  }
+
+  prefillFromPortalProfile();
+  wompiForm?.addEventListener('submit', () => saveProfileFromDonation(wompiForm));
+  stripeForm?.addEventListener('submit', () => saveProfileFromDonation(stripeForm));
+</script>

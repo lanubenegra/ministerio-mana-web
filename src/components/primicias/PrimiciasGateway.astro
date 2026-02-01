@@ -397,6 +397,8 @@ const cspNonce = Astro.locals?.cspNonce;
   setupCurrencyInput('wompi-amount-display', 'wompi-amount-real');
   setupCurrencyInput('stripe-amount-display', 'stripe-amount-real');
 
+  let portalProfileCache = null;
+
   function getSupabaseAccessToken() {
     try {
       const key = Object.keys(localStorage).find((k) => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -436,6 +438,45 @@ const cspNonce = Astro.locals?.cspNonce;
     }
   }
 
+  function resolveValue(form, selector, fallback) {
+    const el = form?.querySelector(selector);
+    const value = el?.value?.trim();
+    return value || fallback || '';
+  }
+
+  function saveProfileFromDonation(form) {
+    if (!form || !portalProfileCache) return;
+    const token = getSupabaseAccessToken();
+    if (!token) return;
+
+    const payload = {
+      fullName: resolveValue(form, 'input[name="fullName"]', portalProfileCache.full_name),
+      phone: resolveValue(form, 'input[name="phone"]', portalProfileCache.phone),
+      city: resolveValue(form, 'input[name="city"]', portalProfileCache.city),
+      country: resolveValue(form, 'input[name="country"]', portalProfileCache.country),
+      documentType: resolveValue(form, 'select[name="documentType"]', portalProfileCache.document_type),
+      documentNumber: resolveValue(form, 'input[name="documentNumber"]', portalProfileCache.document_number),
+      churchName: resolveValue(form, 'input[name="church"]', portalProfileCache.church_name),
+      affiliationType: portalProfileCache.affiliation_type || '',
+      churchId: portalProfileCache.church_id || null,
+    };
+
+    try {
+      fetch('/api/portal/profile', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+        keepalive: true,
+        credentials: 'include',
+      }).catch(() => {});
+    } catch (err) {
+      // Non-blocking update; ignore errors here.
+    }
+  }
+
   async function prefillFromPortalProfile() {
     const token = getSupabaseAccessToken();
     if (!token) return;
@@ -447,6 +488,7 @@ const cspNonce = Astro.locals?.cspNonce;
       const payload = await res.json().catch(() => null);
       if (!res.ok || !payload?.ok) return;
       const profile = payload.profile || {};
+      portalProfileCache = profile;
       fillDonationForm(wompiForm, profile);
       fillDonationForm(stripeForm, profile);
     } catch (err) {
@@ -455,4 +497,7 @@ const cspNonce = Astro.locals?.cspNonce;
   }
 
   prefillFromPortalProfile();
+
+  wompiForm?.addEventListener('submit', () => saveProfileFromDonation(wompiForm));
+  stripeForm?.addEventListener('submit', () => saveProfileFromDonation(stripeForm));
 </script>
