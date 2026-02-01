@@ -5,6 +5,7 @@
 ALTER TABLE donations ADD COLUMN IF NOT EXISTS church_id UUID REFERENCES churches(id);
 ALTER TABLE donations ADD COLUMN IF NOT EXISTS concept_code TEXT; -- TITHE, OFFERING, CAMPUS, REGISTRATION, EVENT, OTHER
 ALTER TABLE donations ADD COLUMN IF NOT EXISTS concept_label TEXT;
+ALTER TABLE donations ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN DEFAULT FALSE;
 
 create index if not exists idx_donations_church on donations(church_id);
 create index if not exists idx_donations_concept on donations(concept_code);

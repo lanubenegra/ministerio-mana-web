@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
+import { normalizeDocumentType } from '@lib/donationInput';
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
 
 export const prerender = false;
@@ -48,6 +49,8 @@ export const POST: APIRoute = async ({ request }) => {
   const phone = sanitizePlainText(payload.phone || '', 32);
   const city = sanitizePlainText(payload.city || '', 80);
   const country = sanitizePlainText(payload.country || '', 80);
+  const documentType = normalizeDocumentType(payload.document_type || payload.documentType || '') || '';
+  const documentNumber = sanitizePlainText(payload.document_number || payload.documentNumber || '', 40);
   const affiliationType = isValidAffiliation(payload.affiliation_type || payload.affiliationType)
     ? (payload.affiliation_type || payload.affiliationType)
     : null;
@@ -60,12 +63,20 @@ export const POST: APIRoute = async ({ request }) => {
       headers: { 'content-type': 'application/json' },
     });
   }
+  if (documentNumber && containsBlockedSequence(documentNumber)) {
+    return new Response(JSON.stringify({ ok: false, error: 'Documento invalido' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
 
   const updatePayload = {
     full_name: fullName || null,
     phone: phone || null,
     city: city || null,
     country: country || null,
+    document_type: documentType || null,
+    document_number: documentNumber || null,
     affiliation_type: affiliationType,
     church_name: churchName || null,
     church_id: churchId,

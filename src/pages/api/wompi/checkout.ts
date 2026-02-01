@@ -83,6 +83,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         headers: { 'content-type': 'application/json' },
       });
     }
+    const recurringFlag = String(data.get('isRecurring') || '').toLowerCase();
+    const isRecurring = ['true', '1', 'on', 'yes'].includes(recurringFlag);
 
     const baseUrl = resolveBaseUrl(request);
     const redirectUrl = `${baseUrl}/donaciones/gracias`;
@@ -124,6 +126,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       donor_phone: donorInfo.phone,
       donor_document_type: donorInfo.documentType,
       donor_document_number: donorInfo.documentNumber,
+      is_recurring: isRecurring,
       donor_country: donorInfo.country,
       donor_city: donorInfo.city,
       source: 'donaciones-wompi',

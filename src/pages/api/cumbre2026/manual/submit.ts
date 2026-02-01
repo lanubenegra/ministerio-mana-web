@@ -246,6 +246,7 @@ export const POST: APIRoute = async ({ request }) => {
         donor_phone: phone,
         donor_document_type: documentType || null,
         donor_document_number: documentNumber || null,
+        is_recurring: false,
         donor_country: contactCountry || null,
         donor_city: contactCity || null,
         source: 'cumbre-manual',

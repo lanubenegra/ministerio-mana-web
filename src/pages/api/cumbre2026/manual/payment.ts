@@ -97,6 +97,7 @@ export const POST: APIRoute = async ({ request }) => {
     donor_phone: booking.contact_phone ?? null,
     donor_document_type: booking.contact_document_type ?? null,
     donor_document_number: booking.contact_document_number ?? null,
+    is_recurring: false,
     donor_country: booking.contact_country ?? null,
     donor_city: booking.contact_city ?? null,
     source: 'cumbre-manual',

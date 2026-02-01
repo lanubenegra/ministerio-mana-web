@@ -23,6 +23,7 @@ export type DonationRecord = {
   donor_phone: string | null;
   donor_document_type: string | null;
   donor_document_number: string | null;
+  is_recurring: boolean | null;
   donor_country: string | null;
   donor_city: string | null;
   source: string | null;
@@ -71,6 +72,7 @@ export async function createDonation(payload: Omit<DonationRecord, 'id'>): Promi
       donor_phone: payload.donor_phone ?? null,
       donor_document_type: payload.donor_document_type ?? null,
       donor_document_number: payload.donor_document_number ?? null,
+      is_recurring: payload.is_recurring ?? null,
       donor_country: payload.donor_country ?? null,
       donor_city: payload.donor_city ?? null,
       source: payload.source ?? null,

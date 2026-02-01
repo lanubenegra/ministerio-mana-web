@@ -22,6 +22,7 @@ create table if not exists donations (
   donor_phone text,
   donor_document_type text,
   donor_document_number text,
+  is_recurring boolean default false,
   donor_country text,
   donor_city text,
   source text,
