@@ -12,6 +12,47 @@ function isValidAffiliation(value: any): value is AffiliationType {
   return value === 'local' || value === 'online' || value === 'none';
 }
 
+export const GET: APIRoute = async ({ request }) => {
+  if (!supabaseAdmin) {
+    return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const user = await getUserFromRequest(request);
+  if (!user) {
+    return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows returned"
+    return new Response(JSON.stringify({ ok: false, error: 'Error al cargar perfil' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  // If no profile exists yet, return empty object/defaults but with user info
+  const profile = data || {
+    email: user.email,
+    role: 'user' // Default role
+  };
+
+  return new Response(JSON.stringify(profile), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
+};
+
 export const POST: APIRoute = async ({ request }) => {
   if (!supabaseAdmin) {
     return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), {
