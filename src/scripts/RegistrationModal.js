@@ -161,7 +161,7 @@ export class RegistrationModal {
         this.paymentOptions?.forEach(input => {
             input.addEventListener('change', (e) => {
                 // Prevent scroll jump by preserving current position
-                const scrollContainer = this.modal?.querySelector('.overflow-y-auto');
+                const scrollContainer = document.getElementById('modal-scroll-container');
                 const currentScrollPos = scrollContainer?.scrollTop || 0;
 
                 // Update UI
