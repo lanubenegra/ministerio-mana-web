@@ -75,19 +75,24 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
+  const url = new URL(request.url);
+  const requestedChurch = url.searchParams.get('churchId');
+  const includeAllSources = isAdmin && !requestedChurch;
+
   // Build Query
   let query = supabaseAdmin
     .from('cumbre_bookings')
     // Added payment_method for "Online vs Physical" request
     .select('id, contact_name, contact_email, total_amount, total_paid, currency, status, created_at, church_id, contact_church, payment_method, payment_status')
-    .eq('source', 'portal-iglesia')
     .order('created_at', { ascending: false })
     .limit(100);
+  if (!includeAllSources) {
+    query = query.eq('source', 'portal-iglesia');
+  }
 
   // Apply Scope
   if (isAdmin) {
     // Admin can filter by param, otherwise sees all (or limited 100 recent)
-    const requestedChurch = new URL(request.url).searchParams.get('churchId');
     if (requestedChurch) query = query.eq('church_id', requestedChurch);
   } else if (churchId && churchId.startsWith('IN:')) {
     // Country Scope (Multiple IDs)

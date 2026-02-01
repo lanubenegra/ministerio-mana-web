@@ -74,17 +74,22 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
+  const url = new URL(request.url);
+  const requestedChurch = url.searchParams.get('churchId');
+  const includeAllSources = isAdmin && !requestedChurch;
+
   // Build Query
   let bookingQuery = supabaseAdmin
     .from('cumbre_bookings')
     .select('id, contact_name, contact_email, contact_phone, contact_church, church_id, total_amount, total_paid, status, currency')
-    .eq('source', 'portal-iglesia')
     .order('created_at', { ascending: false })
     .limit(200);
+  if (!includeAllSources) {
+    bookingQuery = bookingQuery.eq('source', 'portal-iglesia');
+  }
 
   // Apply Scope
   if (isAdmin) {
-    const requestedChurch = new URL(request.url).searchParams.get('churchId');
     if (requestedChurch) bookingQuery = bookingQuery.eq('church_id', requestedChurch);
   } else if (churchId && churchId.startsWith('IN:')) {
     const ids = churchId.substring(3).split(',');

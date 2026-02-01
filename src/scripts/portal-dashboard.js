@@ -655,7 +655,7 @@ async function loadChurchSelector(headers = {}) {
     if (isAdmin) {
       const allOption = document.createElement('option');
       allOption.value = ALL_CHURCHES_VALUE;
-      allOption.textContent = 'Todas las iglesias';
+      allOption.textContent = 'Todos';
       churchSelectorInput.appendChild(allOption);
     } else {
       const placeholder = document.createElement('option');
@@ -724,7 +724,7 @@ async function loadChurchSelector(headers = {}) {
     }
 
     if (isAllChurchesSelected()) {
-      churchSelectorStatus.textContent = 'Mostrando todas las iglesias.';
+      churchSelectorStatus.textContent = 'Mostrando todos los registros (incluye sin iglesia / virtual).';
     } else {
       churchSelectorStatus.textContent = churches.length ? 'Selecciona una iglesia para ver los registros.' : 'No hay iglesias disponibles.';
     }
@@ -873,7 +873,8 @@ function renderChurchBookings(list) {
   list.forEach((item) => {
     const card = document.createElement('div');
     card.className = 'rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition-shadow';
-    const churchLabel = item.contact_church ? `<p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 truncate">${item.contact_church}</p>` : '';
+    const churchName = item.contact_church || (isAllChurchesSelected() ? 'Sin iglesia / virtual' : 'Sin iglesia');
+    const churchLabel = `<p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 truncate">${churchName}</p>`;
 
     // Status Logic
     const isPaidFull = item.is_paid_full || item.total_paid >= item.total_amount;
