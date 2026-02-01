@@ -4,63 +4,64 @@
 // ===================================
 
 async function loadMyEventInfo(authHeaders) {
-    try {
-        const res = await fetch('/api/portal/eventos/my-registration', {
-            headers: authHeaders
-        });
-        const data = await res.json();
+  try {
+    const res = await fetch('/api/portal/eventos/my-registration', {
+      headers: authHeaders
+    });
+    const data = await res.json();
 
-        if (!data.ok) {
-            console.error('Error loading event info:', data.error);
-            renderNotEnrolledView();
-            return;
-        }
-
-        if (!data.enrolled) {
-            renderNotEnrolledView();
-            return;
-        }
-
-        // Render sections
-        renderCountdown();
-        renderPaymentStatus(data);
-        renderMyGroup(data.group);
-        renderWhatsAppButton();
-
-    } catch (err) {
-        console.error('Error in loadMyEventInfo:', err);
-        renderNotEnrolledView();
+    if (!data.ok) {
+      console.error('Error loading event info:', data.error);
+      renderNotEnrolledView();
+      return;
     }
+
+    if (!data.enrolled) {
+      renderNotEnrolledView();
+      return;
+    }
+
+    // Render sections
+    renderCountdown();
+    renderPaymentStatus(data);
+    renderMyGroup(data.group);
+    renderWhatsAppButton();
+    renderPolicies();
+
+  } catch (err) {
+    console.error('Error in loadMyEventInfo:', err);
+    renderNotEnrolledView();
+  }
 }
 
 function renderCountdown() {
-    const countdownEl = document.getElementById('event-countdown');
-    if (!countdownEl) return;
+  const countdownEl = document.getElementById('event-countdown');
+  if (!countdownEl) return;
 
-    const eventDate = new Date('2026-05-15T00:00:00');
+  const eventDate = new Date('2026-06-06T00:00:00');
 
-    function updateCountdown() {
-        const now = new Date();
-        const diff = eventDate - now;
+  function updateCountdown() {
+    const now = new Date();
+    const diff = eventDate - now;
 
-        if (diff <= 0) {
-            countdownEl.innerHTML = `
+    if (diff <= 0) {
+      countdownEl.innerHTML = `
         <div class="text-center py-8">
           <h3 class="text-2xl font-bold text-brand-teal">¡La Cumbre ha comenzado!</h3>
         </div>
       `;
-            return;
-        }
+      return;
+    }
 
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-        countdownEl.innerHTML = `
+    countdownEl.innerHTML = `
       <div class="bg-gradient-to-br from-[#293C74] to-[#1e2b58] rounded-[3rem] p-10 text-white text-center">
         <h2 class="text-3xl font-bold mb-2">Cumbre Mundial 2026</h2>
-        <p class="text-brand-teal mb-8">La Unión, Valle del Cauca • Mayo 15-18</p>
+        <p class="text-brand-teal mb-8">La Unión, Valle del Cauca • Junio 6-8, 2026</p>
         
         <div class="grid grid-cols-4 gap-4 max-w-lg mx-auto">
           <div class="bg-white/10 backdrop-blur rounded-2xl p-4">
@@ -82,22 +83,22 @@ function renderCountdown() {
         </div>
       </div>
     `;
-    }
+  }
 
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
 }
 
 function renderPaymentStatus(data) {
-    const statusEl = document.getElementById('my-payment-status');
-    if (!statusEl) return;
+  const statusEl = document.getElementById('my-payment-status');
+  if (!statusEl) return;
 
-    const { payment, installments } = data;
-    const isPaidFull = payment.isPaidFull;
+  const { payment, installments } = data;
+  const isPaidFull = payment.isPaidFull;
 
-    if (isPaidFull) {
-        // Paid in full - Green success card
-        statusEl.innerHTML = `
+  if (isPaidFull) {
+    // Paid in full - Green success card
+    statusEl.innerHTML = `
       <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-[3rem] p-8 border border-green-200">
         <div class="flex items-start gap-4 mb-6">
           <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white flex-shrink-0">
@@ -123,12 +124,12 @@ function renderPaymentStatus(data) {
         </div>
       </div>
     `;
-    } else {
-        // Has pending payments
-        const pendingCount = installments.pendingCount || 0;
-        const progress = payment.totalAmount > 0 ? Math.round((payment.totalPaid / payment.totalAmount) * 100) : 0;
+  } else {
+    // Has pending payments
+    const pendingCount = installments.pendingCount || 0;
+    const progress = payment.totalAmount > 0 ? Math.round((payment.totalPaid / payment.totalAmount) * 100) : 0;
 
-        statusEl.innerHTML = `
+    statusEl.innerHTML = `
       <div class="bg-white rounded-[3rem] p-8 border border-slate-200">
         <div class="flex items-start justify-between mb-6">
           <div>
@@ -157,21 +158,21 @@ function renderPaymentStatus(data) {
         </div>
       </div>
     `;
-    }
+  }
 }
 
 function renderInstallmentsList(installments, totalPaid) {
-    if (!installments || installments.length === 0) {
-        return `<p class="text-slate-400 text-sm text-center py-4">No hay cuotas programadas</p>`;
-    }
+  if (!installments || installments.length === 0) {
+    return `<p class="text-slate-400 text-sm text-center py-4">No hay cuotas programadas</p>`;
+  }
 
-    return installments.map((inst, index) => {
-        const isPaid = inst.status === 'PAID';
-        const dueDate = new Date(inst.due_date);
-        const formattedDate = dueDate.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+  return installments.map((inst, index) => {
+    const isPaid = inst.status === 'PAID';
+    const dueDate = new Date(inst.due_date);
+    const formattedDate = dueDate.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 
-        if (isPaid) {
-            return `
+    if (isPaid) {
+      return `
         <div class="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-2xl">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white">
@@ -187,9 +188,9 @@ function renderInstallmentsList(installments, totalPaid) {
           <span class="text-green-700 font-bold">$${inst.amount.toLocaleString()}</span>
         </div>
       `;
-        } else {
-            const isOverdue = new Date() > dueDate;
-            return `
+    } else {
+      const isOverdue = new Date() > dueDate;
+      return `
         <div class="flex items-center justify-between p-4 ${isOverdue ? 'bg-red-50 border-red-200 border-2' : 'bg-yellow-50 border border-yellow-200'} rounded-2xl">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 ${isOverdue ? 'bg-red-500' : 'bg-yellow-500'} rounded-full flex items-center justify-center text-white">
@@ -205,29 +206,29 @@ function renderInstallmentsList(installments, totalPaid) {
           <span class="${isOverdue ? 'text-red-700' : 'text-yellow-700'} font-bold">$${inst.amount.toLocaleString()}</span>
         </div>
       `;
-        }
-    }).join('');
+    }
+  }).join('');
 }
 
 function renderMyGroup(group) {
-    const groupEl = document.getElementById('my-group-members');
-    if (!groupEl) return;
+  const groupEl = document.getElementById('my-group-members');
+  if (!groupEl) return;
 
-    if (!group || !group.members || group.members.length === 0) {
-        groupEl.innerHTML = '<p class="text-slate-400 text-center py-8">No hay participantes</p>';
-        return;
-    }
+  if (!group || !group.members || group.members.length === 0) {
+    groupEl.innerHTML = '<p class="text-slate-400 text-center py-8">No hay participantes</p>';
+    return;
+  }
 
-    groupEl.innerHTML = `
+  groupEl.innerHTML = `
     <div class="bg-white rounded-[3rem] p-8 border border-slate-200">
       <h3 class="text-lg font-bold text-[#293C74] mb-6">Participantes Inscritos</h3>
       
       <div class="space-y-3">
         ${group.members.map(member => {
-        const initials = member.name.split(' ').map(n => n[0]).join('').substring(0, 2);
-        const isLeader = member.is_leader;
+    const initials = member.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+    const isLeader = member.is_leader;
 
-        return `
+    return `
             <div class="flex items-center gap-4 p-4 ${isLeader ? 'bg-[#293C74]/5' : 'bg-slate-50'} rounded-2xl">
               <div class="w-12 h-12 ${isLeader ? 'bg-[#293C74]' : 'bg-slate-300'} rounded-full flex items-center justify-center ${isLeader ? 'text-white' : 'text-slate-600'} font-bold text-sm">
                 ${initials}
@@ -241,20 +242,20 @@ function renderMyGroup(group) {
               ${isLeader ? '<span class="px-3 py-1 bg-brand-teal/10 text-brand-teal text-xs font-bold rounded-full">Líder</span>' : ''}
             </div>
           `;
-    }).join('')}
+  }).join('')}
       </div>
     </div>
   `;
 }
 
 function renderWhatsAppButton() {
-    const whatsappEl = document.getElementById('event-whatsapp');
-    if (!whatsappEl) return;
+  const whatsappEl = document.getElementById('event-whatsapp');
+  if (!whatsappEl) return;
 
-    const message = encodeURIComponent('Hola, necesito información sobre la Cumbre Mundial 2026');
-    const whatsappNumber = '573001234567'; // TODO: Replace with actual number
+  const message = encodeURIComponent('Hola, necesito información sobre la Cumbre Mundial 2026');
+  const whatsappNumber = '573001234567'; // TODO: Replace with actual number
 
-    whatsappEl.innerHTML = `
+  whatsappEl.innerHTML = `
     <div class="bg-gradient-to-br from-[#25D366] to-[#1ea952] rounded-[3rem] p-8 text-white text-center">
       <div class="w-16 h-16 bg-white/20 rounded-full mx-auto mb-4 flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
@@ -278,10 +279,10 @@ function renderWhatsAppButton() {
 }
 
 function renderNotEnrolledView() {
-    const statusEl = document.getElementById('my-payment-status');
-    if (!statusEl) return;
+  const statusEl = document.getElementById('my-payment-status');
+  if (!statusEl) return;
 
-    statusEl.innerHTML = `
+  statusEl.innerHTML = `
     <div class="bg-white rounded-[3rem] p-12 text-center border border-slate-200">
       <div class="w-20 h-20 bg-yellow-100 rounded-full mx-auto mb-6 flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -298,7 +299,96 @@ function renderNotEnrolledView() {
     </div>
   `;
 
-    // Still show countdown
-    renderCountdown();
-    renderWhatsAppButton();
+  // Still show countdown
+  renderCountdown();
+  renderWhatsAppButton();
+  renderPolicies();
+}
+
+function renderPolicies() {
+  const policiesEl = document.getElementById('event-policies');
+  if (!policiesEl) return;
+
+  policiesEl.innerHTML = `
+    <div class="bg-slate-50 rounded-[3rem] p-8 border border-slate-100">
+      <div class="flex items-start gap-3 mb-6">
+        <div class="w-10 h-10 bg-[#293C74] rounded-full flex items-center justify-center text-white flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-lg font-bold text-[#293C74] mb-2">Políticas y Condiciones</h3>
+          <p class="text-sm text-slate-600 mb-4">Información importante para participantes de la Cumbre Mundial 2026</p>
+        </div>
+      </div>
+      
+      <div class="space-y-4 text-sm">
+        <div class="bg-white rounded-2xl p-5 border border-slate-100">
+          <div class="flex items-start gap-2 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-teal flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h4 class="font-bold text-[#293C74] mb-1">Política de Pagos</h4>
+              <p class="text-slate-600 leading-relaxed">Los pagos pueden realizarse en efectivo en tu iglesia o mediante transferencia bancaria. Si eliges pago a cuotas, debes cumplir con las fechas de vencimiento establecidas.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-slate-100">
+          <div class="flex items-start gap-2 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <h4 class="font-bold text-[#293C74] mb-1">Cancelaciones y Reembolsos</h4>
+              <p class="text-slate-600 leading-relaxed">Las cancelaciones realizadas antes del 1 de mayo tendrán un reembolso del 50%. Después de esa fecha, no se realizarán reembolsos.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-slate-100">
+          <div class="flex items-start gap-2 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <div>
+              <h4 class="font-bold text-[#293C74] mb-1">Alojamiento</h4>
+              <p class="text-slate-600 leading-relaxed">El alojamiento incluye hospedaje del 5 al 8 de junio. Check-in viernes 6 desde las 2:00 PM, check-out domingo 8 a las 12:00 PM.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-slate-100">
+          <div class="flex items-start gap-2 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <div>
+              <h4 class="font-bold text-[#293C74] mb-1">Alimentación</h4>
+              <p class="text-slate-600 leading-relaxed">Incluye desayuno, almuerzo y cena durante los 3 días. Informa restricciones alimentarias con 2 semanas de anticipación.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 mt-6">
+          <div class="flex items-start gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h4 class="font-bold text-blue-900 mb-2">Notas Importantes</h4>
+              <ul class="text-blue-800 text-xs space-y-1 leading-relaxed list-disc list-inside">
+                <li>Trae ropa cómoda y adecuada para clima cálido</li>
+                <li>No olvides tu documento de identidad</li>
+                <li>El evento es libre de alcohol y cigarrillos</li>
+                <li>Respeta los horarios establecidos</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
