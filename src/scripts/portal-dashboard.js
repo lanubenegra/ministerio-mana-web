@@ -668,6 +668,63 @@ async function loadChurchSelector(headers = {}) {
   }
 }
 
+// Church Selector: Change Event Listener
+if (churchSelectorInput) {
+  churchSelectorInput.addEventListener('change', async () => {
+    const selectedChurchId = churchSelectorInput.value;
+
+    if (selectedChurchId && selectedChurchId !== '__custom__') {
+      // Save selection
+      await saveChurchSelection(selectedChurchId, portalAuthHeaders);
+
+      // Show dashboard content, hide empty state
+      const emptyEl = document.getElementById('church-dashboard-empty');
+      const contentEl = document.getElementById('church-dashboard-content');
+      if (emptyEl) emptyEl.classList.add('hidden');
+      if (contentEl) contentEl.classList.remove('hidden');
+
+      // Reload data for selected church
+      await Promise.all([
+        loadChurchBookings(portalAuthHeaders),
+        loadChurchInstallments(portalAuthHeaders),
+        loadChurchPayments(portalAuthHeaders),
+        loadChurchMembers(portalAuthHeaders)
+      ]).catch(err => console.error('Error loading church data:', err));
+
+      // Update stats
+      updateChurchStats();
+    } else if (selectedChurchId === '__custom__') {
+      portalIsCustomChurch = true;
+      if (churchNameInput) {
+        churchNameInput.removeAttribute('readonly');
+        churchNameInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+        churchNameInput.value = '';
+      }
+    } else {
+      // No selection -> show empty
+      const emptyEl = document.getElementById('church-dashboard-empty');
+      const contentEl = document.getElementById('church-dashboard-content');
+      if (emptyEl) emptyEl.classList.remove('hidden');
+      if (contentEl) contentEl.classList.add('hidden');
+    }
+  });
+}
+
+// Helper: Update Church Stats Cards
+function updateChurchStats() {
+  const total = churchBookingsData.length;
+  const paid = churchBookingsData.filter(b => b.is_paid_full || b.status === 'PAID').length;
+  const pending = total - paid;
+
+  const totalEl = document.getElementById('stat-church-total');
+  const paidEl = document.getElementById('stat-church-paid');
+  const pendingEl = document.getElementById('stat-church-pending');
+
+  if (totalEl) totalEl.textContent = total;
+  if (paidEl) paidEl.textContent = paid;
+  if (pendingEl) pendingEl.textContent = pending;
+}
+
 async function saveChurchSelection(churchId, headers = {}) {
   if (!churchSelectorStatus) return;
   churchSelectorStatus.textContent = 'Guardando selección...';
@@ -799,6 +856,9 @@ function renderChurchBookings(list) {
     `;
     churchBookingsList.appendChild(card);
   });
+
+  // Update stats after rendering
+  updateChurchStats();
 }
 
 function parseDateInput(value) {
