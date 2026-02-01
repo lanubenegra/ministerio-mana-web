@@ -322,6 +322,9 @@ async function loadDashboardData(authResult) {
     portalMemberships = sessionPayload.memberships || [];
     portalIsAdmin = portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin';
     portalIsSuperadmin = portalProfile?.role === 'superadmin';
+    if (portalIsAdmin && !portalSelectedChurchId) {
+      portalSelectedChurchId = ALL_CHURCHES_VALUE;
+    }
 
     dlog('[DEBUG] Data loaded. Profile:', portalProfile);
 

@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     let query = supabaseAdmin
         .from('user_profiles')
-        .select('user_id, first_name, last_name, email, role, church_id, updated_at, country')
+        .select('user_id, first_name, last_name, full_name, email, role, church_id, updated_at, country')
         .order('updated_at', { ascending: false });
 
     // Scoping Logic

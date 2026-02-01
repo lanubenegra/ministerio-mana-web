@@ -120,7 +120,7 @@ function applyFilters() {
     const query = searchInput?.value?.trim().toLowerCase() || '';
     const roleValue = roleFilter?.value || '';
     const filtered = (allUsers || []).filter((user) => {
-        const name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+        const name = user.full_name || `${user.first_name || ''} ${user.last_name || ''}`.trim();
         const searchable = `${name} ${user.email || ''}`.toLowerCase();
         if (query && !searchable.includes(query)) return false;
         if (roleValue && user.role !== roleValue) return false;
@@ -178,7 +178,7 @@ function renderTable(users) {
 
     if (tbody) {
         tbody.innerHTML = users.map(u => {
-            const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Sin nombre';
+            const fullName = u.full_name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Sin nombre';
             const resetButton = (currentUserRole === 'admin' || currentUserRole === 'superadmin')
                 ? `<button data-action="reset" data-email="${u.email}" class="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-[#293C74] hover:bg-slate-100">Reset contraseña</button>`
                 : '';
