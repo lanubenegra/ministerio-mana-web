@@ -100,7 +100,7 @@ function renderTable(users) {
                         ${u.role}
                     </span>
                 </td>
-                <td class="py-3 text-slate-400 text-xs">${new Date(u.created_at).toLocaleDateString()}</td>
+                <td class="py-3 text-slate-400 text-xs">${new Date(u.updated_at).toLocaleDateString()}</td>
             </tr>
         `).join('');
     }

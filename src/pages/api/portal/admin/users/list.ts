@@ -21,8 +21,8 @@ export const GET: APIRoute = async ({ request }) => {
 
     let query = supabaseAdmin
         .from('user_profiles')
-        .select('user_id, first_name, last_name, email, role, church_id, created_at')
-        .order('created_at', { ascending: false });
+        .select('user_id, first_name, last_name, email, role, church_id, updated_at')
+        .order('updated_at', { ascending: false });
 
     if (creatorProfile.role === 'pastor') {
         if (!creatorProfile.church_id) {
