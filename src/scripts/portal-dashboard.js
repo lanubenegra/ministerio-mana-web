@@ -314,6 +314,54 @@ async function loadDashboardData(authResult) {
 
     dlog('[DEBUG] Data loaded. Profile:', portalProfile);
 
+    // --- Sidebar Role Visibility Logic ---
+    // Note: "Eventos" (tab=iglesia) is visible for ALL users by default (no ID needed)
+    // We only control restricted admin/pastor links here
+    const navLinkEventManagement = document.getElementById('nav-link-events'); // Gestión de Eventos
+    const navLinkFinances = document.getElementById('nav-link-finances'); // Finanzas
+    const navLinkUsers = document.getElementById('nav-link-users'); // Usuarios
+    const navLinkCampus = document.getElementById('nav-link-campus'); // Campus
+
+    // Default: Hide ALL restricted links (regular users see none of these)
+    if (navLinkEventManagement) navLinkEventManagement.style.display = 'none';
+    if (navLinkFinances) navLinkFinances.style.display = 'none';
+    if (navLinkUsers) navLinkUsers.style.display = 'none';
+    if (navLinkCampus) navLinkCampus.style.display = 'none';
+
+    const myRole = portalProfile?.role;
+
+    // Gestión de Eventos: Only Pastors and Admins (can create local/national events)
+    const eventManagementRoles = ['superadmin', 'admin', 'national_pastor', 'pastor'];
+
+    // Usuarios: Only Pastors and Admins
+    const userManagementRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator'];
+
+    // Campus: Campus Missionaries + Admins (donor management)
+    const campusRoles = ['superadmin', 'admin', 'campus_missionary'];
+
+    // Finanzas: ONLY Superadmin and Admin
+    const financeRoles = ['superadmin', 'admin'];
+
+    if (myRole) {
+      if (eventManagementRoles.includes(myRole) && navLinkEventManagement) {
+        navLinkEventManagement.style.display = 'flex';
+      }
+
+      if (userManagementRoles.includes(myRole) && navLinkUsers) {
+        navLinkUsers.style.display = 'flex';
+      }
+
+      if (campusRoles.includes(myRole) && navLinkCampus) {
+        navLinkCampus.style.display = 'flex';
+      }
+
+      if (financeRoles.includes(myRole) && navLinkFinances) {
+        navLinkFinances.style.display = 'flex';
+      }
+    }
+
+    // -------------------------------------
+
     const hasChurchRole = (portalMemberships || []).some(
       (membership) => ['church_admin', 'church_member'].includes(membership?.role) && membership?.status !== 'pending',
     );
@@ -346,14 +394,16 @@ async function loadDashboardData(authResult) {
     profileChurchName.value = portalProfile.church_name || '';
     toggleChurchField(profileAffiliation.value);
 
+    // Update Label for Superadmins if needed, though replaced by new static logic
     if (portalProfile?.role === 'admin' || portalProfile?.role === 'superadmin') {
-      if (iglesiaNavLabel) iglesiaNavLabel.textContent = 'Eventos';
       if (iglesiaTitle) iglesiaTitle.textContent = 'Cumbre Mundial 2026';
       if (iglesiaSubtitle) iglesiaSubtitle.textContent = 'Panel general del evento para gestión de sedes y registros físicos.';
 
       const adminUsersCard = document.getElementById('admin-users-card');
       const syncWrapper = document.getElementById('admin-sync-wrapper');
-      adminUsersCard?.classList.remove('hidden');
+      // We might keep these hidden or visible depending on specific page logic, 
+      // but Sidebar is now the primary navigation.
+      // adminUsersCard?.classList.remove('hidden'); // Legacy logic?
       syncWrapper?.classList.remove('hidden');
       loadAdminUsers();
     }
@@ -376,13 +426,14 @@ async function loadDashboardData(authResult) {
 
       const relatedBooking = payload.bookings?.find(b => b.id === activePlan.booking_id);
       // Default concept
-      let concept = 'Cumbre Mundial 2026';
-      let type = 'Abono';
+      let concept = relatedBooking?.event_name || 'Cumbre Mundial 2026';
 
-      // Future-proofing for other types
-      if (relatedBooking?.event_name) {
-        concept = relatedBooking.event_name;
+      // Override if specific metadata exists
+      if (relatedBooking?.event_type === 'campus') {
+        concept = 'Campus Maná';
       }
+
+      let type = 'Abono auto.';
 
       if (highlightHeader) highlightHeader.textContent = `${type} - ${concept}`;
       if (highlightContext) highlightContext.textContent = concept;
@@ -1607,8 +1658,8 @@ function renderMemberships(memberships) {
 }
 
 async function updateProfile() {
-    profileStatus.textContent = 'Guardando...';
-    profileStatus.className = 'text-sm font-medium text-white/40';
+  profileStatus.textContent = 'Guardando...';
+  profileStatus.className = 'text-sm font-medium text-white/40';
   try {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
