@@ -315,12 +315,11 @@ async function loadDashboardData(authResult) {
     dlog('[DEBUG] Data loaded. Profile:', portalProfile);
 
     // --- Sidebar Role Visibility Logic ---
-    // Note: "Eventos" (tab=iglesia) is visible for ALL users by default (no ID needed)
-    // We only control restricted admin/pastor links here
     const navLinkEventManagement = document.getElementById('nav-link-events'); // Gestión de Eventos
     const navLinkFinances = document.getElementById('nav-link-finances'); // Finanzas
     const navLinkUsers = document.getElementById('nav-link-users'); // Usuarios
     const navLinkCampus = document.getElementById('nav-link-campus'); // Campus
+    const tabIglesia = document.getElementById('tab-iglesia'); // The actual tab content
 
     // Default: Hide ALL restricted links (regular users see none of these)
     if (navLinkEventManagement) navLinkEventManagement.style.display = 'none';
@@ -328,7 +327,15 @@ async function loadDashboardData(authResult) {
     if (navLinkUsers) navLinkUsers.style.display = 'none';
     if (navLinkCampus) navLinkCampus.style.display = 'none';
 
-    const myRole = portalProfile?.role;
+    const myRole = portalProfile?.role || 'user';
+    const allowedDashboardRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator', 'church_admin'];
+
+    // STRICT: Remove or Hide "Gestión Sede" tab for regular users
+    if (!allowedDashboardRoles.includes(myRole) && tabIglesia) {
+      tabIglesia.remove(); // Completely remove from DOM
+      const navLinkIglesia = document.querySelector('[data-tab="iglesia"]');
+      if (navLinkIglesia) navLinkIglesia.style.display = 'none';
+    }
 
     // Gestión de Eventos: Only Pastors and Admins (can create local/national events)
     const eventManagementRoles = ['superadmin', 'admin', 'national_pastor', 'pastor'];
@@ -727,25 +734,67 @@ function renderChurchBookings(list) {
   churchBookingsList.classList.remove('hidden');
   list.forEach((item) => {
     const card = document.createElement('div');
-    card.className = 'rounded-2xl border border-slate-200 bg-slate-50/70 p-4';
-    const churchLabel = item.contact_church ? `<p class="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">${item.contact_church}</p>` : '';
+    card.className = 'rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition-shadow';
+    const churchLabel = item.contact_church ? `<p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 truncate">${item.contact_church}</p>` : '';
+
+    // Status Logic
+    const isPaidFull = item.is_paid_full || item.total_paid >= item.total_amount;
+    const paymentMethod = item.payment_type || (item.payment_method === 'cash' ? 'Físico' : 'Online');
+
+    // Badges
+    const statusBadge = isPaidFull
+      ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-green-700 text-[10px] font-bold uppercase tracking-wide border border-green-100">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+             Completo
+           </span>`
+      : `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wide border border-yellow-100">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+             Abono
+           </span>`;
+
+    const methodBadge = paymentMethod === 'Físico'
+      ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wide border border-slate-200">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+             Físico
+           </span>`
+      : `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-purple-700 text-[10px] font-bold uppercase tracking-wide border border-purple-100">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+             Online
+           </span>`;
+
     card.innerHTML = `
-      <div class="flex items-center justify-between gap-4">
-        <div>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reserva</p>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex-1 min-w-0">
           ${churchLabel}
-          <p class="text-sm font-bold text-[#293C74]">#${(item.reference || item.id)?.slice(0, 8).toUpperCase()}</p>
-          <p class="text-xs text-slate-500">${item.contact_name || item.contact_email || ''}</p>
+          <div class="flex items-center gap-2 mb-1">
+             <p class="text-sm font-bold text-[#293C74]">#${(item.reference || item.id)?.slice(0, 8).toUpperCase()}</p>
+             <span class="text-xs text-slate-400">•</span>
+             <p class="text-xs font-semibold text-slate-700 truncate">${item.contact_name || item.contact_email || 'Participante'}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            ${statusBadge}
+            ${methodBadge}
+          </div>
         </div>
-        <div class="text-right">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pagado</p>
-          <p class="text-sm font-bold text-[#293C74]">${formatCurrency(item.total_paid, item.currency)}</p>
-          <p class="text-xs text-slate-500">Total ${formatCurrency(item.total_amount, item.currency)}</p>
+        
+        <div class="flex items-center gap-4 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4 mt-2 md:mt-0">
+            <div class="text-right">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Pagado</p>
+              <p class="text-sm font-bold text-brand-teal">${formatCurrency(item.total_paid, item.currency)}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total</p>
+              <p class="text-sm font-bold text-[#293C74]">${formatCurrency(item.total_amount, item.currency)}</p>
+            </div>
         </div>
       </div>
-      <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
-        <span>${item.participant_count || 0} participantes</span>
-        <span>${item.status || 'PENDING'}</span>
+      
+      <div class="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400">
+         <span class="flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            ${item.participant_count || 0} inscritos
+         </span>
+         <span>${formatDateTime(item.created_at)}</span>
       </div>
     `;
     churchBookingsList.appendChild(card);

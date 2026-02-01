@@ -34,52 +34,66 @@ export const GET: APIRoute = async ({ request }) => {
   if (!user?.email) {
     const passwordSession = readPasswordSession(request);
     if (!passwordSession?.email) {
-      return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
-        status: 401,
-        headers: { 'content-type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), { status: 401 });
     }
     isAllowed = true;
     isAdmin = true;
   } else {
+    // Check Profile & Roles with strict 403 for regular users
     profile = await ensureUserProfile(user);
-    const memberships = await listUserMemberships(user.id);
-    const hasChurchRole = memberships.some((m: any) =>
-      ['church_admin', 'church_member'].includes(m?.role) && m?.status !== 'pending',
-    );
-    isAdmin = Boolean(profile && isAdminRole(profile.role));
-    isAllowed = Boolean(profile && (isAdmin || hasChurchRole));
-    churchId = memberships.find((m: any) => m?.church?.id)?.church?.id || profile?.church_id || null;
+    if (!profile) return new Response(JSON.stringify({ ok: false, error: 'Perfil no encontrado' }), { status: 403 });
+
+    const role = profile.role || 'user';
+    const allowedRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator', 'church_admin'];
+
+    if (!allowedRoles.includes(role)) {
+      return new Response(JSON.stringify({ ok: false, error: 'Acceso denegado a datos operativos' }), { status: 403 });
+    }
+
+    if (role === 'superadmin' || role === 'admin') {
+      isAdmin = true;
+      isAllowed = true;
+    } else if (role === 'national_pastor') {
+      isAllowed = true;
+      const country = profile.country;
+      if (!country) return new Response(JSON.stringify({ ok: false, error: 'Sin país asignado' }), { status: 403 });
+
+      const { data: churches } = await supabaseAdmin.from('churches').select('id').eq('country', country);
+      const countryChurchIds = (churches || []).map(c => c.id);
+
+      const requestedChurch = new URL(request.url).searchParams.get('churchId');
+      if (requestedChurch) {
+        if (!countryChurchIds.includes(requestedChurch)) return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), { status: 403 });
+        churchId = requestedChurch;
+      } else {
+        churchId = `IN:${countryChurchIds.join(',')}`;
+      }
+    } else {
+      isAllowed = true;
+      churchId = profile.church_id;
+    }
   }
 
-  if (!isAllowed) {
-    return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
-
-  const url = new URL(request.url);
-  const requestedChurch = url.searchParams.get('churchId');
-  const profileChurch = profile?.portal_church_id || profile?.church_id || null;
-  const targetChurch = isAdmin ? (requestedChurch || profileChurch || churchId) : churchId;
-
-  if (isAdmin && !targetChurch) {
-    return new Response(JSON.stringify({ ok: true, payments: [] }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
-
-  const bookingQuery = supabaseAdmin
+  // Build Query
+  let bookingQuery = supabaseAdmin
     .from('cumbre_bookings')
     .select('id, contact_name, contact_email, contact_phone, contact_church, church_id, total_amount, total_paid, status, currency')
     .eq('source', 'portal-iglesia')
     .order('created_at', { ascending: false })
     .limit(200);
 
-  if (targetChurch) {
-    bookingQuery.eq('church_id', targetChurch);
+  // Apply Scope
+  if (isAdmin) {
+    const requestedChurch = new URL(request.url).searchParams.get('churchId');
+    if (requestedChurch) bookingQuery = bookingQuery.eq('church_id', requestedChurch);
+  } else if (churchId && churchId.startsWith('IN:')) {
+    const ids = churchId.substring(3).split(',');
+    if (ids.length === 0) return new Response(JSON.stringify({ ok: true, payments: [] }), { status: 200 });
+    bookingQuery = bookingQuery.in('church_id', ids);
+  } else if (churchId) {
+    bookingQuery = bookingQuery.eq('church_id', churchId);
+  } else {
+    return new Response(JSON.stringify({ ok: true, payments: [] }), { status: 200 });
   }
 
   const { data: bookings, error: bookingsError } = await bookingQuery;

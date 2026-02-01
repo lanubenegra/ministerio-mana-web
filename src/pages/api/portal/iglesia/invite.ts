@@ -17,97 +17,98 @@ function isUuid(value: string | null | undefined): boolean {
 
 export const POST: APIRoute = async ({ request }) => {
   if (!supabaseAdmin) {
-    return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), { status: 500 });
   }
 
   const user = await getUserFromRequest(request);
   if (!user?.email) {
-    return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), { status: 401 });
   }
 
   const profile = await ensureUserProfile(user);
-  if (!profile) {
-    return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
+  if (!profile) return new Response(JSON.stringify({ ok: false, error: 'Perfil no encontrado' }), { status: 403 });
 
+  // Roles Authorization
+  const myRole = profile.role || 'user';
   const memberships = await listUserMemberships(user.id);
-  const hasChurchAdmin = memberships.some((m: any) => m?.role === 'church_admin' && m?.status !== 'pending');
-  const isAdmin = isAdminRole(profile.role);
+  const hasChurchAdmin = memberships.some((m: any) => m?.role === 'church_admin');
 
-  if (!isAdmin && !hasChurchAdmin) {
-    return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    });
+  // Can Invite?
+  // admins, national_pastor, pastor (implicit church leader), church_admin (explicit membership)
+  const canInvite = ['superadmin', 'admin', 'national_pastor', 'pastor'].includes(myRole) || hasChurchAdmin;
+
+  if (!canInvite) {
+    return new Response(JSON.stringify({ ok: false, error: 'No tienes permisos para invitar' }), { status: 403 });
   }
 
   const payload = await request.json().catch(() => null);
   if (!payload?.email) {
-    return new Response(JSON.stringify({ ok: false, error: 'Email requerido' }), {
-      status: 400,
-      headers: { 'content-type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ ok: false, error: 'Email requerido' }), { status: 400 });
   }
 
   const email = String(payload.email).trim().toLowerCase();
   const desiredRole = String(payload.role || 'church_member');
-  if (!isAdmin && desiredRole !== 'church_member') {
-    return new Response(JSON.stringify({ ok: false, error: 'Solo puedes invitar delegados' }), {
-      status: 403,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
+
+  // Only Admins can execute creating NEW churches on the fly or inviting global roles
+  // Pastors invting collaborators -> usually 'church_member' or 'local_collaborator'
+
+  const isAdmin = ['superadmin', 'admin'].includes(myRole);
 
   let churchId: string | null = null;
   let churchName: string | null = null;
+
+  // Church Resolution Logic
   if (isAdmin) {
+    // Admin can specify any church or create one
     const churchRaw = normalizeChurchName(payload.church || '');
     if (churchRaw) {
-      const { data: existing } = await supabaseAdmin
-        .from('churches')
-        .select('id, name')
-        .ilike('name', churchRaw)
-        .maybeSingle();
+      const { data: existing } = await supabaseAdmin.from('churches').select('id, name').ilike('name', churchRaw).maybeSingle();
       if (existing?.id) {
         churchId = existing.id;
         churchName = existing.name;
       } else {
-        const { data: created } = await supabaseAdmin
-          .from('churches')
-          .insert({
-            name: churchRaw,
-            city: normalizeCityName(payload.city || ''),
-            country: sanitizePlainText(payload.country || '', 40) || null,
-            created_by: isUuid(user.id) ? user.id : null,
-          })
-          .select('id, name')
-          .single();
+        const { data: created } = await supabaseAdmin.from('churches').insert({
+          name: churchRaw,
+          city: normalizeCityName(payload.city || ''),
+          country: sanitizePlainText(payload.country || '', 40) || null,
+          created_by: isUuid(user.id) ? user.id : null,
+        }).select('id, name').single();
         churchId = created?.id || null;
         churchName = created?.name || churchRaw;
       }
     }
+  } else if (myRole === 'national_pastor') {
+    // National Pastor -> Can select church in country
+    const myCountry = profile.country;
+    if (!myCountry) return new Response(JSON.stringify({ ok: false, error: 'Sin país asignado' }), { status: 403 });
+
+    const requestedChurchId = payload.churchId; // Frontend should pass ID if selecting from list
+    // Verify church is in country
+    if (requestedChurchId) {
+      const { data: church } = await supabaseAdmin.from('churches').select('id, name, country').eq('id', requestedChurchId).single();
+      if (church && church.country === myCountry) {
+        churchId = church.id;
+        churchName = church.name;
+      } else {
+        return new Response(JSON.stringify({ ok: false, error: 'No autorizado para esta iglesia' }), { status: 403 });
+      }
+    } else {
+      return new Response(JSON.stringify({ ok: false, error: 'Debes seleccionar una iglesia' }), { status: 400 });
+    }
   } else {
+    // Local Pastor / Church Admin -> Restricted to own church
+    // Prefer membership church first
     const membership = memberships.find((m: any) => m?.church?.id);
-    churchId = membership?.church?.id || null;
-    churchName = membership?.church?.name || null;
+    // Or profile church
+    churchId = membership?.church?.id || profile.church_id || profile.portal_church_id;
+    churchName = membership?.church?.name || profile.church_name;
   }
 
   if (!churchId) {
-    return new Response(JSON.stringify({ ok: false, error: 'Selecciona una iglesia' }), {
-      status: 400,
-      headers: { 'content-type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ ok: false, error: 'No se identificó la iglesia destino' }), { status: 400 });
   }
 
+  // ... (User creation / Upsert membership logic remains same) ...
   const existingUser = await findAuthUserByEmail(email);
   let targetUserId = existingUser?.id || null;
 
@@ -116,20 +117,12 @@ export const POST: APIRoute = async ({ request }) => {
     const redirectTo = `${baseUrl}/portal/activar?next=${encodeURIComponent('/portal')}`;
     const result = await sendAuthLink({ kind: 'invite', email, redirectTo });
     if (!result.ok) {
-      return new Response(JSON.stringify({ ok: false, error: 'No se pudo enviar invitación' }), {
-        status: 500,
-        headers: { 'content-type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ ok: false, error: 'Error enviando invitación' }), { status: 500 });
     }
-    targetUserId = result.userId || null;
+    targetUserId = result.userId;
   }
 
-  if (!targetUserId) {
-    return new Response(JSON.stringify({ ok: false, error: 'No se pudo crear usuario' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
+  if (!targetUserId) return new Response(JSON.stringify({ ok: false, error: 'Error usuario destino' }), { status: 500 });
 
   await supabaseAdmin
     .from('church_memberships')
@@ -137,11 +130,8 @@ export const POST: APIRoute = async ({ request }) => {
       church_id: churchId,
       user_id: targetUserId,
       role: desiredRole,
-      status: 'active',
+      status: 'active', // Auto-active for now
     }, { onConflict: 'church_id,user_id' });
 
-  return new Response(JSON.stringify({ ok: true, churchId, churchName }), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  });
+  return new Response(JSON.stringify({ ok: true, churchId, churchName }), { status: 200 });
 };

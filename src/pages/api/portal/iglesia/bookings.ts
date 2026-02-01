@@ -22,62 +22,94 @@ export const GET: APIRoute = async ({ request }) => {
   if (!user?.email) {
     const passwordSession = readPasswordSession(request);
     if (!passwordSession?.email) {
-      return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
-        status: 401,
-        headers: { 'content-type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), { status: 401 });
     }
     isAllowed = true;
     isAdmin = true;
   } else {
+    // Standard User - Check Profile & Roles
     const profile = await ensureUserProfile(user);
-    const memberships = await listUserMemberships(user.id);
-    const hasChurchRole = memberships.some((m: any) =>
-      ['church_admin', 'church_member'].includes(m?.role) && m?.status !== 'pending',
-    );
-    isAdmin = Boolean(profile && isAdminRole(profile.role));
-    isAllowed = Boolean(profile && (isAdmin || hasChurchRole));
-    churchId = memberships.find((m: any) => m?.church?.id)?.church?.id || profile?.church_id || null;
+    if (!profile) return new Response(JSON.stringify({ ok: false, error: 'Perfil no encontrado' }), { status: 403 });
+
+    const role = profile.role || 'user';
+
+    // 1. Roles allowed to view dashboard data
+    const allowedRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator', 'church_admin'];
+    if (!allowedRoles.includes(role)) {
+      // Regular users cannot see this data
+      return new Response(JSON.stringify({ ok: false, error: 'Acceso denegado a datos operativos' }), { status: 403 });
+    }
+
+    // 2. Determine Scope
+    if (role === 'superadmin' || role === 'admin') {
+      // Global Scope
+      isAdmin = true;
+      isAllowed = true;
+      // Logic handled below (churchId param)
+    } else if (role === 'national_pastor') {
+      // Country Scope
+      isAllowed = true;
+      const country = profile.country;
+      if (!country) return new Response(JSON.stringify({ ok: false, error: 'Sin país asignado' }), { status: 403 });
+
+      // Find all churches in this country
+      const { data: churches } = await supabaseAdmin.from('churches').select('id').eq('country', country);
+      const countryChurchIds = (churches || []).map(c => c.id);
+
+      const requestedChurch = new URL(request.url).searchParams.get('churchId');
+      if (requestedChurch) {
+        // Verify requested church is in country
+        if (!countryChurchIds.includes(requestedChurch)) {
+          return new Response(JSON.stringify({ ok: false, error: 'No autorizado para esta sede' }), { status: 403 });
+        }
+        churchId = requestedChurch; // Validated
+      } else {
+        // No specific church requested, return query for ALL in country
+        // Special flag to handle "IN" query below
+        churchId = `IN:${countryChurchIds.join(',')}`;
+      }
+    } else {
+      // Local Scope (Pastor / Collaborator)
+      isAllowed = true;
+      churchId = profile.church_id; // Forced to assigned church
+    }
   }
 
-  if (!isAllowed) {
-    return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
-
-  const url = new URL(request.url);
-  const requestedChurch = url.searchParams.get('churchId');
-  const targetChurch = isAdmin ? (requestedChurch || churchId) : churchId;
-
-  if (isAdmin && !targetChurch) {
-    return new Response(JSON.stringify({ ok: true, bookings: [] }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
-
-  const query = supabaseAdmin
+  // Build Query
+  let query = supabaseAdmin
     .from('cumbre_bookings')
-    .select('id, contact_name, contact_email, total_amount, total_paid, currency, status, created_at, church_id, contact_church')
+    // Added payment_method for "Online vs Physical" request
+    .select('id, contact_name, contact_email, total_amount, total_paid, currency, status, created_at, church_id, contact_church, payment_method, payment_status')
     .eq('source', 'portal-iglesia')
     .order('created_at', { ascending: false })
     .limit(100);
 
-  if (targetChurch) {
-    query.eq('church_id', targetChurch);
+  // Apply Scope
+  if (isAdmin) {
+    // Admin can filter by param, otherwise sees all (or limited 100 recent)
+    const requestedChurch = new URL(request.url).searchParams.get('churchId');
+    if (requestedChurch) query = query.eq('church_id', requestedChurch);
+  } else if (churchId && churchId.startsWith('IN:')) {
+    // Country Scope (Multiple IDs)
+    const ids = churchId.substring(3).split(',');
+    if (ids.length === 0) return new Response(JSON.stringify({ ok: true, bookings: [] }), { status: 200 }); // No churches
+    query = query.in('church_id', ids);
+  } else if (churchId) {
+    // Local Scope (Single ID)
+    query = query.eq('church_id', churchId);
+  } else {
+    // Should not happen if allowed, but fail safe
+    return new Response(JSON.stringify({ ok: true, bookings: [] }), { status: 200 });
   }
 
   const { data: bookings, error } = await query;
+
   if (error) {
     console.error('[portal.iglesia.bookings] error', error);
-    return new Response(JSON.stringify({ ok: false, error: 'No se pudo cargar' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ ok: false, error: 'Error interno' }), { status: 500 });
   }
 
+  // Participant Counts
   const bookingIds = (bookings || []).map((b: any) => b.id);
   let counts: Record<string, number> = {};
   if (bookingIds.length) {
@@ -94,6 +126,9 @@ export const GET: APIRoute = async ({ request }) => {
   const response = (bookings || []).map((booking: any) => ({
     ...booking,
     participant_count: counts[booking.id] || 0,
+    // Helper fields for frontend
+    is_paid_full: booking.status === 'PAID' || booking.total_paid >= booking.total_amount,
+    payment_type: booking.payment_method === 'cash' ? 'Físico' : 'Online' // Default mapping
   }));
 
   return new Response(JSON.stringify({ ok: true, bookings: response }), {
