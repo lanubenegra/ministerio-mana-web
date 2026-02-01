@@ -115,11 +115,11 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 </div>
 
                 <!-- Support Card -->
-                <div class="bg-[#293C74] rounded-[2rem] p-8 relative overflow-hidden group text-white shadow-xl shadow-[#293C74]/20">
-                  <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-                  <h3 class="relative text-lg font-bold mb-2">¿Necesitas ayuda?</h3>
-                  <p class="relative text-xs text-white/90 leading-relaxed mb-6">Si tienes dudas con tus aportes, nuestro equipo de soporte está listo para asistirte.</p>
-                  <a href="https://wa.me/573148297534" class="relative inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#293C74] text-sm font-bold hover:bg-slate-100 transition-all">
+                <div class="bg-white border border-slate-100 rounded-[2rem] p-8 relative overflow-hidden group shadow-lg shadow-slate-200/50">
+                  <div class="absolute inset-0 bg-gradient-to-br from-[#293C74]/5 to-transparent"></div>
+                  <h3 class="relative text-lg font-bold mb-2 text-[#293C74]">¿Necesitas ayuda?</h3>
+                  <p class="relative text-xs text-slate-600 leading-relaxed mb-6">Si tienes dudas con tus aportes, nuestro equipo de soporte está listo para asistirte.</p>
+                  <a href="https://wa.me/573148297534" class="relative inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#293C74] text-white text-sm font-bold hover:bg-[#293C74]/90 transition-all shadow-lg shadow-[#293C74]/20">
                     Soporte WhatsApp
                   </a>
                 </div>
@@ -133,7 +133,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                    </div>
                    <div class="text-center md:text-left">
                       <h4 class="font-bold text-[#293C74]">Recordatorio de abono automático</h4>
-                      <p class="text-slate-600 text-sm">Tu próxima cuota de <span id="highlight-amount" class="text-[#293C74] font-bold">...</span> será procesada el <span id="highlight-date" class="text-[#293C74] font-bold">...</span>.</p>
+                      <p class="text-slate-600 text-sm">Tu próxima cuota de <span id="highlight-amount" class="text-[#293C74] font-bold">...</span> para <span class="text-[#293C74] font-bold">Cumbre Mundial 2026</span> será procesada el <span id="highlight-date" class="text-[#293C74] font-bold">...</span>.</p>
                    </div>
                    <div class="md:ml-auto">
                       <button data-tab-trigger="reservas" class="text-sm font-bold text-brand-teal hover:underline px-4 py-2">Ver detalles →</button>
@@ -285,8 +285,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                   </div>
                   <p id="security-status" class="text-sm font-medium text-slate-500 min-h-[1.25rem]"></p>
                   
-                  <!-- Passkeys Section -->
-                  <div class="pt-6 border-t border-slate-100 mt-2">
+                  <!-- Passkeys Section (Hidden for now) -->
+                  <div class="hidden pt-6 border-t border-slate-100 mt-2">
                      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                            <div class="flex items-center gap-2 mb-1">
@@ -413,73 +413,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                     </div>
                     <h3 class="text-xl font-bold mb-2 relative z-10">Nueva Inscripción</h3>
                     <p class="text-white/70 text-sm mb-6 relative z-10">Registra un participante manualmente y gestiona su pago en efectivo.</p>
-                    <button id="church-form-toggle" class="w-full py-3 bg-white text-[#293C74] rounded-xl font-bold text-sm hover:bg-brand-teal hover:text-white transition-all shadow-lg relative z-10">
-                      + Registrar Persona
+                    <button id="church-form-toggle" class="w-full py-3 bg-white text-[#293C74] rounded-xl font-bold text-sm hover:bg-brand-teal hover:text-white transition-all shadow-lg relative z-10 flex items-center justify-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                      Registrar Participante
                     </button>
                     <!-- Expandable Form Container (Moved visually, will toggle visibility) -->
                   </div>
 
-                  <!-- Manual Form Container (Initially Hidden) -->
-                  <div id="church-manual-form-container" class="hidden bg-white border border-slate-100 rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/50 border-l-4 border-l-brand-teal">
-                      <div class="flex items-center justify-between mb-4">
-                         <h4 class="font-bold text-[#293C74]">Formulario de Registro</h4>
-                         <button id="church-form-close" class="text-xs text-red-500 font-bold hover:underline">Cerrar</button>
-                      </div>
-                      <form id="church-manual-form" class="space-y-4 text-sm" data-collapsed="true">
-                         <!-- Simplified Layout for Sidebar Form -->
-                         <div class="space-y-2">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Nombre Responsable</label>
-                            <input id="church-contact-name" type="text" class="w-full bg-slate-50 border-slate-200 rounded-xl px-3 py-2" placeholder="Nombre completo">
-                         </div>
-                         <div class="space-y-2">
-                           <label class="text-[10px] font-bold text-slate-400 uppercase">Email</label>
-                           <input id="church-contact-email" type="email" class="w-full bg-slate-50 border-slate-200 rounded-xl px-3 py-2" placeholder="Email">
-                         </div>
-                         <!-- Hidden fields to keep logic working but simplify UI options for now -->
-                         <div class="hidden">
-                           <input id="church-contact-phone" type="text">
-                           <input id="church-document-type" value="CC">
-                           <input id="church-document-number" type="text">
-                           <input id="church-country" value="Colombia">
-                           <input id="church-city" value="Bogota">
-                           <input id="church-name" type="text">
-                         </div>
-
-                         <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                            <div class="flex justify-between items-center mb-2">
-                              <span class="font-bold text-[#293C74]">Participantes</span>
-                              <button type="button" id="btn-add-participant" class="text-[10px] bg-[#293C74] text-white px-2 py-1 rounded">+ Agregar</button>
-                            </div>
-                            <div id="participants-list" class="space-y-2 text-xs"></div>
-                         </div>
-                         
-                         <div class="grid grid-cols-2 gap-2">
-                            <div class="space-y-1">
-                               <label class="text-[10px] font-bold text-slate-400 uppercase">Pago</label>
-                               <select id="church-payment-option" class="w-full bg-slate-50 border-slate-200 rounded-xl px-2 py-2 text-xs">
-                                 <option value="FULL">Total</option>
-                                 <option value="DEPOSIT">Abono</option>
-                                 <option value="INSTALLMENTS">Cuotas</option>
-                               </select>
-                            </div>
-                            <div class="space-y-1">
-                               <label class="text-[10px] font-bold text-slate-400 uppercase">Monto</label>
-                               <input id="church-payment-amount" type="number" class="w-full bg-slate-50 border-slate-200 rounded-xl px-2 py-2 text-xs">
-                            </div>
-                         </div>
-                         <input id="church-payment-method" type="text" class="w-full bg-slate-50 border-slate-200 rounded-xl px-3 py-2 text-xs" placeholder="Método (Efectivo, etc)">
-                         <input id="church-notes" type="text" class="w-full bg-slate-50 border-slate-200 rounded-xl px-3 py-2 text-xs" placeholder="Notas">
-                         <div class="hidden">
-                           <select id="church-payment-frequency"><option value="MONTHLY">Mensual</option></select>
-                           <select id="church-country-group"><option value="CO">CO</option></select>
-                         </div>
-
-                         <div class="pt-2">
-                            <p id="church-form-status" class="text-xs text-center text-slate-500 mb-2"></p>
-                            <button type="submit" class="w-full bg-brand-teal text-white font-bold py-3 rounded-xl hover:shadow-lg transition">Guardar</button>
-                         </div>
-                      </form>
-                  </div>
+                  <!-- Removed Manual Form Container in favor of Modal -->
 
                   <!-- Team Card -->
                   <div class="bg-white border border-slate-100 rounded-[2.5rem] p-6 shadow-lg shadow-slate-200/50">
@@ -501,7 +442,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                         </div>
                         <select id="church-invite-role" class="w-full bg-slate-50 border-slate-200 rounded-xl px-3 py-2 text-xs">
                            <option value="church_member">Delegado</option>
-                           <option value="church_admin">Líder</option>
+                           <option value="church_admin">Pastor</option>
                         </select>
                         <p id="church-invite-status" class="text-[10px] text-slate-500 h-4"></p>
                         <button id="church-invite-btn" class="w-full bg-[#293C74] text-white py-2 rounded-xl text-xs font-bold">Enviar</button>
@@ -596,6 +537,152 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Manual Registration Modal -->
+    <div id="manual-registration-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+      <div class="w-full max-w-4xl bg-white rounded-[2rem] shadow-2xl border border-slate-100 my-8 relative flex flex-col max-h-[90vh]">
+        <!-- Modal Header -->
+        <div class="p-8 border-b border-slate-100 flex items-start justify-between sticky top-0 bg-white z-10 rounded-t-[2rem]">
+          <div>
+            <p class="text-[10px] font-bold text-[#293C74] uppercase tracking-[0.3em]">Nueva Inscripción</p>
+            <h2 class="text-2xl font-display font-bold text-[#293C74]">Registrar Participante</h2>
+          </div>
+          <button id="btn-close-manual-modal" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <!-- Modal Body (Scrollable) -->
+        <div class="p-8 overflow-y-auto">
+          <form id="manual-registration-form" class="space-y-8">
+            
+            <!-- Section 1: Identificación y Ubicación -->
+            <div class="space-y-4">
+              <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">1</span>
+                Identificación y Ubicación
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo Doc</label>
+                    <select id="reg-doc-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                      <option value="CC">Cédula (CC)</option>
+                      <option value="TI">Tarjeta Identidad (TI)</option>
+                      <option value="PA">Pasaporte (PA)</option>
+                      <option value="CE">Cédula Extranjería (CE)</option>
+                    </select>
+                 </div>
+                 <div class="space-y-1 lg:col-span-3">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Número de Documento</label>
+                    <input type="text" id="reg-doc-number" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Número de identificación">
+                 </div>
+                 <div class="space-y-1 lg:col-span-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">País</label>
+                    <input type="text" id="reg-country" value="Colombia" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                 </div>
+                 <div class="space-y-1 lg:col-span-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Ciudad</label>
+                    <input type="text" id="reg-city" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Ciudad de residencia">
+                 </div>
+              </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- Section 2: Datos Personales -->
+             <div class="space-y-4">
+              <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">2</span>
+                Datos Personales
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre Completo</label>
+                    <input type="text" id="reg-name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Nombres y Apellidos">
+                 </div>
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Email</label>
+                    <input type="email" id="reg-email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="correo@ejemplo.com">
+                 </div>
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Teléfono</label>
+                    <input type="tel" id="reg-phone" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="+57 300...">
+                 </div>
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Género</label>
+                    <select id="reg-gender" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                      <option value="">Seleccionar</option>
+                      <option value="M">Masculino</option>
+                      <option value="F">Femenino</option>
+                    </select>
+                 </div>
+              </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- Section 3: Detalles del Evento -->
+            <div class="space-y-4">
+              <h3 class="text-sm font-bold text-[#293C74] flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-[#293C74]/10 text-[#293C74] flex items-center justify-center text-xs">3</span>
+                Detalles de Inscripción
+              </h3>
+               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Iglesia / Sede</label>
+                    <!-- This input will be auto-filled if the user is a church admin, otherwise manual -->
+                    <input type="text" id="reg-church" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Escribe para buscar...">
+                 </div>
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Preferencia Alimentaria</label>
+                    <select id="reg-menu" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                      <option value="general">Menú General</option>
+                      <option value="vegetarian">Vegetariano</option>
+                      <option value="vegan">Vegano</option>
+                      <option value="kids">Menú Infantil</option>
+                    </select>
+                 </div>
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo de Registro</label>
+                    <select id="reg-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                      <option value="full_access">Completo (Con Alojamiento)</option>
+                      <option value="day_pass">Solo Entrada (Sin Alojamiento)</option>
+                    </select>
+                 </div>
+                 <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Modo de Pago</label>
+                    <select id="reg-payment-mode" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                      <option value="FULL">Pago Total Inmediato</option>
+                      <option value="INSTALLMENTS">Pago a Cuotas</option>
+                      <option value="DEPOSIT">Solo Abono Inicial</option>
+                    </select>
+                 </div>
+              </div>
+            </div>
+          
+            <!-- Payment Amount Highlight -->
+            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                 <p class="text-xs font-bold text-slate-500 uppercase">Monto a registrar hoy</p>
+                 <p class="text-xs text-slate-400">Si es abono, ingresa solo lo recibido.</p>
+              </div>
+              <div class="relative w-full md:w-auto">
+                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#293C74] font-bold">$</span>
+                 <input type="number" id="reg-amount" class="w-full md:w-48 pl-8 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xl font-bold text-[#293C74] outline-none focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74]" placeholder="0">
+              </div>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-4">
+               <span id="manual-reg-status" class="text-sm text-slate-500"></span>
+               <button type="button" id="btn-cancel-manual-reg" class="px-6 py-3 rounded-xl text-slate-500 font-bold hover:bg-slate-100 transition-colors">Cancelar</button>
+               <button type="submit" class="bg-brand-teal text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all">Registrar Participante</button>
+            </div>
+
+          </form>
+        </div>
+        
       </div>
     </div>
   </main>

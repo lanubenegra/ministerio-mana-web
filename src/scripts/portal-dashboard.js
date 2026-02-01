@@ -1750,16 +1750,123 @@ churchFormToggle?.addEventListener('click', () => {
     return;
   }
 
-  churchFormContainer.classList.remove('hidden');
-  churchForm?.classList.remove('hidden');
-  // Scroll to form
-  churchFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const modal = document.getElementById('manual-registration-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
 });
 
-churchFormCloseBtn?.addEventListener('click', () => {
-  if (!churchFormContainer) return;
-  churchFormContainer.classList.add('hidden');
+// Manual Modal Close Handlers
+const manualModalCloseBtn = document.getElementById('btn-close-manual-modal');
+const manualModalCancelBtn = document.getElementById('btn-cancel-manual-reg');
+const manualModal = document.getElementById('manual-registration-modal');
+
+function closeManualModal() {
+  if (manualModal) {
+    manualModal.classList.add('hidden');
+    manualModal.classList.remove('flex');
+    document.body.style.overflow = '';
+    // Reset form
+    document.getElementById('manual-registration-form')?.reset();
+    document.getElementById('manual-reg-status').textContent = '';
+  }
+}
+
+manualModalCloseBtn?.addEventListener('click', closeManualModal);
+manualModalCancelBtn?.addEventListener('click', closeManualModal);
+
+// Close on click outside
+manualModal?.addEventListener('click', (e) => {
+  if (e.target === manualModal) closeManualModal();
 });
+
+// Manual Registration Form Submit
+const manualRegForm = document.getElementById('manual-registration-form');
+manualRegForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('manual-reg-status');
+  const submitBtn = manualRegForm.querySelector('button[type="submit"]');
+
+  if (statusEl) statusEl.textContent = 'Procesando...';
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const payload = {
+      // Identity & Location
+      docType: document.getElementById('reg-doc-type').value,
+      docNumber: document.getElementById('reg-doc-number').value.trim(),
+      country: document.getElementById('reg-country').value.trim(),
+      city: document.getElementById('reg-city').value.trim(),
+
+      // Personal
+      fullName: document.getElementById('reg-name').value.trim(),
+      email: document.getElementById('reg-email').value.trim(),
+      phone: document.getElementById('reg-phone').value.trim(),
+      gender: document.getElementById('reg-gender').value,
+
+      // Event Details
+      churchName: document.getElementById('reg-church').value.trim(),
+      dietaryPreference: document.getElementById('reg-menu').value,
+      registrationType: document.getElementById('reg-type').value,
+
+      // Payment
+      paymentMode: document.getElementById('reg-payment-mode').value,
+      paymentAmount: parseFloat(document.getElementById('reg-amount').value) || 0,
+
+      // Context (using existing)
+      churchId: churchSelectorInput?.value || null
+    };
+
+    // Basic validation
+    if (!payload.docNumber || !payload.fullName || !payload.email) {
+      throw new Error('Por favor completa los campos obligatorios (Documento, Nombre, Email).');
+    }
+
+    const endpoint = '/api/portal/iglesia/manual-register'; // Mapping to existing endpoint logic or we may need to adapt it
+
+    // NOTE: Sending to existing endpoint structure first, adapting payload keys if needed
+    // The previous implementation used contactName, contactEmail etc.
+    // Let's map to what the server likely expects based on previous code or just send clean new payload
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Error al registrar.');
+
+    if (statusEl) {
+      statusEl.textContent = '¡Registro exitoso!';
+      statusEl.className = 'text-sm text-green-600 font-bold';
+    }
+
+    // Refresh lists
+    loadChurchBookings(portalAuthHeaders);
+
+    setTimeout(() => {
+      closeManualModal();
+      if (submitBtn) submitBtn.disabled = false;
+      if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.className = 'text-sm text-slate-500';
+      }
+    }, 1500);
+
+  } catch (err) {
+    console.error(err);
+    if (statusEl) {
+      statusEl.textContent = err.message;
+      statusEl.className = 'text-sm text-red-500 font-bold';
+    }
+    if (submitBtn) submitBtn.disabled = false;
+  }
+});
+
+
 
 inviteToggleBtn?.addEventListener('click', () => {
   if (!inviteCard) return;
