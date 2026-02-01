@@ -106,6 +106,25 @@
 
             <!-- Add Companion Form (Hidden by default) -->
             <div id="add-companion-form" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+              
+              <!-- Document Info -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo de Documento</label>
+                  <select id="companion-doc-type" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]">
+                    <option value="TI">Tarjeta de Identidad</option>
+                    <option value="RC">Registro Civil</option>
+                    <option value="CC">Cédula de Ciudadanía</option>
+                    <option value="CE">Cédula de Extranjería</option>
+                    <option value="PAS">Pasaporte</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Número de Documento</label>
+                  <input type="text" id="companion-doc-number" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-[#293C74] outline-none focus:border-[#293C74]" placeholder="Número de documento">
+                </div>
+              </div>
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1">
                   <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre</label>

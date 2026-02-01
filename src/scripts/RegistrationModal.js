@@ -50,11 +50,16 @@ export class RegistrationModal {
         // Companion form
         this.btnAddCompanion = document.getElementById('btn-add-companion');
         this.addCompanionForm = document.getElementById('add-companion-form');
+
+        // Companion fields
+        this.companionDocType = document.getElementById('companion-doc-type');
+        this.companionDocNumber = document.getElementById('companion-doc-number');
         this.companionName = document.getElementById('companion-name');
         this.companionAge = document.getElementById('companion-age');
         this.companionPackage = document.getElementById('companion-package');
         this.companionMenu = document.getElementById('companion-menu');
         this.companionPackageContainer = document.getElementById('companion-package-container');
+
         this.btnSaveCompanion = document.getElementById('btn-save-companion');
         this.btnCancelCompanion = document.getElementById('btn-cancel-companion');
 
@@ -141,6 +146,15 @@ export class RegistrationModal {
             const age = this.parseAge(this.companionAge?.value);
             this.updateMenuOptions(this.companionMenu, age);
             this.updateCompanionPackageVisibility();
+
+            // Smart doc type selection for kids
+            if (age !== null && age <= 7 && this.companionDocType) {
+                this.companionDocType.value = 'RC';
+            } else if (age !== null && age > 7 && age < 18 && this.companionDocType) {
+                this.companionDocType.value = 'TI';
+            } else if (age !== null && age >= 18 && this.companionDocType) {
+                this.companionDocType.value = 'CC';
+            }
         });
 
         // Payment options
@@ -176,6 +190,11 @@ export class RegistrationModal {
 
         this.alertModal.classList.remove('hidden');
         this.alertModal.classList.add('flex');
+
+        // Accessibility: Focus close button
+        setTimeout(() => {
+            this.btnCloseAlert?.focus();
+        }, 50);
     }
 
     closeAlert() {
@@ -250,9 +269,9 @@ export class RegistrationModal {
         if (this.addCompanionForm) this.addCompanionForm.classList.remove('hidden');
         if (this.btnAddCompanion) this.btnAddCompanion.classList.add('hidden');
 
-        // Wait for display change before focus
+        // Focus first field
         setTimeout(() => {
-            if (this.companionName) this.companionName.focus();
+            if (this.companionDocType) this.companionDocType.focus();
         }, 50);
     }
 
@@ -265,6 +284,10 @@ export class RegistrationModal {
     clearCompanionForm() {
         if (this.companionName) this.companionName.value = '';
         if (this.companionAge) this.companionAge.value = '';
+
+        if (this.companionDocNumber) this.companionDocNumber.value = '';
+        // Reset doc type to TI default or empty
+        if (this.companionDocType) this.companionDocType.value = 'TI';
 
         // Reset package options
         if (this.companionPackage) {
@@ -292,10 +315,17 @@ export class RegistrationModal {
     }
 
     saveCompanion() {
+        const docType = this.companionDocType?.value || 'TI';
+        const docNumber = this.companionDocNumber?.value?.trim();
         const name = this.companionName?.value?.trim();
         const age = this.parseAge(this.companionAge?.value);
         const packageChoice = this.companionPackage?.value || 'lodging';
         const menuChoice = this.companionMenu?.value || 'general';
+
+        if (!docNumber) {
+            this.showAlert('Ingresa el número de documento del acompañante');
+            return;
+        }
 
         if (!name) {
             this.showAlert('Ingresa el nombre del acompañante');
@@ -311,6 +341,8 @@ export class RegistrationModal {
 
         this.participants.push({
             id: Date.now(),
+            document_type: docType,
+            document_number: docNumber,
             name,
             age,
             packageType,
@@ -363,12 +395,13 @@ export class RegistrationModal {
         const price = this.getPrice(p.packageType);
         const ageLabel = p.age !== null ? ` · ${p.age} años` : '';
         const menuLabel = p.menu !== 'general' ? ` · 🍽️ ${p.menu}` : '';
+        const docLabel = p.document_number ? ` · ${p.document_type} ${p.document_number}` : '';
 
         return `
       <div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
         <div class="flex-1">
           <div class="font-bold text-[#293C74] text-sm">${p.name}</div>
-          <div class="text-xs text-slate-500">${this.getTypeLabel(p.packageType)}${ageLabel}${menuLabel}</div>
+          <div class="text-xs text-slate-500">${this.getTypeLabel(p.packageType)}${ageLabel}${docLabel}</div>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm font-bold text-[#293C74]">${this.formatPrice(price)}</span>
@@ -563,17 +596,36 @@ export class RegistrationModal {
         const paymentOption = document.querySelector('input[name="payment_option"]:checked')?.value || 'FULL';
         const installmentFrequency = document.querySelector('input[name="installment_frequency"]:checked')?.value || 'MONTHLY';
 
+        // Get fresh leader data from DOM
+        const leaderDocType = document.getElementById('reg-leader-doc-type')?.value || 'CC';
+        const leaderDocNumber = document.getElementById('reg-leader-doc-number')?.value || '';
+        const leaderEmail = document.getElementById('reg-leader-email')?.value || '';
+        const leaderPhone = document.getElementById('reg-leader-phone')?.value || '';
+
         return {
             church_id: this.selectedChurch?.id,
             country: document.getElementById('reg-country')?.value || 'Colombia',
             city: document.getElementById('reg-city')?.value || '',
-            participants: this.participants.map(p => ({
-                ...p,
-                document_type: document.getElementById('reg-leader-doc-type')?.value || 'CC',
-                document_number: document.getElementById('reg-leader-doc-number')?.value || '',
-                email: p.isLeader ? document.getElementById('reg-leader-email')?.value : null,
-                phone: p.isLeader ? document.getElementById('reg-leader-phone')?.value : null,
-            })),
+            participants: this.participants.map(p => {
+                if (p.isLeader) {
+                    // For leader, we must grab the current values from the inputs
+                    // because they might have been edited after being added to the list
+                    return {
+                        ...p,
+                        document_type: leaderDocType,
+                        document_number: leaderDocNumber,
+                        email: leaderEmail,
+                        phone: leaderPhone
+                    };
+                }
+                // For companions, the data in 'p' is already correct (saved from saveCompanion form)
+                // Ensure they have defaults if missing (should be caught by validation though)
+                return {
+                    ...p,
+                    document_type: p.document_type || 'TI',
+                    document_number: p.document_number || ''
+                };
+            }),
             payment_option: paymentOption,
             installment_frequency: installmentFrequency,
             total_amount: this.getTotal(),
