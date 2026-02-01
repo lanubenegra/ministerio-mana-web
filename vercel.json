@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/donations/reminders/run?token=REPLACE_WITH_CRON_SECRET",
+      "path": "/api/donations/reminders/run?token=f44f0b15fad0789fcf94d985108a30cc1851f42b9efe4d59b81a6aef66605aca",
       "schedule": "0 14 * * *"
     }
   ]
