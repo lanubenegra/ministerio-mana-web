@@ -47,7 +47,8 @@ export async function ensureUserProfile(user: User): Promise<UserProfile | null>
   const email = user.email?.toLowerCase();
   if (!email) return null;
 
-  const desiredRole: PortalRole = isSuperadminEmail(email) ? 'superadmin' : 'user';
+  const shouldBeSuperadmin = isSuperadminEmail(email);
+  const desiredRole: PortalRole = shouldBeSuperadmin ? 'superadmin' : 'user';
 
   const { data: existing, error: existingError } = await supabaseAdmin
     .from('user_profiles')
@@ -61,10 +62,10 @@ export async function ensureUserProfile(user: User): Promise<UserProfile | null>
   }
 
   if (existing) {
-    if (existing.role !== desiredRole) {
+    if (shouldBeSuperadmin && existing.role !== 'superadmin') {
       const { data, error } = await supabaseAdmin
         .from('user_profiles')
-        .update({ role: desiredRole, updated_at: new Date().toISOString() })
+        .update({ role: 'superadmin', updated_at: new Date().toISOString() })
         .eq('user_id', user.id)
         .select('*')
         .single();

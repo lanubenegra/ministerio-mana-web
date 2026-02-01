@@ -8,6 +8,9 @@ const tableEl = document.getElementById('users-table');
 const tbody = tableEl?.querySelector('tbody');
 const loadingEl = document.getElementById('users-loading');
 const emptyEl = document.getElementById('users-empty');
+const searchInput = document.getElementById('users-search');
+const roleFilter = document.getElementById('users-role-filter');
+const countEl = document.getElementById('users-count');
 
 // Modal Elements
 const modal = document.getElementById('create-user-modal');
@@ -20,6 +23,8 @@ const passwordInput = document.getElementById('user-password-input');
 const togglePasswordBtn = document.getElementById('toggle-password-user');
 
 let currentUserRole = 'user';
+let currentToken = '';
+let allUsers = [];
 
 const roleTranslations = {
     'superadmin': 'Super Admin',
@@ -31,6 +36,17 @@ const roleTranslations = {
     'leader': 'Líder (Legacy)',
     'user': 'Usuario (Asistente)'
 };
+
+const roleOrder = [
+    'superadmin',
+    'admin',
+    'national_pastor',
+    'campus_missionary',
+    'pastor',
+    'local_collaborator',
+    'leader',
+    'user',
+];
 
 // Password Toggle
 togglePasswordBtn?.addEventListener('click', () => {
@@ -46,6 +62,7 @@ async function init() {
     }
 
     const token = session.access_token;
+    currentToken = token;
 
     // 1. Get My Profile to set UI permissions
     try {
@@ -70,6 +87,9 @@ async function init() {
 
     // 3. Setup Events
     setupModal(token);
+
+    searchInput?.addEventListener('input', () => applyFilters());
+    roleFilter?.addEventListener('change', () => applyFilters());
 }
 
 async function loadUsers(token) {
@@ -87,7 +107,8 @@ async function loadUsers(token) {
         const data = await res.json();
         if (!data.ok) throw new Error(data.error);
 
-        renderTable(data.users || []);
+        allUsers = data.users || [];
+        applyFilters();
 
     } catch (err) {
         console.error(err);
@@ -95,33 +116,140 @@ async function loadUsers(token) {
     }
 }
 
+function applyFilters() {
+    const query = searchInput?.value?.trim().toLowerCase() || '';
+    const roleValue = roleFilter?.value || '';
+    const filtered = (allUsers || []).filter((user) => {
+        const name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+        const searchable = `${name} ${user.email || ''}`.toLowerCase();
+        if (query && !searchable.includes(query)) return false;
+        if (roleValue && user.role !== roleValue) return false;
+        return true;
+    });
+    renderTable(filtered);
+}
+
+function roleBadgeClass(role) {
+    if (role === 'admin' || role === 'superadmin') return 'bg-purple-100 text-purple-700';
+    if (role === 'pastor' || role === 'national_pastor') return 'bg-blue-100 text-blue-700';
+    if (role === 'local_collaborator') return 'bg-teal-100 text-teal-700';
+    return 'bg-slate-100 text-slate-600';
+}
+
+function renderRoleCell(user) {
+    if (currentUserRole === 'superadmin') {
+        const options = roleOrder.map((role) => {
+            const label = roleTranslations[role] || role;
+            const selected = user.role === role ? 'selected' : '';
+            return `<option value="${role}" ${selected}>${label}</option>`;
+        }).join('');
+        return `
+            <select data-action="role" data-user-id="${user.user_id}" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-[#293C74]">
+                ${options}
+            </select>
+        `;
+    }
+
+    const label = roleTranslations[user.role] || user.role || 'Usuario';
+    const badgeClass = roleBadgeClass(user.role);
+    return `
+        <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
+            ${label}
+        </span>
+    `;
+}
+
 function renderTable(users) {
     if (loadingEl) loadingEl.classList.add('hidden');
+    if (countEl) {
+        const total = allUsers.length;
+        const count = users.length;
+        const hasFilters = Boolean(searchInput?.value || roleFilter?.value);
+        countEl.textContent = hasFilters ? `${count} de ${total} usuarios` : `${total} usuarios`;
+    }
     if (users.length === 0) {
         if (emptyEl) emptyEl.classList.remove('hidden');
+        if (tableEl) tableEl.classList.add('hidden');
         return;
     }
 
     if (tableEl) tableEl.classList.remove('hidden');
+    if (emptyEl) emptyEl.classList.add('hidden');
 
     if (tbody) {
-        tbody.innerHTML = users.map(u => `
-            <tr class="group hover:bg-slate-50 transition-colors">
-                <td class="py-3 pl-2 font-medium text-[#293C74]">${u.first_name} ${u.last_name || ''}</td>
-                <td class="py-3 text-slate-500">${u.email}</td>
-                <td class="py-3">
-                    <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                        ${u.role === 'admin' || u.role === 'superadmin' ? 'bg-purple-100 text-purple-700' :
-                u.role === 'pastor' || u.role === 'national_pastor' ? 'bg-blue-100 text-blue-700' :
-                    u.role === 'local_collaborator' ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-600'}">
-                        ${roleTranslations[u.role] || u.role}
-                    </span>
-                </td>
-                <td class="py-3 text-slate-400 text-xs">${new Date(u.updated_at || u.created_at).toLocaleDateString()}</td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = users.map(u => {
+            const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Sin nombre';
+            const resetButton = (currentUserRole === 'admin' || currentUserRole === 'superadmin')
+                ? `<button data-action="reset" data-email="${u.email}" class="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-[#293C74] hover:bg-slate-100">Reset contraseña</button>`
+                : '';
+            return `
+                <tr class="group hover:bg-slate-50 transition-colors">
+                    <td class="py-3 pl-2 font-medium text-[#293C74]">${fullName}</td>
+                    <td class="py-3 text-slate-500">${u.email}</td>
+                    <td class="py-3">
+                        ${renderRoleCell(u)}
+                    </td>
+                    <td class="py-3 text-slate-400 text-xs">${new Date(u.updated_at || u.created_at).toLocaleDateString()}</td>
+                    <td class="py-3 text-right pr-2">
+                        ${resetButton || '<span class="text-[10px] text-slate-400 uppercase tracking-widest">-</span>'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 }
+
+tbody?.addEventListener('change', async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLSelectElement)) return;
+    if (target.dataset.action !== 'role') return;
+    const userId = target.dataset.userId;
+    const role = target.value;
+    if (!userId || !currentToken) return;
+
+    try {
+        const res = await fetch('/api/portal/admin/role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
+            body: JSON.stringify({ userId, role })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo actualizar el rol');
+        const idx = allUsers.findIndex((user) => user.user_id === userId);
+        if (idx !== -1) {
+            allUsers[idx].role = role;
+            applyFilters();
+        }
+    } catch (err) {
+        console.error(err);
+        alert(err.message || 'No se pudo actualizar el rol.');
+    }
+});
+
+tbody?.addEventListener('click', async (event) => {
+    const target = event.target.closest('[data-action="reset"]');
+    if (!target || !currentToken) return;
+    const email = target.dataset.email;
+    if (!email) return;
+    const originalText = target.textContent;
+    target.textContent = 'Enviando...';
+    target.setAttribute('disabled', 'disabled');
+    try {
+        const res = await fetch('/api/portal/admin/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo enviar');
+        target.textContent = 'Enviado';
+    } catch (err) {
+        console.error(err);
+        target.textContent = originalText;
+        target.removeAttribute('disabled');
+        alert(err.message || 'No se pudo enviar.');
+    }
+});
 
 function setupModal(token) {
     btnOpen?.addEventListener('click', () => {

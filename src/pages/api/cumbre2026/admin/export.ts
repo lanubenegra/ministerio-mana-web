@@ -27,6 +27,13 @@ function csvEscape(value: unknown): string {
   return str;
 }
 
+function ilikeValue(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.includes('%') ? trimmed : `%${trimmed}%`;
+}
+
 function normalizeProvider(raw: string | null): string | null {
   if (!raw) return null;
   const value = raw.toLowerCase();
@@ -65,10 +72,35 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
-  const { data: bookings, error: bookingsError } = await supabaseAdmin
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+  const bookingFrom = url.searchParams.get('bookingFrom');
+  const bookingTo = url.searchParams.get('bookingTo');
+  const churchId = url.searchParams.get('churchId');
+  const church = ilikeValue(url.searchParams.get('church'));
+  const city = ilikeValue(url.searchParams.get('city'));
+  const country = ilikeValue(url.searchParams.get('country'));
+  const email = ilikeValue(url.searchParams.get('email'));
+  const status = (url.searchParams.get('bookingStatus') ?? '').toUpperCase();
+  const groupRaw = (url.searchParams.get('group') ?? '').toUpperCase();
+  const group = groupRaw === 'CO' || groupRaw === 'INT' ? groupRaw : '';
+
+  let bookingsQuery = supabaseAdmin
     .from('cumbre_bookings')
     .select('id, contact_name, contact_email, contact_phone, contact_document_type, contact_document_number, contact_country, contact_city, contact_church, church_id, source, created_by, country_group, currency, total_amount, total_paid, status, deposit_threshold, created_at')
     .order('created_at', { ascending: false });
+
+  if (churchId) bookingsQuery = bookingsQuery.eq('church_id', churchId);
+  if (church) bookingsQuery = bookingsQuery.ilike('contact_church', church);
+  if (city) bookingsQuery = bookingsQuery.ilike('contact_city', city);
+  if (country) bookingsQuery = bookingsQuery.ilike('contact_country', country);
+  if (email) bookingsQuery = bookingsQuery.ilike('contact_email', email);
+  if (group) bookingsQuery = bookingsQuery.eq('country_group', group);
+  if (status) bookingsQuery = bookingsQuery.eq('status', status);
+  if (bookingFrom) bookingsQuery = bookingsQuery.gte('created_at', bookingFrom);
+  if (bookingTo) bookingsQuery = bookingsQuery.lte('created_at', bookingTo);
+
+  const { data: bookings, error: bookingsError } = await bookingsQuery;
 
   if (bookingsError) {
     console.error('[cumbre.admin.export] booking error', bookingsError);
@@ -161,6 +193,8 @@ export const GET: APIRoute = async ({ request }) => {
   if (provider) {
     paymentQuery = paymentQuery.eq('provider', provider);
   }
+  if (from) paymentQuery = paymentQuery.gte('created_at', from);
+  if (to) paymentQuery = paymentQuery.lte('created_at', to);
   const { data: payments } = await paymentQuery;
 
   const plansByBooking = new Map<string, any>();

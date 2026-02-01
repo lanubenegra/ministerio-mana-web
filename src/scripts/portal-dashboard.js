@@ -150,6 +150,17 @@ let churchBookingsData = [];
 let churchMembersData = [];
 let churchPaymentsData = [];
 let churchInstallmentsData = [];
+const ALL_CHURCHES_VALUE = '__all__';
+const CUSTOM_CHURCH_VALUE = '__custom__';
+
+function isAllChurchesSelected() {
+  return portalSelectedChurchId === ALL_CHURCHES_VALUE;
+}
+
+function resolveSelectedChurchId() {
+  if (!portalSelectedChurchId || isAllChurchesSelected()) return '';
+  return portalSelectedChurchId;
+}
 
 function formatCurrency(value, currency) {
   if (!currency) return value;
@@ -392,7 +403,7 @@ async function loadDashboardData(authResult) {
     const hasChurchAccess = portalIsAdmin || hasChurchRole;
     const membershipChurch = portalMemberships.find((item) => item?.church?.id)?.church || null;
 
-    if (!portalSelectedChurchId && membershipChurch?.id) {
+    if (!portalSelectedChurchId && membershipChurch?.id && !portalIsAdmin) {
       portalSelectedChurchId = membershipChurch.id;
     }
     if (churchNameInput && membershipChurch?.name && !portalIsAdmin) {
@@ -637,7 +648,18 @@ async function loadChurchSelector(headers = {}) {
       window.advancedChurchSelector.setChurches(churches);
     }
     const isAdmin = Boolean(payload.isAdmin);
-    churchSelectorInput.innerHTML = '<option value="">Selecciona una iglesia</option>';
+    churchSelectorInput.innerHTML = '';
+    if (isAdmin) {
+      const allOption = document.createElement('option');
+      allOption.value = ALL_CHURCHES_VALUE;
+      allOption.textContent = 'Todas las iglesias';
+      churchSelectorInput.appendChild(allOption);
+    } else {
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = 'Selecciona una iglesia';
+      churchSelectorInput.appendChild(placeholder);
+    }
     churches.forEach((church) => {
       const option = document.createElement('option');
       option.value = church.id;
@@ -649,12 +671,15 @@ async function loadChurchSelector(headers = {}) {
     });
 
     const customOption = document.createElement('option');
-    customOption.value = '__custom__';
+    customOption.value = CUSTOM_CHURCH_VALUE;
     customOption.textContent = 'Otra iglesia (manual)';
     churchSelectorInput.appendChild(customOption);
 
     portalSelectedChurchId = payload.selectedChurchId || '';
     portalIsCustomChurch = false;
+    if (isAdmin && !portalSelectedChurchId) {
+      portalSelectedChurchId = ALL_CHURCHES_VALUE;
+    }
     if (portalSelectedChurchId) {
       churchSelectorInput.value = portalSelectedChurchId;
     } else if (churches.length === 1) {
@@ -663,12 +688,19 @@ async function loadChurchSelector(headers = {}) {
       await saveChurchSelection(portalSelectedChurchId, headers);
     }
 
-    if (portalSelectedChurchId && churchNameInput) {
-      const selected = portalChurchesCatalog.find((item) => item.id === portalSelectedChurchId);
-      if (selected) {
-        churchNameInput.value = selected.name;
-        churchNameInput.setAttribute('readonly', 'readonly');
-        churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+    if (churchNameInput) {
+      const resolvedId = resolveSelectedChurchId();
+      if (resolvedId) {
+        const selected = portalChurchesCatalog.find((item) => item.id === resolvedId);
+        if (selected) {
+          churchNameInput.value = selected.name;
+          churchNameInput.setAttribute('readonly', 'readonly');
+          churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+        }
+      } else {
+        churchNameInput.value = '';
+        churchNameInput.removeAttribute('readonly');
+        churchNameInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
       }
     }
 
@@ -678,7 +710,21 @@ async function loadChurchSelector(headers = {}) {
       churchSelector.classList.add('hidden');
     }
 
-    churchSelectorStatus.textContent = churches.length ? 'Selecciona una iglesia para ver los registros.' : 'No hay iglesias disponibles.';
+    const emptyEl = document.getElementById('church-dashboard-empty');
+    const contentEl = document.getElementById('church-dashboard-content');
+    if (portalSelectedChurchId && portalSelectedChurchId !== CUSTOM_CHURCH_VALUE) {
+      if (emptyEl) emptyEl.classList.add('hidden');
+      if (contentEl) contentEl.classList.remove('hidden');
+    } else {
+      if (emptyEl) emptyEl.classList.remove('hidden');
+      if (contentEl) contentEl.classList.add('hidden');
+    }
+
+    if (isAllChurchesSelected()) {
+      churchSelectorStatus.textContent = 'Mostrando todas las iglesias.';
+    } else {
+      churchSelectorStatus.textContent = churches.length ? 'Selecciona una iglesia para ver los registros.' : 'No hay iglesias disponibles.';
+    }
   } catch (err) {
     console.error(err);
     churchSelectorStatus.textContent = 'No se pudo cargar iglesias.';
@@ -690,37 +736,47 @@ if (churchSelectorInput) {
   churchSelectorInput.addEventListener('change', async () => {
     const selectedChurchId = churchSelectorInput.value;
 
-    if (selectedChurchId && selectedChurchId !== '__custom__') {
-      // Save selection
-      await saveChurchSelection(selectedChurchId, portalAuthHeaders);
-
-      // Show dashboard content, hide empty state
-      const emptyEl = document.getElementById('church-dashboard-empty');
-      const contentEl = document.getElementById('church-dashboard-content');
-      if (emptyEl) emptyEl.classList.add('hidden');
-      if (contentEl) contentEl.classList.remove('hidden');
-
-      // Reload data for selected church
-      await Promise.all([
-        loadChurchBookings(portalAuthHeaders),
-        loadChurchInstallments(portalAuthHeaders),
-        loadChurchPayments(portalAuthHeaders),
-        loadChurchMembers(portalAuthHeaders)
-      ]).catch(err => console.error('Error loading church data:', err));
-
-      // Update stats
-      updateChurchStats();
-    } else if (selectedChurchId === '__custom__') {
+    if (selectedChurchId === CUSTOM_CHURCH_VALUE) {
       portalIsCustomChurch = true;
+      portalSelectedChurchId = null;
+      if (churchSelectorStatus) {
+        churchSelectorStatus.textContent = 'Modo manual activo. Escribe el nombre de la iglesia.';
+      }
       if (churchNameInput) {
         churchNameInput.removeAttribute('readonly');
         churchNameInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
         churchNameInput.value = '';
+        churchNameInput.focus();
       }
+      return;
+    }
+
+    portalIsCustomChurch = false;
+    if (selectedChurchId === ALL_CHURCHES_VALUE) {
+      portalSelectedChurchId = ALL_CHURCHES_VALUE;
+      await saveChurchSelection(null, portalAuthHeaders);
+    } else if (selectedChurchId) {
+      portalSelectedChurchId = selectedChurchId;
+      await saveChurchSelection(selectedChurchId, portalAuthHeaders);
     } else {
-      // No selection -> show empty
-      const emptyEl = document.getElementById('church-dashboard-empty');
-      const contentEl = document.getElementById('church-dashboard-content');
+      portalSelectedChurchId = null;
+    }
+
+    const emptyEl = document.getElementById('church-dashboard-empty');
+    const contentEl = document.getElementById('church-dashboard-content');
+    if (selectedChurchId === ALL_CHURCHES_VALUE || selectedChurchId) {
+      if (emptyEl) emptyEl.classList.add('hidden');
+      if (contentEl) contentEl.classList.remove('hidden');
+
+      await Promise.all([
+        loadChurchBookings(portalAuthHeaders),
+        loadChurchInstallments(portalAuthHeaders),
+        loadChurchPayments(portalAuthHeaders),
+        loadChurchMembers(portalAuthHeaders),
+      ]).catch((err) => console.error('Error loading church data:', err));
+
+      updateChurchStats();
+    } else {
       if (emptyEl) emptyEl.classList.remove('hidden');
       if (contentEl) contentEl.classList.add('hidden');
     }
@@ -755,17 +811,22 @@ async function saveChurchSelection(churchId, headers = {}) {
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo guardar');
     portalSelectedChurchId = payload.churchId || '';
-    churchSelectorStatus.textContent = 'Iglesia seleccionada.';
+    if (!portalSelectedChurchId && portalIsAdmin && churchId === null) {
+      portalSelectedChurchId = ALL_CHURCHES_VALUE;
+    }
+    churchSelectorStatus.textContent = isAllChurchesSelected() ? 'Mostrando todas las iglesias.' : 'Iglesia seleccionada.';
 
     if (churchNameInput) {
-      if (portalSelectedChurchId) {
-        const selected = portalChurchesCatalog.find((item) => item.id === portalSelectedChurchId);
+      const resolvedId = resolveSelectedChurchId();
+      if (resolvedId) {
+        const selected = portalChurchesCatalog.find((item) => item.id === resolvedId);
         if (selected) {
           churchNameInput.value = selected.name;
           churchNameInput.setAttribute('readonly', 'readonly');
           churchNameInput.classList.add('bg-slate-100', 'cursor-not-allowed');
         }
       } else {
+        churchNameInput.value = '';
         churchNameInput.removeAttribute('readonly');
         churchNameInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
       }
@@ -1060,9 +1121,8 @@ async function loadChurchBookings(headers = {}) {
   }
   try {
     const url = new URL('/api/portal/iglesia/bookings', window.location.origin);
-    if (portalSelectedChurchId) {
-      url.searchParams.set('churchId', portalSelectedChurchId);
-    }
+    const resolvedId = resolveSelectedChurchId();
+    if (resolvedId) url.searchParams.set('churchId', resolvedId);
     const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
@@ -1087,9 +1147,8 @@ async function loadChurchInstallments(headers = {}) {
       churchInstallmentsStatusMsg.textContent = 'Cargando cuotas...';
     }
     const url = new URL('/api/portal/iglesia/installments', window.location.origin);
-    if (portalSelectedChurchId) {
-      url.searchParams.set('churchId', portalSelectedChurchId);
-    }
+    const resolvedId = resolveSelectedChurchId();
+    if (resolvedId) url.searchParams.set('churchId', resolvedId);
     const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
@@ -1116,9 +1175,8 @@ async function loadChurchPayments(headers = {}) {
   }
   try {
     const url = new URL('/api/portal/iglesia/payments', window.location.origin);
-    if (portalSelectedChurchId) {
-      url.searchParams.set('churchId', portalSelectedChurchId);
-    }
+    const resolvedId = resolveSelectedChurchId();
+    if (resolvedId) url.searchParams.set('churchId', resolvedId);
     const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
@@ -1182,9 +1240,8 @@ async function loadChurchMembers(headers = {}) {
   }
   try {
     const url = new URL('/api/portal/iglesia/members', window.location.origin);
-    if (portalSelectedChurchId) {
-      url.searchParams.set('churchId', portalSelectedChurchId);
-    }
+    const resolvedId = resolveSelectedChurchId();
+    if (resolvedId) url.searchParams.set('churchId', resolvedId);
     const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
@@ -1198,14 +1255,15 @@ async function loadChurchMembers(headers = {}) {
 
 async function exportChurchBookings() {
   if (!churchExportBtn || !churchExportStatus) return;
-  if (!portalSelectedChurchId) {
+  const resolvedId = resolveSelectedChurchId();
+  if (!resolvedId) {
     churchExportStatus.textContent = 'Selecciona una iglesia antes de exportar.';
     return;
   }
   churchExportStatus.textContent = 'Preparando export...';
   try {
     const url = new URL('/api/portal/iglesia/export', window.location.origin);
-    url.searchParams.set('churchId', portalSelectedChurchId);
+    url.searchParams.set('churchId', resolvedId);
     const res = await fetch(url.toString(), { headers: portalAuthHeaders });
     if (!res.ok) {
       const payload = await res.json().catch(() => null);
@@ -1387,7 +1445,7 @@ async function saveChurchDraft() {
     country: document.getElementById('church-country')?.value || '',
     city: document.getElementById('church-city')?.value || '',
     church: document.getElementById('church-name')?.value || '',
-    churchId: portalSelectedChurchId || '',
+    churchId: resolveSelectedChurchId(),
     paymentOption: document.getElementById('church-payment-option')?.value || 'FULL',
     paymentAmount: document.getElementById('church-payment-amount')?.value || '',
     frequency: document.getElementById('church-payment-frequency')?.value || 'MONTHLY',
@@ -1408,7 +1466,7 @@ async function saveChurchDraft() {
 
 function initChurchManualForm() {
   if (!churchForm || !participantsList || !addParticipantBtn) return;
-  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
+  if (portalIsAdmin && !resolveSelectedChurchId() && !portalIsCustomChurch) {
     if (churchFormStatus) {
       churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior antes de registrar.';
     }
@@ -1433,7 +1491,7 @@ function initChurchManualForm() {
   churchForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!churchFormStatus) return;
-    if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
+    if (portalIsAdmin && !resolveSelectedChurchId() && !portalIsCustomChurch) {
       churchFormStatus.textContent = 'Selecciona una iglesia en el panel superior.';
       return;
     }
@@ -1452,7 +1510,7 @@ function initChurchManualForm() {
       country: document.getElementById('church-country')?.value || '',
       city: document.getElementById('church-city')?.value || '',
       church: document.getElementById('church-name')?.value || '',
-      churchId: portalSelectedChurchId || '',
+      churchId: resolveSelectedChurchId(),
       paymentOption: document.getElementById('church-payment-option')?.value || 'FULL',
       paymentAmount: Number(document.getElementById('church-payment-amount')?.value || 0),
       frequency: document.getElementById('church-payment-frequency')?.value || 'MONTHLY',
@@ -1984,29 +2042,6 @@ churchInstallmentsList?.addEventListener('click', async (event) => {
   }
 });
 
-churchSelectorInput?.addEventListener('change', async (event) => {
-  const value = event.target.value || '';
-  if (value === '__custom__') {
-    portalIsCustomChurch = true;
-    portalSelectedChurchId = null;
-    if (churchSelectorStatus) {
-      churchSelectorStatus.textContent = 'Modo manual activo. Escribe el nombre de la iglesia.';
-    }
-    if (churchNameInput) {
-      churchNameInput.removeAttribute('readonly');
-      churchNameInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
-      churchNameInput.focus();
-    }
-    return;
-  }
-  portalIsCustomChurch = false;
-  await saveChurchSelection(value, portalAuthHeaders);
-  await loadChurchBookings(portalAuthHeaders);
-  await loadChurchPayments(portalAuthHeaders);
-  await loadChurchInstallments(portalAuthHeaders);
-  await loadChurchMembers(portalAuthHeaders);
-});
-
 churchBookingsSearch?.addEventListener('input', () => {
   renderChurchBookings(filterChurchBookings(churchBookingsData));
 });
@@ -2055,7 +2090,7 @@ churchFormToggle?.addEventListener('click', () => {
   console.log('[DEBUG] Open manual registration modal clicked');
 
   // Validation: Check if admin has selected a church
-  if (portalIsAdmin && !portalSelectedChurchId && !portalIsCustomChurch) {
+  if (portalIsAdmin && !resolveSelectedChurchId() && !portalIsCustomChurch) {
     alert('Por favor selecciona una iglesia en el panel superior antes de registrar.');
     return;
   }
@@ -2124,7 +2159,7 @@ manualRegForm?.addEventListener('submit', async (e) => {
     }
 
     // Get selected church
-    const selectedChurchId = churchSelectorInput?.value || portalSelectedChurchId;
+    const selectedChurchId = resolveSelectedChurchId();
     if (!selectedChurchId) {
       throw new Error('Selecciona una iglesia antes de registrar');
     }

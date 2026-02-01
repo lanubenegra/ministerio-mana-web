@@ -27,6 +27,13 @@ function csvEscape(value: unknown): string {
   return str;
 }
 
+function ilikeValue(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.includes('%') ? trimmed : `%${trimmed}%`;
+}
+
 export const GET = async ({ request }: APIContext) => {
   if (!validateExport(request)) {
     void logSecurityEvent({
@@ -40,7 +47,8 @@ export const GET = async ({ request }: APIContext) => {
     });
   }
 
-  const provider = (new URL(request.url).searchParams.get('provider') ?? '').toLowerCase();
+  const url = new URL(request.url);
+  const provider = (url.searchParams.get('provider') ?? '').toLowerCase();
   const allowed = new Set(['wompi', 'stripe', 'physical']);
   if (!provider) {
     return new Response(JSON.stringify({ ok: false, error: 'provider requerido' }), {
@@ -62,12 +70,39 @@ export const GET = async ({ request }: APIContext) => {
     });
   }
 
-  const { data, error } = await supabaseAdmin
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+  const country = ilikeValue(url.searchParams.get('country'));
+  const city = ilikeValue(url.searchParams.get('city'));
+  const church = ilikeValue(url.searchParams.get('church'));
+  const campus = ilikeValue(url.searchParams.get('campus'));
+  const email = ilikeValue(url.searchParams.get('email'));
+  const name = ilikeValue(url.searchParams.get('name'));
+  const currency = (url.searchParams.get('currency') ?? '').toUpperCase();
+  const minAmountRaw = url.searchParams.get('minAmount');
+  const maxAmountRaw = url.searchParams.get('maxAmount');
+  const minAmount = minAmountRaw ? Number(minAmountRaw) : NaN;
+  const maxAmount = maxAmountRaw ? Number(maxAmountRaw) : NaN;
+
+  let query = supabaseAdmin
     .from('donations')
     .select('*')
     .eq('provider', provider)
-    .eq('status', 'APPROVED')
-    .order('created_at', { ascending: false });
+    .eq('status', 'APPROVED');
+
+  if (from) query = query.gte('created_at', from);
+  if (to) query = query.lte('created_at', to);
+  if (country) query = query.ilike('donor_country', country);
+  if (city) query = query.ilike('donor_city', city);
+  if (church) query = query.ilike('church', church);
+  if (campus) query = query.ilike('campus', campus);
+  if (email) query = query.ilike('donor_email', email);
+  if (name) query = query.ilike('donor_name', name);
+  if (currency) query = query.eq('currency', currency);
+  if (Number.isFinite(minAmount)) query = query.gte('amount', minAmount);
+  if (Number.isFinite(maxAmount)) query = query.lte('amount', maxAmount);
+
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
     console.error('[donations.export] error', error);
