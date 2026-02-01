@@ -6,7 +6,7 @@ import { resolveBaseUrl } from '@lib/url';
 import { createStripeDonationSession } from '@lib/stripe';
 import { logPaymentEvent, logSecurityEvent } from '@lib/securityEvents';
 import { stripeSupportedCurrencyCodes } from '@lib/geo';
-import { parseDonationFormBase } from '@lib/donationInput';
+import { DOCUMENT_TYPES_ANY, parseDonationFormBase } from '@lib/donationInput';
 import { buildDonationReference, createDonation } from '@lib/donationsStore';
 
 export const prerender = false;
@@ -88,7 +88,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     );
     let donorInfo;
     try {
-      donorInfo = parseDonationFormBase(data, 'UN');
+      donorInfo = parseDonationFormBase(data, 'UN', {
+        requireDocument: false,
+        allowedDocumentTypes: DOCUMENT_TYPES_ANY,
+      });
     } catch (error: any) {
       return new Response(JSON.stringify({ ok: false, error: error?.message || 'Datos inválidos' }), {
         status: 400,

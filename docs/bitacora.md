@@ -14,6 +14,16 @@
 
 ## Entradas
 
+### 2026-02-01 (Donaciones Stripe: identidad opcional y oculta)
+- Responsable: Codex
+- Cambios:
+  - Stripe (Primicias + Donaciones): se ocultan campos de documento y el checkbox de certificado mientras se define el flujo.
+  - Stripe: validacion backend deja documento como opcional.
+  - Documentos internacionales quedan listos en validacion de perfil para futuro uso.
+- Pruebas: N/A
+- Pendientes:
+  - Definir flujo de certificados y requisito de documento para eventos internacionales.
+
 ### 2026-01-28 (Portal logout fiable)
 - Responsable: Codex
 - Cambios:

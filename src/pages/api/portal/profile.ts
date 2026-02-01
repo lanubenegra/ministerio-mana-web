@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
-import { normalizeDocumentType } from '@lib/donationInput';
+import { DOCUMENT_TYPES_ANY, normalizeDocumentType } from '@lib/donationInput';
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
 
 export const prerender = false;
@@ -90,7 +90,7 @@ export const POST: APIRoute = async ({ request }) => {
   const phone = sanitizePlainText(payload.phone || '', 32);
   const city = sanitizePlainText(payload.city || '', 80);
   const country = sanitizePlainText(payload.country || '', 80);
-  const documentType = normalizeDocumentType(payload.document_type || payload.documentType || '') || '';
+  const documentType = normalizeDocumentType(payload.document_type || payload.documentType || '', DOCUMENT_TYPES_ANY) || '';
   const documentNumber = sanitizePlainText(payload.document_number || payload.documentNumber || '', 40);
   const affiliationType = isValidAffiliation(payload.affiliation_type || payload.affiliationType)
     ? (payload.affiliation_type || payload.affiliationType)

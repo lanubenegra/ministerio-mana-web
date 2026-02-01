@@ -250,22 +250,31 @@ const cspNonce = Astro.locals?.cspNonce;
              </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
              <div class="space-y-1">
                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Tipo de documento</label>
-               <select name="documentType" required class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-ocean focus:ring-1 focus:ring-brand-ocean outline-none transition-all">
-                 <option value="" disabled selected>Selecciona</option>
-                 <option value="CC">CC</option>
-                 <option value="CE">CE</option>
-                 <option value="NIT">NIT</option>
-                 <option value="TI">TI</option>
+               <select name="documentType" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-ocean focus:ring-1 focus:ring-brand-ocean outline-none transition-all">
+                 <option value="" selected>Selecciona</option>
                  <option value="PAS">Pasaporte</option>
+                 <option value="NID">ID nacional</option>
+                 <option value="DL">Licencia de conducir</option>
+                 <option value="OTRO">Otro</option>
                </select>
              </div>
              <div class="space-y-1">
                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Número de documento</label>
-               <input type="text" name="documentNumber" required placeholder="Documento" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-ocean focus:ring-1 focus:ring-brand-ocean outline-none transition-all placeholder-slate-600" />
+               <input type="text" name="documentNumber" placeholder="Documento" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-ocean focus:ring-1 focus:ring-brand-ocean outline-none transition-all placeholder-slate-600" />
              </div>
+          </div>
+
+          <div class="hidden flex items-center gap-3 px-2">
+            <div class="relative flex items-center">
+              <input type="checkbox" name="needCertificate" id="stripe-certificate" class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-white/20 bg-slate-800 transition-all checked:border-brand-ocean checked:bg-brand-ocean" />
+              <svg class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity text-white" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <label for="stripe-certificate" class="cursor-pointer select-none text-sm text-slate-300">
+              Necesito certificado
+            </label>
           </div>
 
           <div class="space-y-1">
@@ -398,6 +407,7 @@ const cspNonce = Astro.locals?.cspNonce;
   setupCurrencyInput('stripe-amount-display', 'stripe-amount-real');
 
   let portalProfileCache = null;
+  const DEFAULT_CHURCH = 'Ministerio Maná Virtual';
 
   function getSupabaseAccessToken() {
     try {
@@ -416,6 +426,24 @@ const cspNonce = Astro.locals?.cspNonce;
     if (!el || !value) return;
     if (el.value) return;
     el.value = value;
+  }
+
+  function ensureVirtualChurch(form) {
+    if (!form) return;
+    const churchInput = form.querySelector('input[name="church"]');
+    const campusInput = form.querySelector('input[name="campus"]');
+    const hasCampus = campusInput?.value?.trim();
+    if (churchInput && !churchInput.value.trim() && !hasCampus) {
+      churchInput.value = DEFAULT_CHURCH;
+    }
+  }
+
+  function setDocumentRequired(form, required) {
+    if (!form) return;
+    const docType = form.querySelector('select[name="documentType"]');
+    const docNumber = form.querySelector('input[name="documentNumber"]');
+    if (docType) docType.required = Boolean(required);
+    if (docNumber) docNumber.required = Boolean(required);
   }
 
   function fillDonationForm(form, profile) {
@@ -446,6 +474,7 @@ const cspNonce = Astro.locals?.cspNonce;
 
   function saveProfileFromDonation(form) {
     if (!form || !portalProfileCache) return;
+    ensureVirtualChurch(form);
     const token = getSupabaseAccessToken();
     if (!token) return;
 
@@ -497,6 +526,9 @@ const cspNonce = Astro.locals?.cspNonce;
   }
 
   prefillFromPortalProfile();
+  ensureVirtualChurch(wompiForm);
+  ensureVirtualChurch(stripeForm);
+  setDocumentRequired(stripeForm, false);
 
   wompiForm?.addEventListener('submit', () => saveProfileFromDonation(wompiForm));
   stripeForm?.addEventListener('submit', () => saveProfileFromDonation(stripeForm));

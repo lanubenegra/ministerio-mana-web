@@ -138,7 +138,7 @@ const copPerUsd: number | null =
             />
           </div>
 
-          <div class="grid gap-3 md:grid-cols-2">
+          <div class="hidden grid gap-3 md:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1">
                 Tipo de documento
@@ -393,16 +393,14 @@ const copPerUsd: number | null =
               </label>
               <select
                 name="documentType"
-                required
                 class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm
                        focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
               >
-                <option value="" disabled selected>Selecciona</option>
-                <option value="CC">CC</option>
-                <option value="CE">CE</option>
-                <option value="NIT">NIT</option>
-                <option value="TI">TI</option>
+                <option value="" selected>Selecciona</option>
                 <option value="PAS">Pasaporte</option>
+                <option value="NID">ID nacional</option>
+                <option value="DL">Licencia de conducir</option>
+                <option value="OTRO">Otro</option>
               </select>
             </div>
             <div>
@@ -412,12 +410,23 @@ const copPerUsd: number | null =
               <input
                 type="text"
                 name="documentNumber"
-                required
                 placeholder="Documento"
                 class="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm
                        focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
               />
             </div>
+          </div>
+
+          <div class="hidden flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="stripe-need-certificate"
+              name="needCertificate"
+              class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <label for="stripe-need-certificate" class="text-sm text-slate-600">
+              Necesito certificado
+            </label>
           </div>
 
           <div class="grid gap-3 md:grid-cols-2">
@@ -612,6 +621,7 @@ const copPerUsd: number | null =
   const wompiForm = document.querySelector('form[action="/api/wompi/checkout"]');
   const stripeForm = document.querySelector('form[action="/api/stripe/checkout"]');
   let portalProfileCache = null;
+  const DEFAULT_CHURCH = 'Ministerio Maná Virtual';
 
   function getSupabaseAccessToken() {
     try {
@@ -630,6 +640,29 @@ const copPerUsd: number | null =
     if (!el || !value) return;
     if (el.value) return;
     el.value = value;
+  }
+
+  function ensureVirtualChurch(form) {
+    if (!form) return;
+    const churchInput = form.querySelector('input[name="church"]');
+    const campusInput = form.querySelector('input[name="campus"]');
+    const hasCampus = campusInput?.value?.trim();
+    if (churchInput && !churchInput.value.trim() && !hasCampus) {
+      churchInput.value = DEFAULT_CHURCH;
+    }
+  }
+
+  function setDocumentRequired(form, required) {
+    if (!form) return;
+    const docType = form.querySelector('select[name="documentType"]');
+    const docNumber = form.querySelector('input[name="documentNumber"]');
+    if (docType) docType.required = Boolean(required);
+    if (docNumber) docNumber.required = Boolean(required);
+  }
+
+  function updateStripeDocumentRequirement() {
+    if (!stripeForm) return;
+    setDocumentRequired(stripeForm, false);
   }
 
   function fillDonationForm(form, profile) {
@@ -660,6 +693,7 @@ const copPerUsd: number | null =
 
   function saveProfileFromDonation(form) {
     if (!form || !portalProfileCache) return;
+    ensureVirtualChurch(form);
     const token = getSupabaseAccessToken();
     if (!token) return;
 
@@ -711,6 +745,9 @@ const copPerUsd: number | null =
   }
 
   prefillFromPortalProfile();
+  ensureVirtualChurch(wompiForm);
+  ensureVirtualChurch(stripeForm);
+  updateStripeDocumentRequirement();
   wompiForm?.addEventListener('submit', () => saveProfileFromDonation(wompiForm));
   stripeForm?.addEventListener('submit', () => saveProfileFromDonation(stripeForm));
 </script>
