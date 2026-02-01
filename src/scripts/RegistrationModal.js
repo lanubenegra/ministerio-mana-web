@@ -159,7 +159,21 @@ export class RegistrationModal {
 
         // Payment options
         this.paymentOptions?.forEach(input => {
-            input.addEventListener('change', () => this.updatePaymentUI());
+            input.addEventListener('change', (e) => {
+                // Prevent scroll jump by preserving current position
+                const scrollContainer = this.modal?.querySelector('.overflow-y-auto');
+                const currentScrollPos = scrollContainer?.scrollTop || 0;
+
+                // Update UI
+                this.updatePaymentUI();
+
+                // Restore scroll position after DOM updates
+                requestAnimationFrame(() => {
+                    if (scrollContainer) {
+                        scrollContainer.scrollTop = currentScrollPos;
+                    }
+                });
+            });
         });
 
         this.installmentFrequencyInputs?.forEach(input => {
