@@ -91,6 +91,7 @@ Endpoint:
 - `GET /api/cumbre2026/admin/export`
 - Header requerido: `x-export-secret: <CUMBRE_ADMIN_EXPORT_SECRET>`
 - Alternativa: `?token=<CUMBRE_ADMIN_EXPORT_SECRET>`
+- Filtro opcional: `?provider=wompi|stripe|manual` (manual = fisico)
 
 Ejemplo:
 
@@ -105,6 +106,7 @@ Endpoint:
 - `GET /api/cumbre2026/admin/export-all`
 - Header requerido: `x-export-secret: <CUMBRE_ADMIN_EXPORT_SECRET>`
 - Alternativa: `?token=<CUMBRE_ADMIN_EXPORT_SECRET>`
+- Filtro opcional: `?provider=wompi|stripe|manual` (manual = fisico)
 
 Ejemplo:
 

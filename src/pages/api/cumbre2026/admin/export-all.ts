@@ -27,6 +27,14 @@ function csvEscape(value: unknown): string {
   return str;
 }
 
+function normalizeProvider(raw: string | null): string | null {
+  if (!raw) return null;
+  const value = raw.toLowerCase();
+  if (value === 'physical' || value === 'fisico') return 'manual';
+  if (value === 'wompi' || value === 'stripe' || value === 'manual') return value;
+  return null;
+}
+
 export const GET: APIRoute = async ({ request }) => {
   if (!validateExport(request)) {
     void logSecurityEvent({
@@ -43,6 +51,16 @@ export const GET: APIRoute = async ({ request }) => {
   if (!supabaseAdmin) {
     return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), {
       status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const url = new URL(request.url);
+  const providerRaw = url.searchParams.get('provider');
+  const provider = normalizeProvider(providerRaw);
+  if (providerRaw && !provider) {
+    return new Response(JSON.stringify({ ok: false, error: 'provider invalido' }), {
+      status: 400,
       headers: { 'content-type': 'application/json' },
     });
   }
@@ -142,22 +160,32 @@ export const GET: APIRoute = async ({ request }) => {
     .select('id, booking_id, full_name, package_type, relationship, birthdate, gender, nationality, document_type, document_number, room_preference, blood_type, allergies, diet_type, diet_notes')
     .in('booking_id', bookingIds);
 
-  const { data: plans } = await supabaseAdmin
+  let planQuery = supabaseAdmin
     .from('cumbre_payment_plans')
     .select('id, booking_id, status, frequency, provider, installment_count, installment_amount, amount_paid, next_due_date, start_date, end_date, auto_debit, provider_customer_id, provider_payment_method_id, provider_subscription_id')
     .in('booking_id', bookingIds)
     .order('created_at', { ascending: false });
+  if (provider) {
+    planQuery = planQuery.eq('provider', provider);
+  }
+  const { data: plans } = await planQuery;
 
-  const { data: payments } = await supabaseAdmin
+  let paymentQuery = supabaseAdmin
     .from('cumbre_payments')
     .select('id, booking_id, reference, provider, provider_tx_id, amount, currency, status, installment_id, raw_event, created_at')
     .in('booking_id', bookingIds)
+    .eq('status', 'APPROVED')
     .order('created_at', { ascending: false });
+  if (provider) {
+    paymentQuery = paymentQuery.eq('provider', provider);
+  }
+  const { data: payments } = await paymentQuery;
 
   const { data: installments } = await supabaseAdmin
     .from('cumbre_installments')
     .select('id, booking_id, plan_id, installment_index, due_date, amount, currency, status, provider_reference, provider_tx_id, paid_at')
-    .in('booking_id', bookingIds);
+    .in('booking_id', bookingIds)
+    .eq('status', 'PAID');
 
   const plansByBooking = new Map<string, any>();
   for (const plan of plans || []) {
@@ -244,29 +272,6 @@ export const GET: APIRoute = async ({ request }) => {
     ];
 
     if (!paymentRows.length) {
-      rows.push([
-        ...baseCells,
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        ...participantCells,
-      ]);
       return;
     }
 

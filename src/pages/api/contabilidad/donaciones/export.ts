@@ -66,6 +66,7 @@ export const GET = async ({ request }: APIContext) => {
     .from('donations')
     .select('*')
     .eq('provider', provider)
+    .eq('status', 'APPROVED')
     .order('created_at', { ascending: false });
 
   if (error) {

@@ -27,6 +27,14 @@ function csvEscape(value: unknown): string {
   return str;
 }
 
+function normalizeProvider(raw: string | null): string | null {
+  if (!raw) return null;
+  const value = raw.toLowerCase();
+  if (value === 'physical' || value === 'fisico') return 'manual';
+  if (value === 'wompi' || value === 'stripe' || value === 'manual') return value;
+  return null;
+}
+
 export const GET: APIRoute = async ({ request }) => {
   if (!validateExport(request)) {
     void logSecurityEvent({
@@ -43,6 +51,16 @@ export const GET: APIRoute = async ({ request }) => {
   if (!supabaseAdmin) {
     return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), {
       status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const url = new URL(request.url);
+  const providerRaw = url.searchParams.get('provider');
+  const provider = normalizeProvider(providerRaw);
+  if (providerRaw && !provider) {
+    return new Response(JSON.stringify({ ok: false, error: 'provider invalido' }), {
+      status: 400,
       headers: { 'content-type': 'application/json' },
     });
   }
@@ -125,16 +143,25 @@ export const GET: APIRoute = async ({ request }) => {
     .select('id, booking_id, full_name, package_type, relationship, birthdate, gender, nationality, document_type, document_number, room_preference, blood_type, allergies, diet_type, diet_notes')
     .in('booking_id', bookingIds);
 
-  const { data: plans } = await supabaseAdmin
+  let planQuery = supabaseAdmin
     .from('cumbre_payment_plans')
     .select('booking_id, status, frequency, provider, installment_count, installment_amount, amount_paid, next_due_date')
     .in('booking_id', bookingIds);
+  if (provider) {
+    planQuery = planQuery.eq('provider', provider);
+  }
+  const { data: plans } = await planQuery;
 
-  const { data: payments } = await supabaseAdmin
+  let paymentQuery = supabaseAdmin
     .from('cumbre_payments')
     .select('id, booking_id, reference, provider, amount, currency, status, installment_id, raw_event, created_at')
     .in('booking_id', bookingIds)
+    .eq('status', 'APPROVED')
     .order('created_at', { ascending: false });
+  if (provider) {
+    paymentQuery = paymentQuery.eq('provider', provider);
+  }
+  const { data: payments } = await paymentQuery;
 
   const plansByBooking = new Map<string, any>();
   for (const plan of plans || []) {
@@ -163,57 +190,6 @@ export const GET: APIRoute = async ({ request }) => {
     const paymentRows = paymentsByBooking.get(participant.booking_id) ?? [];
 
     if (!paymentRows.length) {
-      rows.push([
-        csvEscape(participant.booking_id),
-        csvEscape(booking?.contact_name),
-        csvEscape(booking?.contact_email),
-        csvEscape(booking?.contact_phone),
-        csvEscape(booking?.contact_document_type),
-        csvEscape(booking?.contact_document_number),
-        csvEscape(booking?.contact_country),
-        csvEscape(booking?.contact_city),
-        csvEscape(booking?.contact_church),
-        csvEscape(booking?.church_id),
-        csvEscape(booking?.source),
-        csvEscape(booking?.created_by),
-        csvEscape(booking?.country_group),
-        csvEscape(booking?.currency),
-        csvEscape(booking?.total_amount),
-        csvEscape(booking?.total_paid),
-        csvEscape(booking?.deposit_threshold),
-        csvEscape(booking?.status),
-        csvEscape(booking?.created_at),
-        csvEscape(plan?.status),
-        csvEscape(plan?.provider),
-        csvEscape(plan?.frequency),
-        csvEscape(plan?.installment_count),
-        csvEscape(plan?.installment_amount),
-        csvEscape(plan?.amount_paid),
-        csvEscape(plan?.next_due_date),
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        csvEscape(participant.id),
-        csvEscape(participant.full_name),
-        csvEscape(participant.package_type),
-        csvEscape(participant.relationship),
-        csvEscape(participant.birthdate),
-        csvEscape(participant.gender),
-        csvEscape(participant.nationality),
-        csvEscape(participant.document_type),
-        csvEscape(participant.document_number),
-        csvEscape(participant.room_preference),
-        csvEscape(participant.blood_type),
-        csvEscape(participant.allergies),
-        csvEscape(participant.diet_type),
-        csvEscape(participant.diet_notes),
-      ]);
       return;
     }
 

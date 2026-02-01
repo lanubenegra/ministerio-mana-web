@@ -96,6 +96,7 @@ export const GET: APIRoute = async ({ request }) => {
       .from('cumbre_payments')
       .select('id, booking_id, provider, provider_tx_id, reference, amount, currency, status, raw_event, created_at, installment_id')
       .in('booking_id', bookingIds)
+      .eq('status', 'APPROVED')
       .order('created_at', { ascending: true });
     if (error) {
       console.error('[portal.iglesia.export] payments error', error);
@@ -144,32 +145,6 @@ export const GET: APIRoute = async ({ request }) => {
   (bookings || []).forEach((booking: any) => {
     const paymentRows = paymentsByBooking[booking.id] || [];
     if (!paymentRows.length) {
-      rows.push([
-        booking.church_id,
-        churchInfo?.code || '',
-        churchInfo?.name || booking.contact_church || '',
-        booking.id,
-        booking.contact_name,
-        booking.contact_email,
-        booking.contact_phone,
-        booking.contact_document_type,
-        booking.contact_document_number,
-        booking.contact_country,
-        booking.contact_city,
-        booking.total_amount,
-        booking.total_paid,
-        booking.currency,
-        booking.status,
-        booking.created_at,
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-      ].map(csvEscape).join(','));
       return;
     }
     paymentRows.forEach((payment: any) => {

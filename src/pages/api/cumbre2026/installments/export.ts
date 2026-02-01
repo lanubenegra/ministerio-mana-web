@@ -65,6 +65,7 @@ export const GET: APIRoute = async ({ request }) => {
       plan:cumbre_payment_plans(frequency, status, provider, amount_paid, installment_count),
       booking:cumbre_bookings(contact_name, contact_email, total_amount, currency, status)
     `)
+    .eq('status', 'PAID')
     .order('due_date', { ascending: true });
 
   if (error) {
