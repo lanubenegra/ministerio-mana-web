@@ -79,35 +79,49 @@ export const GET: APIRoute = async ({ request }) => {
   const requestedChurch = url.searchParams.get('churchId');
   const includeAllSources = isAdmin && !requestedChurch;
 
-  // Build Query
-  let query = supabaseAdmin
-    .from('cumbre_bookings')
-    // Added payment_method for "Online vs Physical" request
-    .select('id, contact_name, contact_email, total_amount, total_paid, currency, status, created_at, church_id, contact_church, payment_method, payment_status')
-    .order('created_at', { ascending: false })
-    .limit(100);
-  if (!includeAllSources) {
-    query = query.eq('source', 'portal-iglesia');
-  }
+  const baseSelect = 'id, contact_name, contact_email, total_amount, total_paid, currency, status, created_at, church_id, contact_church';
+  const extendedSelect = `${baseSelect}, payment_method, payment_status`;
 
-  // Apply Scope
-  if (isAdmin) {
-    // Admin can filter by param, otherwise sees all (or limited 100 recent)
-    if (requestedChurch) query = query.eq('church_id', requestedChurch);
-  } else if (churchId && churchId.startsWith('IN:')) {
-    // Country Scope (Multiple IDs)
-    const ids = churchId.substring(3).split(',');
-    if (ids.length === 0) return new Response(JSON.stringify({ ok: true, bookings: [] }), { status: 200 }); // No churches
-    query = query.in('church_id', ids);
-  } else if (churchId) {
-    // Local Scope (Single ID)
-    query = query.eq('church_id', churchId);
-  } else {
-    // Should not happen if allowed, but fail safe
+  const buildQuery = (select: string) => {
+    let query = supabaseAdmin
+      .from('cumbre_bookings')
+      .select(select)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (!includeAllSources) {
+      query = query.eq('source', 'portal-iglesia');
+    }
+
+    if (isAdmin) {
+      if (requestedChurch) query = query.eq('church_id', requestedChurch);
+    } else if (churchId && churchId.startsWith('IN:')) {
+      const ids = churchId.substring(3).split(',');
+      if (ids.length === 0) return null;
+      query = query.in('church_id', ids);
+    } else if (churchId) {
+      query = query.eq('church_id', churchId);
+    } else {
+      return null;
+    }
+    return query;
+  };
+
+  const primaryQuery = buildQuery(extendedSelect);
+  if (!primaryQuery) {
     return new Response(JSON.stringify({ ok: true, bookings: [] }), { status: 200 });
   }
 
-  const { data: bookings, error } = await query;
+  let { data: bookings, error } = await primaryQuery;
+
+  if (error && error.code === '42703') {
+    const fallbackQuery = buildQuery(baseSelect);
+    if (!fallbackQuery) {
+      return new Response(JSON.stringify({ ok: true, bookings: [] }), { status: 200 });
+    }
+    const fallback = await fallbackQuery;
+    bookings = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     console.error('[portal.iglesia.bookings] error', error);

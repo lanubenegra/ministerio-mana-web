@@ -69,11 +69,24 @@ export const GET: APIRoute = async ({ request }) => {
   const limitRaw = Number(url.searchParams.get('limit') || 250);
   const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 50), 500) : 250;
 
-  const { data: bookings, error } = await supabaseAdmin
+  const baseSelect = 'id, contact_name, contact_email, contact_phone, status, total_amount, total_paid, currency, created_at, church_id, contact_church';
+  const extendedSelect = `${baseSelect}, payment_method, payment_status`;
+
+  let { data: bookings, error } = await supabaseAdmin
     .from('cumbre_bookings')
-    .select('id, contact_name, contact_email, contact_phone, status, total_amount, total_paid, currency, created_at, church_id, contact_church, payment_method, payment_status')
+    .select(extendedSelect)
     .order('created_at', { ascending: false })
     .limit(limit);
+
+  if (error && error.code === '42703') {
+    const fallback = await supabaseAdmin
+      .from('cumbre_bookings')
+      .select(baseSelect)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    bookings = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     console.error('[portal.admin.cumbre.issues] bookings error', error);
