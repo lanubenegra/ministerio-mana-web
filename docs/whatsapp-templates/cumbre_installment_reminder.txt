@@ -1,7 +1,7 @@
-Cumbre Mundial 2026
+🙌 Cumbre Mundial 2026
 Hola {{1}}, gracias por inscribirte a la Cumbre Mundial 2026 y por apoyar la mision del Ministerio Mana.
-Te recordamos tu cuota {{2}}/{{3}} con vencimiento {{4}}.
-Valor: {{5}}.
-Paga aqui: {{6}}
-Medios: tarjeta, PSE, Nequi o cuenta de ahorros.
-Si ya realizaste el pago, ignora este mensaje. Si necesitas ayuda, responde este WhatsApp.
+📅 Te recordamos tu cuota {{2}}/{{3}} con vencimiento {{4}}.
+💰 Valor: {{5}}.
+🔗 Paga aqui: {{6}}
+💳 Medios: tarjeta, PSE, Nequi o cuenta de ahorros.
+✅ Si ya realizaste el pago, ignora este mensaje. Si necesitas ayuda, responde este WhatsApp.

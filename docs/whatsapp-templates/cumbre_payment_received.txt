@@ -1,5 +1,5 @@
-Cumbre Mundial 2026
+✅ Cumbre Mundial 2026
 Hola {{1}}, gracias por apoyar la mision del Ministerio Mana.
 Confirmamos tu pago de {{2}} para la Cumbre Mundial 2026.
-Booking ID: {{3}}.
+🧾 Booking ID: {{3}}.
 Si necesitas ayuda, responde este WhatsApp.
