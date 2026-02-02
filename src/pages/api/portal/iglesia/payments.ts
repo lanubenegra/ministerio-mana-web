@@ -118,11 +118,17 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
-  const { data: payments, error: paymentsError } = await supabaseAdmin
+  const statusParam = new URL(request.url).searchParams.get('status');
+  let paymentsQuery = supabaseAdmin
     .from('cumbre_payments')
     .select('id, booking_id, provider, provider_tx_id, reference, amount, currency, status, raw_event, created_at, installment_id')
     .in('booking_id', bookingIds)
     .order('created_at', { ascending: false });
+  if (statusParam) {
+    paymentsQuery = paymentsQuery.eq('status', statusParam);
+  }
+
+  const { data: payments, error: paymentsError } = await paymentsQuery;
 
   if (paymentsError) {
     console.error('[portal.iglesia.payments] payments error', paymentsError);

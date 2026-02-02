@@ -1191,6 +1191,7 @@ async function loadChurchPayments(headers = {}) {
     const url = new URL('/api/portal/iglesia/payments', window.location.origin);
     const resolvedId = resolveSelectedChurchId();
     if (resolvedId) url.searchParams.set('churchId', resolvedId);
+    url.searchParams.set('status', 'APPROVED');
     const res = await fetch(url.toString(), { headers, credentials: 'include' });
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
