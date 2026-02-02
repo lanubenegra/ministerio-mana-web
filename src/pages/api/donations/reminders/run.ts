@@ -55,6 +55,8 @@ function formatDateLong(date: string): string {
 async function sendWhatsappMessage(params: {
   to: string;
   message: string;
+  contentSid?: string | null;
+  contentVariables?: Record<string, string>;
   meta?: Record<string, unknown>;
 }): Promise<boolean> {
   const webhookUrl = env('WHATSAPP_WEBHOOK_URL');
@@ -68,6 +70,8 @@ async function sendWhatsappMessage(params: {
     body: JSON.stringify({
       to: params.to,
       message: params.message,
+      ...(params.contentSid ? { contentSid: params.contentSid } : {}),
+      ...(params.contentVariables ? { contentVariables: params.contentVariables } : {}),
       meta: params.meta ?? null,
     }),
   });
@@ -142,6 +146,14 @@ async function handleRun(request: Request): Promise<Response> {
     const amountLabel = formatCurrency(amount, currency);
     const startLabel = formatDateLong(reminder.start_date);
     const endLabel = formatDateLong(reminder.end_date);
+    const whatsappTemplateSid = env('WHATSAPP_TITHE_REMINDER_CONTENT_SID');
+    const templateVariables = whatsappTemplateSid ? {
+      '1': reminder.donor_name || donation.donor_name || 'amigo',
+      '2': amountLabel,
+      '3': startLabel,
+      '4': endLabel,
+      '5': donateLink,
+    } : undefined;
 
     const message = [
       `Este mensaje ha sido enviado bajo tu consentimiento.`,
@@ -177,6 +189,8 @@ async function handleRun(request: Request): Promise<Response> {
         const ok = await sendWhatsappMessage({
           to: reminder.donor_phone,
           message,
+          contentSid: whatsappTemplateSid || null,
+          contentVariables: templateVariables,
           meta: { donationType, amount, currency },
         });
         await recordDonationReminderLog({

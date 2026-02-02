@@ -49,8 +49,11 @@ export const POST: APIRoute = async ({ request }) => {
 
   const toRaw = String(payload.to || '').trim();
   const message = String(payload.message || '').trim();
+  const contentSid = String(payload.contentSid || payload.content_sid || '').trim();
+  const rawContentVars = payload.contentVariables ?? payload.content_variables ?? null;
+  const hasTemplate = Boolean(contentSid);
 
-  if (!toRaw || !message) {
+  if (!toRaw || (!message && !hasTemplate)) {
     return json({ ok: false, error: 'Datos incompletos' }, 400);
   }
 
@@ -69,7 +72,17 @@ export const POST: APIRoute = async ({ request }) => {
   const params = new URLSearchParams();
   params.set('From', from);
   params.set('To', to);
-  params.set('Body', message);
+  if (hasTemplate) {
+    params.set('ContentSid', contentSid);
+    if (rawContentVars) {
+      const variables = typeof rawContentVars === 'string'
+        ? rawContentVars
+        : JSON.stringify(rawContentVars);
+      params.set('ContentVariables', variables);
+    }
+  } else {
+    params.set('Body', message);
+  }
 
   const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
 
