@@ -592,6 +592,17 @@ const formatTestAmount = (value, currency) =>
 
 </div>
 
+<!-- Validation Modal -->
+<div id="validation-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+   <div id="validation-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+   <div class="relative z-10 w-[92%] max-w-lg rounded-2xl border border-white/10 bg-brand-navy/95 p-6 shadow-2xl">
+      <button id="validation-close" type="button" class="absolute right-4 top-4 text-white/60 hover:text-white text-xl leading-none">×</button>
+      <h3 class="text-xl font-bold text-white mb-2">Faltan datos por completar</h3>
+      <p class="text-sm text-white/60 mb-4">Revisa los campos marcados en rojo:</p>
+      <ul id="validation-list" class="space-y-2 text-sm text-white/80 list-disc pl-5"></ul>
+   </div>
+</div>
+
 <script type="module" nonce={cspNonce}>
   // Simple Vanilla JS Logic
   const APP = {
@@ -644,6 +655,7 @@ const formatTestAmount = (value, currency) =>
           leaderDocNumber: document.querySelector('input[name="leader_id"]'),
           leaderName: document.querySelector('input[name="leader_name"]'),
           leaderEmail: document.querySelector('input[name="leader_email"]'),
+          leaderPhone: document.querySelector('input[name="leader_phone"]'),
           leaderAuthBtn: document.getElementById('leader-auth-btn'),
           leaderAuthStatus: document.getElementById('leader-auth-status'),
           leaderPackage: document.getElementById('leader-package'),
@@ -672,7 +684,11 @@ const formatTestAmount = (value, currency) =>
           form: document.getElementById('booking-form'),
           errorMsg: document.getElementById('error-msg'),
           sideSubtotal: document.getElementById('side-subtotal'),
-          sideTotal: document.getElementById('side-total')
+          sideTotal: document.getElementById('side-total'),
+          validationModal: document.getElementById('validation-modal'),
+          validationList: document.getElementById('validation-list'),
+          validationClose: document.getElementById('validation-close'),
+          validationOverlay: document.getElementById('validation-overlay')
        };
     },
 
@@ -736,6 +752,18 @@ const formatTestAmount = (value, currency) =>
           this.dom.detailsContainer.addEventListener('input', (event) => this.handleDetailsInput(event));
           this.dom.detailsContainer.addEventListener('change', (event) => this.handleDetailsInput(event));
        }
+
+       if (this.dom.form) {
+          this.dom.form.addEventListener('input', (event) => this.clearFieldError(event?.target));
+          this.dom.form.addEventListener('change', (event) => this.clearFieldError(event?.target));
+       }
+
+       if (this.dom.validationClose) {
+          this.dom.validationClose.addEventListener('click', () => this.hideValidationModal());
+       }
+       if (this.dom.validationOverlay) {
+          this.dom.validationOverlay.addEventListener('click', () => this.hideValidationModal());
+       }
     },
 
     async sendLeaderAuthLink() {
@@ -782,7 +810,11 @@ const formatTestAmount = (value, currency) =>
           this.updateTotals();
        }
        if(this.step === 2 && this.participants.length === 0) {
-          alert('Debes agregar al menos un participante');
+          this.clearValidationErrors();
+          this.markElementError(this.dom.inputName);
+          this.markElementError(this.dom.inputAge);
+          this.markElementError(this.dom.addPersonBox);
+          this.showValidationModal(['Debes agregar al menos un participante.']);
           return;
        }
        if(this.step === 3 && !this.validateStep3()) {
@@ -801,8 +833,34 @@ const formatTestAmount = (value, currency) =>
 
     validateStep1() {
        const fd = new FormData(this.dom.form);
-       if(!fd.get('leader_document_type') || !fd.get('leader_id') || !fd.get('leader_name') || !fd.get('leader_email') || !fd.get('leader_phone') || !fd.get('leader_package')) {
-          alert('Por favor completa los datos del responsable');
+       this.clearValidationErrors();
+       const missing = [];
+       if(!fd.get('leader_document_type')) {
+          missing.push('tipo de documento');
+          this.markElementError(this.dom.leaderDocType);
+       }
+       if(!fd.get('leader_id')) {
+          missing.push('documento');
+          this.markElementError(this.dom.leaderDocNumber);
+       }
+       if(!fd.get('leader_name')) {
+          missing.push('nombre');
+          this.markElementError(this.dom.leaderName);
+       }
+       if(!fd.get('leader_email')) {
+          missing.push('email');
+          this.markElementError(this.dom.leaderEmail);
+       }
+       if(!fd.get('leader_phone')) {
+          missing.push('teléfono');
+          this.markElementError(this.dom.leaderPhone);
+       }
+       if(!fd.get('leader_package')) {
+          missing.push('paquete');
+          this.markElementError(this.dom.leaderPackage);
+       }
+       if (missing.length) {
+          this.showValidationModal([`Responsable: falta ${missing.join(', ')}.`]);
           return false;
        }
        return true;
@@ -1069,6 +1127,7 @@ const formatTestAmount = (value, currency) =>
     handleDetailsInput(event) {
        const target = event?.target;
        if (!target || !target.dataset) return;
+       this.clearFieldError(target);
        const field = target.dataset.field;
        const id = target.dataset.id;
        if (!field || !id) return;
@@ -1081,8 +1140,13 @@ const formatTestAmount = (value, currency) =>
           }
           const card = target.closest('.participant-card');
           const otherWrap = card?.querySelector('.participant-doc-other');
+          const otherInput = card?.querySelector('.participant-doc-other-input');
           if (otherWrap) {
              otherWrap.classList.toggle('hidden', participant.documentType !== 'OTHER');
+          }
+          if (participant.documentType !== 'OTHER' && otherInput) {
+             otherInput.value = '';
+             this.clearFieldError(otherInput);
           }
           return;
        }
@@ -1094,7 +1158,50 @@ const formatTestAmount = (value, currency) =>
        participant[field] = value;
     },
 
+    clearValidationErrors() {
+       if (!this.dom.form) return;
+       this.dom.form.querySelectorAll('.input-error').forEach((el) => {
+          el.classList.remove('input-error');
+       });
+    },
+
+    clearFieldError(el) {
+       if (el?.classList?.contains('input-error')) {
+          el.classList.remove('input-error');
+       }
+    },
+
+    markFieldError(participantId, field) {
+       if (!this.dom.detailsContainer) return;
+       const selector = `[data-field="${field}"][data-id="${participantId}"]`;
+       const fieldEl = this.dom.detailsContainer.querySelector(selector);
+       if (fieldEl) {
+          fieldEl.classList.add('input-error');
+       }
+    },
+
+    markElementError(el) {
+       if (el?.classList) {
+          el.classList.add('input-error');
+       }
+    },
+
+    showValidationModal(messages) {
+       if (!this.dom.validationModal || !this.dom.validationList) return;
+       this.dom.validationList.innerHTML = messages.map((msg) => `<li>${msg}</li>`).join('');
+       this.dom.validationModal.classList.remove('hidden');
+       this.dom.validationModal.classList.add('flex');
+    },
+
+    hideValidationModal() {
+       if (!this.dom.validationModal) return;
+       this.dom.validationModal.classList.add('hidden');
+       this.dom.validationModal.classList.remove('flex');
+    },
+
     validateStep3() {
+       this.clearValidationErrors();
+       const messages = [];
        for (const participant of this.participants) {
           const missing = [];
           if (!participant.documentType) missing.push('tipo de documento');
@@ -1108,9 +1215,19 @@ const formatTestAmount = (value, currency) =>
           if (needsMenu && !participant.menuType) missing.push('menú');
           if (missing.length) {
              const label = participant.name || 'el participante';
-             alert(`Completa ${missing.join(', ')} de ${label}.`);
-             return false;
+             messages.push(`${label}: falta ${missing.join(', ')}.`);
+             const participantId = String(participant.id);
+             if (!participant.documentType) this.markFieldError(participantId, 'documentType');
+             if (participant.documentType === 'OTHER' && !participant.documentOtherType) this.markFieldError(participantId, 'documentOtherType');
+             if (!participant.documentNumber) this.markFieldError(participantId, 'documentNumber');
+             if (!participant.birthdate) this.markFieldError(participantId, 'birthdate');
+             if (!participant.gender) this.markFieldError(participantId, 'gender');
+             if (needsMenu && !participant.menuType) this.markFieldError(participantId, 'menuType');
           }
+       }
+       if (messages.length) {
+          this.showValidationModal(messages);
+          return false;
        }
        return true;
     },
@@ -1174,12 +1291,16 @@ const formatTestAmount = (value, currency) =>
        const lodgingChoice = this.dom.inputLodging?.value || 'lodging';
        
        if(!name) {
-          alert('Ingresa el nombre del participante');
+          this.clearValidationErrors();
+          this.markElementError(this.dom.inputName);
+          this.showValidationModal(['Nombre del participante: requerido.']);
           return;
        }
 
        if(age == null || age < 0 || age > 120) {
-          alert('Ingresa una edad válida');
+          this.clearValidationErrors();
+          this.markElementError(this.dom.inputAge);
+          this.showValidationModal(['Edad: ingresa un valor válido.']);
           return;
        }
 

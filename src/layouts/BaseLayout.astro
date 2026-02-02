@@ -34,6 +34,17 @@ const cspNonce = Astro.locals?.cspNonce;
     {!hideHeader && <Header />}
     <main class="min-h-[60vh]"><slot /></main>
     {!hideFooter && <Footer />}
+
+    <!-- App Modal -->
+    <div id="app-modal" class="fixed inset-0 z-[999] hidden items-center justify-center">
+      <div id="app-modal-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div class="relative z-10 w-[92%] max-w-lg rounded-2xl border border-white/10 bg-brand-navy/95 p-6 shadow-2xl">
+        <button id="app-modal-close" type="button" class="absolute right-4 top-4 text-white/60 hover:text-white text-xl leading-none">×</button>
+        <h3 id="app-modal-title" class="text-xl font-bold text-white mb-2">Aviso</h3>
+        <p id="app-modal-message" class="text-sm text-white/60 mb-4"></p>
+        <ul id="app-modal-list" class="hidden space-y-2 text-sm text-white/80 list-disc pl-5"></ul>
+      </div>
+    </div>
     
     <!-- Smooth Scroll & Parallax Animations -->
     {!disableSmoothScroll && (
@@ -103,5 +114,8 @@ const cspNonce = Astro.locals?.cspNonce;
       });
     </script>
     )}
+    <script type="module" nonce={cspNonce}>
+      import '@scripts/app-modal.js';
+    </script>
   </body>
 </html>

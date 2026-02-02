@@ -21,6 +21,7 @@ import flatpickr from 'flatpickr';
      bookingEmail: '',
      countryGroup: 'CO',
      draft: null,
+     modal: null,
      
      init() {
         const params = new URLSearchParams(window.location.search);
@@ -299,6 +300,7 @@ import flatpickr from 'flatpickr';
                this.toggleDocOther(card, value === 'OTHER');
                if (value !== 'OTHER' && docOtherInput) {
                  docOtherInput.value = '';
+                 this.clearFieldError(docOtherInput);
                }
              });
            }
@@ -312,10 +314,121 @@ import flatpickr from 'flatpickr';
         });
 
         this.initCalendars();
+        this.initModal();
+        this.attachErrorClear();
         
         // Form submit
         document.getElementById('details-form').addEventListener('submit', (e) => this.handleSubmit(e));
         this.attachAutosave();
+     },
+
+     initModal() {
+        if (this.modal?.initialized) return;
+        this.modal = {
+          root: document.getElementById('registro-validation-modal'),
+          list: document.getElementById('registro-validation-list'),
+          close: document.getElementById('registro-validation-close'),
+          overlay: document.getElementById('registro-validation-overlay'),
+          initialized: true,
+        };
+        if (this.modal.close) {
+          this.modal.close.addEventListener('click', () => this.hideValidationModal());
+        }
+        if (this.modal.overlay) {
+          this.modal.overlay.addEventListener('click', () => this.hideValidationModal());
+        }
+     },
+
+     showValidationModal(messages) {
+        if (!this.modal?.root || !this.modal?.list) return;
+        this.modal.list.innerHTML = messages.map((msg) => `<li>${msg}</li>`).join('');
+        this.modal.root.classList.remove('hidden');
+        this.modal.root.classList.add('flex');
+     },
+
+     hideValidationModal() {
+        if (!this.modal?.root) return;
+        this.modal.root.classList.add('hidden');
+        this.modal.root.classList.remove('flex');
+     },
+
+     clearValidationErrors() {
+        const form = document.getElementById('details-form');
+        if (!form) return;
+        form.querySelectorAll('.input-error').forEach((el) => {
+          el.classList.remove('input-error');
+        });
+     },
+
+     clearFieldError(el) {
+        if (el?.classList?.contains('input-error')) {
+          el.classList.remove('input-error');
+        }
+     },
+
+     markFieldErrorByName(name) {
+        const form = document.getElementById('details-form');
+        if (!form) return;
+        const fieldEl = form.querySelector(`[name="${name}"]`);
+        if (fieldEl) {
+          fieldEl.classList.add('input-error');
+        }
+     },
+
+     attachErrorClear() {
+        const form = document.getElementById('details-form');
+        if (!form) return;
+        form.querySelectorAll('input, select, textarea').forEach((el) => {
+          el.addEventListener('input', () => this.clearFieldError(el));
+          el.addEventListener('change', () => this.clearFieldError(el));
+        });
+     },
+
+     validateForm() {
+        this.clearValidationErrors();
+        const form = document.getElementById('details-form');
+        if (!form) return true;
+        const fd = new FormData(form);
+        const messages = [];
+
+        this.booking.participants.forEach((p) => {
+          const participantId = p.id;
+          if (!participantId) return;
+          const prefix = `p_${participantId}_`;
+          const label = p.full_name || p.name || 'Participante';
+          const packageType = p.package_type || p.type || '';
+          const docType = (fd.get(`${prefix}docType`) || '').toString().trim();
+          const docOther = (fd.get(`${prefix}docOtherType`) || '').toString().trim();
+          const docNumber = (fd.get(`${prefix}docNumber`) || '').toString().trim();
+          const birthdate = (fd.get(`${prefix}birthDate`) || '').toString().trim();
+          const gender = (fd.get(`${prefix}gender`) || '').toString().trim();
+          const menuType = (fd.get(`${prefix}menuType`) || '').toString().trim();
+
+          const missing = [];
+          if (!docType) missing.push('tipo de documento');
+          if (docType === 'OTHER' && !docOther) missing.push('otro documento');
+          if (!docNumber) missing.push('documento');
+          if (!birthdate) missing.push('fecha de nacimiento');
+          if (!gender) missing.push('género');
+          const needsMenu = packageType === 'lodging' || packageType === 'no_lodging';
+          if (needsMenu && !menuType) missing.push('menú');
+
+          if (missing.length) {
+            messages.push(`${label}: falta ${missing.join(', ')}.`);
+            if (!docType) this.markFieldErrorByName(`${prefix}docType`);
+            if (docType === 'OTHER' && !docOther) this.markFieldErrorByName(`${prefix}docOtherType`);
+            if (!docNumber) this.markFieldErrorByName(`${prefix}docNumber`);
+            if (!birthdate) this.markFieldErrorByName(`${prefix}birthDate`);
+            if (!gender) this.markFieldErrorByName(`${prefix}gender`);
+            if (needsMenu && !menuType) this.markFieldErrorByName(`${prefix}menuType`);
+          }
+        });
+
+        if (messages.length) {
+          this.showValidationModal(messages);
+          return false;
+        }
+        return true;
      },
 
      initCalendars() {
@@ -447,6 +560,11 @@ import flatpickr from 'flatpickr';
         btn.disabled = true;
 
         try {
+          if (!this.validateForm()) {
+            btn.textContent = 'Guardar y Finalizar';
+            btn.disabled = false;
+            return;
+          }
           const form = document.getElementById('details-form');
           const fd = new FormData(form);
           const participants = [];
@@ -498,8 +616,8 @@ import flatpickr from 'flatpickr';
           btn.textContent = 'Guardar y Finalizar';
           btn.disabled = false;
           return;
-        }
-     }
+      }
+    }
   };
 
   window.addEventListener('DOMContentLoaded', () => REGISTRO.init());

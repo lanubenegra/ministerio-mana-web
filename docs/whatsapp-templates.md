@@ -12,7 +12,7 @@ WhatsApp exige plantillas aprobadas para mensajes fuera de la ventana de 24h.
 
 ### 1) mana_tithe_reminder_es
 **Body:**
-Hola {{1}}, este es tu recordatorio de diezmo mensual por {{2}}. Vigencia: {{3}} a {{4}}. Dona aqui: {{5}}. Si ya pagaste, ignora este mensaje. Responde ALTO para dejar de recibir recordatorios.
+Hola {{1}}, gracias por apoyar la mision del Ministerio Mana. Este mensaje fue programado por ti para recordarte tu diezmo mensual de {{2}}. Vigencia: {{3}} a {{4}}. Dona aqui: {{5}}. Si ya pagaste, ignora este mensaje. Responde ALTO para dejar de recibir recordatorios.
 
 **Variables:**
 1 = Nombre (ej: "Santiago")
@@ -28,7 +28,7 @@ WHATSAPP_TITHE_REMINDER_CONTENT_SID = <Content SID>
 
 ### 2) mana_tithe_optin_es
 **Body:**
-Gracias {{1}}. Activaste recordatorios de diezmo por {{2}} desde {{3}} hasta {{4}}. Te enviaremos el enlace cuando corresponda. Responde ALTO para cancelar.
+Hola {{1}}, gracias por apoyar la mision del Ministerio Mana. Activaste recordatorios de diezmo por {{2}} desde {{3}} hasta {{4}}. Te enviaremos el enlace cuando corresponda. Responde ALTO para cancelar.
 
 **Variables:**
 1 = Nombre
@@ -40,7 +40,7 @@ Gracias {{1}}. Activaste recordatorios de diezmo por {{2}} desde {{3}} hasta {{4
 
 ### 3) mana_tithe_payment_received_es
 **Body:**
-Recibimos tu diezmo de {{1}}. Gracias por tu generosidad. Si tienes dudas, responde a este mensaje.
+Gracias por apoyar la mision del Ministerio Mana. Recibimos tu diezmo de {{1}}. Si tienes dudas, responde a este mensaje.
 
 **Variables:**
 1 = Monto
@@ -64,7 +64,7 @@ curl -sS -u "$TWILIO_ACCOUNT_SID:$TWILIO_AUTH_TOKEN" \
     },
     "types": {
       "twilio/text": {
-        "body": "Hola {{1}}, este es tu recordatorio de diezmo mensual por {{2}}. Vigencia: {{3}} a {{4}}. Dona aqui: {{5}}. Si ya pagaste, ignora este mensaje. Responde ALTO para dejar de recibir recordatorios."
+        "body": "Hola {{1}}, gracias por apoyar la mision del Ministerio Mana. Este mensaje fue programado por ti para recordarte tu diezmo mensual de {{2}}. Vigencia: {{3}} a {{4}}. Dona aqui: {{5}}. Si ya pagaste, ignora este mensaje. Responde ALTO para dejar de recibir recordatorios."
       }
     }
   }'

@@ -1,1 +1,4 @@
-Hola {{1}}! Para completar tu registro de la Cumbre Mundial 2026 necesitamos confirmar tu iglesia o sede. Responde con el nombre de tu iglesia y ciudad. Booking: {{2}}.
+Cumbre Mundial 2026
+Hola {{1}}, gracias por tu inscripcion a la Cumbre Mundial 2026.
+Para completar tu registro necesitamos tu iglesia/sede y ciudad.
+Responde con esos datos. Booking: {{2}}.
