@@ -497,6 +497,42 @@ import Sidebar from '@components/portal/Sidebar.astro';
                       </div>
                   </div>
 
+                  <!-- Admin Followups -->
+                  <div id="admin-followups-card" class="hidden bg-white border border-slate-100 rounded-[2.5rem] p-6 shadow-lg shadow-slate-200/50 space-y-4">
+                      <div class="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 class="text-sm font-bold text-[#293C74]">Centro de Soluciones</h3>
+                          <p class="text-xs text-slate-500 mt-1">Alertas y acciones rápidas para la Cumbre.</p>
+                        </div>
+                        <span id="admin-followups-count" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">0</span>
+                      </div>
+
+                      <div id="admin-followups-filters" class="flex items-center gap-2 overflow-x-auto pb-1">
+                        <button data-filter="all" class="admin-followups-filter px-3 py-1 rounded-full bg-[#293C74] text-white text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                          Todos <span data-count class="ml-1 text-[10px] opacity-80">0</span>
+                        </button>
+                        <button data-filter="registration_incomplete" class="admin-followups-filter px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">
+                          Registro <span data-count class="ml-1 text-[10px] text-slate-400">0</span>
+                        </button>
+                        <button data-filter="payment_pending" class="admin-followups-filter px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">
+                          Pago pendiente <span data-count class="ml-1 text-[10px] text-slate-400">0</span>
+                        </button>
+                        <button data-filter="payment_mismatch" class="admin-followups-filter px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">
+                          Descuadre <span data-count class="ml-1 text-[10px] text-slate-400">0</span>
+                        </button>
+                        <button data-filter="overpaid" class="admin-followups-filter px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">
+                          Duplicados <span data-count class="ml-1 text-[10px] text-slate-400">0</span>
+                        </button>
+                        <button data-filter="no_church" class="admin-followups-filter px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">
+                          Sin iglesia <span data-count class="ml-1 text-[10px] text-slate-400">0</span>
+                        </button>
+                      </div>
+
+                      <p id="admin-followups-status" class="text-xs text-slate-500"></p>
+                      <div id="admin-followups-empty" class="text-xs text-slate-400 text-center py-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-100">No hay alertas pendientes.</div>
+                      <div id="admin-followups-list" class="hidden space-y-3"></div>
+                  </div>
+
                   <!-- Superadmin User Management (Admin Only) -->
                   <div id="admin-users-card" class="bg-slate-800 rounded-[2.5rem] p-6 text-white hidden relative overflow-hidden">
                      <div class="absolute top-0 right-0 p-4 opacity-5">

@@ -1,0 +1,1 @@
+Hola {{1}}! Detectamos una inconsistencia en tu pago de la Cumbre Mundial 2026. Nuestro equipo ya esta revisando para ayudarte. Si puedes, cuentanos el medio de pago usado. Booking: {{2}}.

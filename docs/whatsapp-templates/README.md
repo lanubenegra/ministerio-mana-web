@@ -21,3 +21,33 @@ Variables sugeridas:
 - {{1}} = nombre
 - {{2}} = valor formateado
 - {{3}} = booking id
+
+## 3) Registro incompleto
+Archivo: `cumbre_registration_incomplete.txt`
+
+Variables sugeridas:
+- {{1}} = nombre
+- {{2}} = campos faltantes (ej. Documento, Fecha de nacimiento)
+- {{3}} = link de registro
+- {{4}} = booking id
+
+## 4) Pago en verificacion
+Archivo: `cumbre_payment_pending.txt`
+
+Variables sugeridas:
+- {{1}} = nombre
+- {{2}} = booking id
+
+## 5) Pago con inconsistencia
+Archivo: `cumbre_payment_issue.txt`
+
+Variables sugeridas:
+- {{1}} = nombre
+- {{2}} = booking id
+
+## 6) Sin iglesia asignada
+Archivo: `cumbre_no_church.txt`
+
+Variables sugeridas:
+- {{1}} = nombre
+- {{2}} = booking id

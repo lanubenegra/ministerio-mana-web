@@ -1,0 +1,1 @@
+Hola {{1}}! Confirmamos tu pago para la Cumbre Mundial 2026. Nos falta completar: {{2}}. Completa el registro aqui: {{3}}. Booking: {{4}}.

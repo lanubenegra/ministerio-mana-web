@@ -110,6 +110,12 @@ const adminInviteStatus = document.getElementById('admin-invite-status');
 const adminInviteBtn = document.getElementById('admin-invite-btn');
 const adminUsersEmpty = document.getElementById('admin-users-empty');
 const adminUsersList = document.getElementById('admin-users-list');
+const adminFollowupsCard = document.getElementById('admin-followups-card');
+const adminFollowupsCount = document.getElementById('admin-followups-count');
+const adminFollowupsStatus = document.getElementById('admin-followups-status');
+const adminFollowupsEmpty = document.getElementById('admin-followups-empty');
+const adminFollowupsList = document.getElementById('admin-followups-list');
+const adminFollowupsFilters = document.getElementById('admin-followups-filters');
 
 // UI Helpers
 const navLinks = document.querySelectorAll('.nav-link');
@@ -150,6 +156,9 @@ let churchBookingsData = [];
 let churchMembersData = [];
 let churchPaymentsData = [];
 let churchInstallmentsData = [];
+let adminIssuesData = [];
+let adminIssuesFilter = 'all';
+let adminIssuesCounts = {};
 const ALL_CHURCHES_VALUE = '__all__';
 const CUSTOM_CHURCH_VALUE = '__custom__';
 
@@ -519,6 +528,7 @@ async function loadDashboardData(authResult) {
       backgroundTasks.push(loadChurchMembers(headers));
     }
     backgroundTasks.push(loadAdminUsers(headers));
+    backgroundTasks.push(loadAdminFollowups(headers));
     backgroundTasks.push(loadChurchDraft());
 
     await Promise.all(backgroundTasks);
@@ -1307,6 +1317,30 @@ async function loadAdminUsers(headers = {}) {
   }
 }
 
+async function loadAdminFollowups(headers = {}) {
+  if (!adminFollowupsCard) return;
+  if (!portalIsAdmin) {
+    adminFollowupsCard.classList.add('hidden');
+    return;
+  }
+  adminFollowupsCard.classList.remove('hidden');
+  if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Cargando alertas...';
+  try {
+    const res = await fetch('/api/portal/admin/cumbre/issues', { headers });
+    const payload = await res.json();
+    if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
+    adminIssuesData = payload.items || [];
+    adminIssuesCounts = payload.counts || {};
+    renderAdminFollowups(adminIssuesData, adminIssuesCounts);
+  } catch (err) {
+    console.error(err);
+    if (adminFollowupsStatus) {
+      adminFollowupsStatus.textContent = err?.message || 'No se pudo cargar alertas.';
+    }
+    if (adminFollowupsEmpty) adminFollowupsEmpty.classList.remove('hidden');
+  }
+}
+
 function renderAdminUsers(users) {
   if (!adminUsersList || !adminUsersEmpty) return;
   adminUsersList.innerHTML = '';
@@ -1347,6 +1381,191 @@ function renderAdminUsers(users) {
       </div>
     `;
     adminUsersList.appendChild(card);
+  });
+}
+
+function getIssueBadge(type) {
+  const map = {
+    registration_incomplete: { label: 'Registro incompleto', className: 'bg-amber-50 text-amber-700 border-amber-100' },
+    payment_pending: { label: 'Pago pendiente', className: 'bg-sky-50 text-sky-700 border-sky-100' },
+    payment_mismatch: { label: 'Descuadre pago', className: 'bg-rose-50 text-rose-700 border-rose-100' },
+    overpaid: { label: 'Pago duplicado', className: 'bg-pink-50 text-pink-700 border-pink-100' },
+    no_church: { label: 'Sin iglesia', className: 'bg-slate-100 text-slate-600 border-slate-200' },
+  };
+  return map[type] || { label: 'Alerta', className: 'bg-slate-100 text-slate-600 border-slate-200' };
+}
+
+function updateAdminFollowupsFilters(counts = {}, total = 0) {
+  if (!adminFollowupsFilters) return;
+  adminFollowupsFilters.querySelectorAll('[data-filter]').forEach((button) => {
+    const filter = button.dataset.filter || 'all';
+    const count = filter === 'all' ? total : (counts[filter] || 0);
+    const countEl = button.querySelector('[data-count]');
+    if (countEl) countEl.textContent = `${count}`;
+
+    if (filter === adminIssuesFilter) {
+      button.classList.remove('bg-white', 'text-slate-500', 'border-slate-100');
+      button.classList.add('bg-[#293C74]', 'text-white', 'border-transparent');
+    } else {
+      button.classList.add('bg-white', 'text-slate-500', 'border-slate-100');
+      button.classList.remove('bg-[#293C74]', 'text-white', 'border-transparent');
+    }
+  });
+}
+
+function normalizeWhatsappPhone(value) {
+  if (!value) return '';
+  const digits = String(value).replace(/\D/g, '');
+  if (digits.length === 10) return `57${digits}`;
+  return digits;
+}
+
+function buildWhatsappMessage(item, ctaUrl = '') {
+  const name = item.contact_name || 'Hola';
+  const bookingRef = (item.booking_id || item.id || '').slice(0, 8).toUpperCase();
+  switch (item.type) {
+    case 'registration_incomplete':
+      const missingFields = Array.isArray(item.missing_fields)
+        ? item.missing_fields.join(', ')
+        : (item.missing_fields || 'datos del registro');
+      return `Hola ${name}, vimos tu pago para la Cumbre Mundial 2026. Falta completar: ${missingFields}. ${ctaUrl ? `Completa aqui: ${ctaUrl}. ` : ''}Booking: ${bookingRef}.`;
+    case 'payment_pending':
+      return `Hola ${name}, tu pago esta en verificacion. Si pagaste con PSE/Nequi puede tardar unos minutos. No hagas otro pago. Booking: ${bookingRef}.`;
+    case 'payment_mismatch':
+      return `Hola ${name}, estamos revisando tu pago porque aparece aprobado pero no se actualizo el registro. Nuestro equipo lo esta corrigiendo. Booking: ${bookingRef}.`;
+    case 'overpaid':
+      return `Hola ${name}, detectamos un pago adicional en tu reserva de la Cumbre. Nuestro equipo esta revisando para ayudarte. Booking: ${bookingRef}.`;
+    case 'no_church':
+      return `Hola ${name}, necesitamos confirmar tu iglesia o sede para la Cumbre Mundial 2026. Responde con el nombre de tu iglesia y ciudad. Booking: ${bookingRef}.`;
+    default:
+      return `Hola ${name}, estamos revisando tu registro de la Cumbre Mundial 2026. Booking: ${bookingRef}.`;
+  }
+}
+
+function renderAdminFollowups(items, counts = {}) {
+  if (!adminFollowupsList || !adminFollowupsEmpty) return;
+  adminFollowupsList.innerHTML = '';
+
+  const total = items.length || 0;
+  if (adminFollowupsCount) adminFollowupsCount.textContent = `${total}`;
+  updateAdminFollowupsFilters(counts, total);
+
+  const filteredItems = adminIssuesFilter === 'all'
+    ? items
+    : items.filter((item) => item.type === adminIssuesFilter);
+
+  if (!filteredItems.length) {
+    adminFollowupsEmpty.classList.remove('hidden');
+    adminFollowupsList.classList.add('hidden');
+    if (adminFollowupsStatus) adminFollowupsStatus.textContent = total ? 'No hay alertas en este filtro.' : '';
+    return;
+  }
+
+  adminFollowupsEmpty.classList.add('hidden');
+  adminFollowupsList.classList.remove('hidden');
+  if (adminFollowupsStatus) {
+    adminFollowupsStatus.textContent = `Mostrando ${filteredItems.length} alertas.`;
+  }
+
+  const churchOptions = (portalChurchesCatalog || [])
+    .map((church) => `<option value="${church.id}">${church.name}</option>`)
+    .join('');
+
+  filteredItems.forEach((item) => {
+    const badge = getIssueBadge(item.type);
+    const contactLabel = item.contact_name || item.contact_email || 'Participante';
+    const createdLabel = formatDateTime(item.created_at);
+    const amountValue = item.total_paid != null ? item.total_paid : item.total_amount;
+    const amountLabel = amountValue != null ? formatCurrency(amountValue, item.currency) : '-';
+    const bookingRef = (item.booking_id || item.id || '').slice(0, 8).toUpperCase();
+    const paymentAmountLabel = item.payment?.amount != null
+      ? formatCurrency(item.payment.amount, item.payment.currency || item.currency)
+      : '-';
+    const paymentInfo = item.payment
+      ? `${item.payment.provider || 'Pago'} · ${item.payment.status || ''} · ${paymentAmountLabel}`
+      : '';
+
+    let detail = '';
+    if (item.type === 'registration_incomplete') {
+      const missing = Array.isArray(item.missing_fields) && item.missing_fields.length
+        ? item.missing_fields.join(', ')
+        : 'Datos incompletos';
+      detail = `Faltan datos: ${missing}`;
+    }
+    if (item.type === 'payment_pending') {
+      detail = paymentInfo || 'Pago en verificación.';
+    }
+    if (item.type === 'payment_mismatch') {
+      detail = `Pagos aprobados: ${formatCurrency(item.approved_total, item.currency)} · Registrado: ${formatCurrency(item.total_paid, item.currency)}`;
+    }
+    if (item.type === 'overpaid') {
+      detail = `Pagado: ${formatCurrency(item.total_paid, item.currency)} · Total: ${formatCurrency(item.total_amount, item.currency)}`;
+    }
+    if (item.type === 'no_church') {
+      detail = 'Sin iglesia registrada.';
+    }
+
+    const canEmail = ['registration_incomplete', 'payment_pending'].includes(item.type);
+    const canRecompute = item.type === 'payment_mismatch';
+    const canAssignChurch = item.type === 'no_church';
+    const whatsappLabel = item.contact_phone ? 'WhatsApp' : 'Copiar WhatsApp';
+
+    const card = document.createElement('div');
+    card.className = 'admin-issue-card rounded-2xl border border-slate-200 bg-white p-4 space-y-3';
+    card.dataset.booking = item.id;
+    card.dataset.type = item.type;
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 mb-2 flex-wrap">
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[10px] font-bold uppercase tracking-widest ${badge.className}">${badge.label}</span>
+            <span class="text-[10px] uppercase tracking-widest text-slate-400">#${bookingRef}</span>
+          </div>
+          <p class="text-sm font-bold text-[#293C74] truncate">${contactLabel}</p>
+          <p class="text-xs text-slate-500 truncate">${item.contact_email || '-'}</p>
+          <p class="text-xs text-slate-400 truncate">${item.contact_phone || 'Sin teléfono'}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] uppercase tracking-widest text-slate-400">Pagado</p>
+          <p class="text-sm font-bold text-brand-teal">${amountLabel}</p>
+          <p class="text-[10px] text-slate-400 mt-2">${createdLabel}</p>
+        </div>
+      </div>
+      <div class="rounded-xl bg-slate-50/70 border border-slate-100 px-3 py-2 text-xs text-slate-600">
+        ${detail || 'Alerta pendiente de revisión.'}
+      </div>
+      ${canAssignChurch ? `
+        <div class="flex flex-col md:flex-row md:items-center gap-2">
+          <select data-role="assign-church" class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-[#293C74]">
+            <option value="">Selecciona iglesia</option>
+            <option value="__virtual__">Ministerio Virtual</option>
+            ${churchOptions}
+          </select>
+          <button data-action="assign-church" data-booking="${item.id}" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-slate-800">
+            Asignar
+          </button>
+        </div>
+      ` : ''}
+      <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+        <span class="text-[10px] uppercase tracking-widest text-slate-400">Estado: ${item.status || '-'}</span>
+        <div class="flex items-center gap-2">
+          ${canRecompute ? `
+            <button data-action="recompute" data-booking="${item.id}" class="px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-bold text-[#293C74] hover:bg-slate-100">
+              Recalcular
+            </button>
+          ` : ''}
+          ${canEmail ? `
+            <button data-action="notify-email" data-booking="${item.id}" data-kind="${item.type}" class="px-3 py-2 rounded-lg bg-[#293C74] text-white text-xs font-bold hover:bg-[#293C74]/90">
+              Enviar correo
+            </button>
+          ` : ''}
+          <button data-action="whatsapp" data-booking="${item.id}" class="px-3 py-2 rounded-lg bg-teal-600 text-white text-xs font-bold hover:bg-teal-700">
+            ${whatsappLabel}
+          </button>
+        </div>
+      </div>
+    `;
+    adminFollowupsList.appendChild(card);
   });
 }
 
@@ -1971,6 +2190,13 @@ adminUsersList?.addEventListener('change', async (event) => {
   }
 });
 
+adminFollowupsFilters?.addEventListener('click', (event) => {
+  const target = event.target.closest('[data-filter]');
+  if (!target) return;
+  adminIssuesFilter = target.dataset.filter || 'all';
+  renderAdminFollowups(adminIssuesData, adminIssuesCounts);
+});
+
 adminUsersList?.addEventListener('click', async (event) => {
   const target = event.target.closest('[data-action="reset"]');
   if (!target) return;
@@ -1992,6 +2218,157 @@ adminUsersList?.addEventListener('click', async (event) => {
     target.textContent = 'Reset contraseña';
     target.removeAttribute('disabled');
     alert(err.message || 'No se pudo enviar.');
+  }
+});
+
+adminFollowupsList?.addEventListener('click', async (event) => {
+  const target = event.target.closest('[data-action]');
+  if (!target) return;
+  const action = target.dataset.action;
+  const bookingId = target.dataset.booking;
+  if (!bookingId) return;
+
+  if (action === 'notify-email') {
+    const kind = target.dataset.kind || 'registration_incomplete';
+    const originalText = target.textContent;
+    target.textContent = 'Enviando...';
+    target.setAttribute('disabled', 'disabled');
+    if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Enviando correo...';
+
+    try {
+      const res = await fetch('/api/portal/admin/cumbre/notify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify({ bookingId, kind }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo enviar');
+      target.textContent = 'Enviado';
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Correo enviado.';
+      setTimeout(() => {
+        loadAdminFollowups(portalAuthHeaders);
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      target.textContent = originalText;
+      target.removeAttribute('disabled');
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = err?.message || 'No se pudo enviar el correo.';
+      alert(err?.message || 'No se pudo enviar el correo.');
+    }
+    return;
+  }
+
+  if (action === 'recompute') {
+    const originalText = target.textContent;
+    target.textContent = 'Recalculando...';
+    target.setAttribute('disabled', 'disabled');
+    if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Recalculando totales...';
+    try {
+      const res = await fetch('/api/portal/admin/cumbre/recompute', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify({ bookingId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo recalcular');
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Totales actualizados.';
+      target.textContent = 'Listo';
+      setTimeout(() => {
+        loadAdminFollowups(portalAuthHeaders);
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      target.textContent = originalText;
+      target.removeAttribute('disabled');
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = err?.message || 'No se pudo recalcular.';
+      alert(err?.message || 'No se pudo recalcular.');
+    }
+    return;
+  }
+
+  if (action === 'assign-church') {
+    const card = target.closest('.admin-issue-card');
+    const select = card?.querySelector('[data-role=\"assign-church\"]');
+    if (!(select instanceof HTMLSelectElement)) return;
+    const churchId = select.value;
+    const churchName = churchId === '__virtual__'
+      ? 'Ministerio Virtual'
+      : select.options[select.selectedIndex]?.text || '';
+    if (!churchId) {
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Selecciona una iglesia.';
+      return;
+    }
+    const originalText = target.textContent;
+    target.textContent = 'Asignando...';
+    target.setAttribute('disabled', 'disabled');
+    if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Asignando iglesia...';
+    try {
+      const res = await fetch('/api/portal/admin/cumbre/assign-church', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify({ bookingId, churchId, churchName }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo asignar');
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Iglesia asignada.';
+      target.textContent = 'Listo';
+      setTimeout(() => {
+        loadAdminFollowups(portalAuthHeaders);
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      target.textContent = originalText;
+      target.removeAttribute('disabled');
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = err?.message || 'No se pudo asignar.';
+      alert(err?.message || 'No se pudo asignar.');
+    }
+    return;
+  }
+
+  if (action === 'whatsapp') {
+    const card = target.closest('.admin-issue-card');
+    const issueType = card?.dataset.type;
+    const item = adminIssuesData.find((entry) => entry.id === bookingId && (!issueType || entry.type === issueType));
+    if (!item) return;
+    const originalText = target.textContent;
+    target.textContent = 'Preparando...';
+    target.setAttribute('disabled', 'disabled');
+    if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Preparando WhatsApp...';
+    try {
+      let ctaUrl = '';
+      if (item.type === 'registration_incomplete') {
+        const res = await fetch('/api/portal/admin/cumbre/link', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+          body: JSON.stringify({ bookingId }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo generar el link');
+        ctaUrl = data.ctaUrl || '';
+      }
+
+      const message = buildWhatsappMessage(item, ctaUrl);
+      const phone = normalizeWhatsappPhone(item.contact_phone || '');
+      if (phone) {
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        try {
+          await navigator.clipboard.writeText(message);
+          alert('Mensaje copiado. Pégalo en WhatsApp.');
+        } catch (err) {
+          window.prompt('Copia este mensaje para WhatsApp:', message);
+        }
+      }
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Mensaje listo.';
+    } catch (err) {
+      console.error(err);
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = err?.message || 'No se pudo preparar WhatsApp.';
+      alert(err?.message || 'No se pudo preparar WhatsApp.');
+    } finally {
+      target.textContent = originalText;
+      target.removeAttribute('disabled');
+    }
   }
 });
 
