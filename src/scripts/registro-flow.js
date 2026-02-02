@@ -19,6 +19,7 @@ import flatpickr from 'flatpickr';
   const REGISTRO = {
      booking: null,
      bookingEmail: '',
+     countryGroup: 'CO',
      draft: null,
      
      init() {
@@ -49,6 +50,7 @@ import flatpickr from 'flatpickr';
                     { id: 3, name: 'Tomás Pérez', type: 'child_7_13' }
                  ]
               };
+              this.countryGroup = 'CO';
            } else {
               // Real API call
               const res = await fetch(`/api/cumbre2026/booking/get?bookingId=${this.bookingId}&token=${this.token}`);
@@ -61,6 +63,7 @@ import flatpickr from 'flatpickr';
                  holder: booking.contact_name || booking.contact_email || 'Participante',
                  participants: payload.participants || []
               };
+              this.countryGroup = booking.country_group || 'CO';
               this.bookingEmail = (booking.contact_email || '').toString().trim().toLowerCase();
            }
 
@@ -103,6 +106,122 @@ import flatpickr from 'flatpickr';
         }
      },
 
+     parseDocType(value) {
+        if (!value) return { type: '', other: '' };
+        const raw = value.toString().trim();
+        const upper = raw.toUpperCase();
+        if (upper.startsWith('OTRO:')) {
+          return { type: 'OTHER', other: raw.slice(raw.indexOf(':') + 1).trim() };
+        }
+        return { type: raw, other: '' };
+     },
+
+     getAgeFromBirthdate(value) {
+        if (!value) return null;
+        const parts = value.toString().split('-').map(Number);
+        if (parts.length < 3) return null;
+        const [year, month, day] = parts;
+        if (!year || !month || !day) return null;
+        const today = new Date();
+        const now = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+        const birth = new Date(Date.UTC(year, month - 1, day));
+        if (Number.isNaN(birth.getTime())) return null;
+        let age = now.getUTCFullYear() - birth.getUTCFullYear();
+        const m = now.getUTCMonth() - birth.getUTCMonth();
+        if (m < 0 || (m === 0 && now.getUTCDate() < birth.getUTCDate())) {
+          age -= 1;
+        }
+        return age;
+     },
+
+     isMinorParticipant(packageType, age) {
+        if (packageType === 'child_0_7' || packageType === 'child_7_13') return true;
+        if (typeof age === 'number') return age <= 17;
+        return false;
+     },
+
+     getDocOptions(packageType, age) {
+        const group = this.countryGroup || 'CO';
+        const isMinor = this.isMinorParticipant(packageType, age);
+        if (group === 'CO') {
+          if (isMinor) {
+            return [
+              { value: 'RC', label: 'RC - Registro civil' },
+              { value: 'TI', label: 'TI - Tarjeta de identidad' },
+            ];
+          }
+          return [
+            { value: 'CC', label: 'CC - Cédula de ciudadanía' },
+            { value: 'CE', label: 'CE - Cédula de extranjería' },
+            { value: 'PASSPORT', label: 'Pasaporte' },
+          ];
+        }
+        return [
+          { value: 'PASSPORT', label: 'Pasaporte' },
+          { value: 'NATIONAL_ID', label: 'ID nacional' },
+          { value: 'OTHER', label: 'Otro documento' },
+        ];
+     },
+
+     getDocDefault(packageType, age) {
+        const group = this.countryGroup || 'CO';
+        if (group !== 'CO') return 'PASSPORT';
+        if (typeof age === 'number') {
+          if (age <= 6) return 'RC';
+          if (age <= 17) return 'TI';
+        }
+        if (packageType === 'child_0_7') return 'RC';
+        if (packageType === 'child_7_13') return 'TI';
+        if (this.isMinorParticipant(packageType, age)) return 'TI';
+        return 'CC';
+     },
+
+     fillDocOptions(select, options) {
+        if (!select) return;
+        select.innerHTML = options.map((opt) => `<option value="${opt.value}">${opt.label}</option>`).join('');
+     },
+
+     toggleDocOther(card, show) {
+        if (!card) return;
+        const wrap = card.querySelector('.doc-other');
+        if (wrap) {
+          wrap.classList.toggle('hidden', !show);
+        }
+     },
+
+     updateDocOptionsForCard(card, packageType) {
+        if (!card) return;
+        const birthInput = card.querySelector('input[name$="_birthDate"]');
+        const birthdate = birthInput?.value || '';
+        const age = this.getAgeFromBirthdate(birthdate);
+        const select = card.querySelector('select[name$="_docType"]');
+        const otherInput = card.querySelector('input[name$="_docOtherType"]');
+        if (!select) return;
+        const parsed = this.parseDocType(select.value);
+        const options = this.getDocOptions(packageType, age);
+        this.fillDocOptions(select, options);
+        let nextValue = parsed.type;
+        if (!options.some((opt) => opt.value === nextValue)) {
+          nextValue = this.getDocDefault(packageType, age);
+          if (!options.some((opt) => opt.value === nextValue)) {
+            nextValue = options[0]?.value || '';
+          }
+        }
+        select.value = nextValue;
+        this.toggleDocOther(card, nextValue === 'OTHER');
+        if (nextValue !== 'OTHER' && otherInput) {
+          otherInput.value = '';
+        }
+     },
+
+     composeDocType(docType, other) {
+        if (docType === 'OTHER') {
+          const detail = (other || '').toString().trim();
+          return detail ? `OTRO:${detail}` : 'OTRO:';
+        }
+        return docType || '';
+     },
+
      render() {
         document.getElementById('loading-state').classList.add('hidden');
         document.getElementById('main-content').classList.remove('hidden');
@@ -129,6 +248,7 @@ import flatpickr from 'flatpickr';
            card.querySelector('.name-display').textContent = p.full_name || p.name || 'Participante';
            card.querySelector('.type-display').textContent = this.formatType(p.package_type || p.type);
            const prefill = draftMap.get(p.id) || {};
+           const packageType = p.package_type || p.type || '';
            
            // Toggle Logic
            const body = card.querySelector('.card-body');
@@ -144,11 +264,49 @@ import flatpickr from 'flatpickr';
            });
            
            // Prefill values
-           card.querySelector(`[name="p_${p.id}_docType"]`).value = prefill.documentType || p.document_type || 'CC';
-           card.querySelector(`[name="p_${p.id}_docNumber"]`).value = prefill.documentNumber || p.document_number || '';
-           card.querySelector(`[name="p_${p.id}_birthDate"]`).value = prefill.birthdate || p.birthdate || '';
-           card.querySelector(`[name="p_${p.id}_gender"]`).value = prefill.gender || p.gender || '';
-           card.querySelector(`[name="p_${p.id}_menuType"]`).value = prefill.dietType || p.diet_type || '';
+           const rawDocType = prefill.documentType || p.document_type || '';
+           const parsedDoc = this.parseDocType(rawDocType);
+           const birthValue = prefill.birthdate || p.birthdate || '';
+           const age = this.getAgeFromBirthdate(birthValue);
+           const docTypeSelect = card.querySelector(`[name="p_${p.id}_docType"]`);
+           const docNumberInput = card.querySelector(`[name="p_${p.id}_docNumber"]`);
+           const docOtherInput = card.querySelector(`[name="p_${p.id}_docOtherType"]`);
+           const birthInput = card.querySelector(`[name="p_${p.id}_birthDate"]`);
+           const genderInput = card.querySelector(`[name="p_${p.id}_gender"]`);
+           const menuInput = card.querySelector(`[name="p_${p.id}_menuType"]`);
+           const docOptions = this.getDocOptions(packageType, age);
+
+           this.fillDocOptions(docTypeSelect, docOptions);
+           let docValue = parsedDoc.type || '';
+           if (!docOptions.some((opt) => opt.value === docValue)) {
+             docValue = this.getDocDefault(packageType, age);
+             if (!docOptions.some((opt) => opt.value === docValue)) {
+               docValue = docOptions[0]?.value || '';
+             }
+           }
+           if (docTypeSelect) docTypeSelect.value = docValue;
+           if (docOtherInput) docOtherInput.value = parsedDoc.other || '';
+           this.toggleDocOther(card, docValue === 'OTHER');
+
+           if (docNumberInput) docNumberInput.value = prefill.documentNumber || p.document_number || '';
+           if (birthInput) birthInput.value = birthValue;
+           if (genderInput) genderInput.value = prefill.gender || p.gender || '';
+           if (menuInput) menuInput.value = prefill.dietType || p.diet_type || '';
+
+           if (docTypeSelect) {
+             docTypeSelect.addEventListener('change', (event) => {
+               const value = event?.target?.value || '';
+               this.toggleDocOther(card, value === 'OTHER');
+               if (value !== 'OTHER' && docOtherInput) {
+                 docOtherInput.value = '';
+               }
+             });
+           }
+
+           if (birthInput) {
+             birthInput.addEventListener('change', () => this.updateDocOptionsForCard(card, packageType));
+             birthInput.addEventListener('input', () => this.updateDocOptionsForCard(card, packageType));
+           }
 
            container.appendChild(clone);
         });
@@ -253,9 +411,11 @@ import flatpickr from 'flatpickr';
             const participantId = p.id;
             if (!participantId) return;
             const prefix = `p_${participantId}_`;
+            const docType = fd.get(`${prefix}docType`);
+            const docOther = fd.get(`${prefix}docOtherType`);
             participants.push({
               id: participantId,
-              documentType: fd.get(`${prefix}docType`),
+              documentType: this.composeDocType(docType, docOther),
               documentNumber: fd.get(`${prefix}docNumber`),
               birthdate: fd.get(`${prefix}birthDate`),
               gender: fd.get(`${prefix}gender`),
@@ -295,9 +455,11 @@ import flatpickr from 'flatpickr';
             const participantId = p.id;
             if (!participantId) return;
             const prefix = `p_${participantId}_`;
+            const docType = fd.get(`${prefix}docType`);
+            const docOther = fd.get(`${prefix}docOtherType`);
             participants.push({
               id: participantId,
-              documentType: fd.get(`${prefix}docType`),
+              documentType: this.composeDocType(docType, docOther),
               documentNumber: fd.get(`${prefix}docNumber`),
               birthdate: fd.get(`${prefix}birthDate`),
               gender: fd.get(`${prefix}gender`),
@@ -341,4 +503,3 @@ import flatpickr from 'flatpickr';
   };
 
   window.addEventListener('DOMContentLoaded', () => REGISTRO.init());
-

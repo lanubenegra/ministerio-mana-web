@@ -79,7 +79,12 @@ const formatTestAmount = (value, currency) =>
 
           <button type="button" class="step-btn opacity-50 relative" data-step="3">
              <span class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center font-bold border border-white/20">3</span>
-             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-white/60 whitespace-nowrap">Confirmar</span>
+             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-white/60 whitespace-nowrap">Datos</span>
+          </button>
+
+          <button type="button" class="step-btn opacity-50 relative" data-step="4">
+             <span class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center font-bold border border-white/20">4</span>
+             <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-bold text-white/60 whitespace-nowrap">Pago</span>
           </button>
        </div>
     </div>
@@ -315,8 +320,93 @@ const formatTestAmount = (value, currency) =>
       </div>
 
 
-      <!-- STEP 3: Payment & Confirm -->
+      <!-- STEP 3: Participant Details -->
       <div id="step-3" class="step-content hidden space-y-8">
+         <h2 class="text-2xl font-bold text-white">Datos de asistentes</h2>
+         <p class="text-sm text-white/60">
+            Completa documento, fecha de nacimiento, género y menú. Estos datos son necesarios para tu inscripción.
+         </p>
+
+         <div id="participants-details" class="space-y-4"></div>
+
+         <template id="participant-details-template">
+            <div class="participant-card rounded-2xl border border-white/10 bg-black/20 p-6 space-y-4">
+               <div class="flex items-start justify-between gap-3">
+                  <div>
+                     <p class="text-xs uppercase tracking-widest text-white/40">Asistente</p>
+                     <p class="text-lg font-bold text-white participant-name"></p>
+                     <p class="text-xs text-white/50 participant-type"></p>
+                  </div>
+                  <span class="participant-badge hidden rounded-full bg-brand-teal/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-brand-teal">Responsable</span>
+               </div>
+
+               <div class="grid md:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Tipo de documento</label>
+                     <select class="participant-doc-type w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-brand-teal focus:ring-1 focus:ring-brand-teal transition-all" data-field="documentType">
+                        <option value="" class="text-black">Seleccionar</option>
+                        <option value="CC" class="text-black">CC</option>
+                        <option value="TI" class="text-black">TI</option>
+                        <option value="CE" class="text-black">CE</option>
+                        <option value="RC" class="text-black">RC</option>
+                        <option value="PASSPORT" class="text-black">Pasaporte</option>
+                        <option value="NATIONAL_ID" class="text-black">ID nacional</option>
+                        <option value="OTHER" class="text-black">Otro</option>
+                     </select>
+                  </div>
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Número de documento</label>
+                     <input type="text" class="participant-doc-number w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all" placeholder="Documento" data-field="documentNumber">
+                  </div>
+               </div>
+
+               <div class="participant-doc-other hidden space-y-1">
+                  <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Otro documento (especifica)</label>
+                  <input type="text" class="participant-doc-other-input w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all" placeholder="Ej: ID nacional, licencia..." data-field="documentOtherType">
+               </div>
+
+               <div class="grid md:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Fecha de nacimiento</label>
+                     <input type="date" class="participant-birthdate w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all" data-field="birthdate">
+                  </div>
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Género</label>
+                     <select class="participant-gender w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-brand-teal focus:ring-1 focus:ring-brand-teal transition-all" data-field="gender">
+                        <option value="" class="text-black">Seleccionar</option>
+                        <option value="M" class="text-black">Masculino</option>
+                        <option value="F" class="text-black">Femenino</option>
+                     </select>
+                  </div>
+               </div>
+
+               <div class="grid md:grid-cols-2 gap-4 items-center">
+                  <div class="space-y-1">
+                     <label class="text-xs font-bold text-white/60 uppercase tracking-wider">Menú</label>
+                     <select class="participant-menu w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-brand-teal focus:ring-1 focus:ring-brand-teal transition-all" data-field="menuType">
+                        <option value="" class="text-black">Seleccionar</option>
+                        <option value="TRADICIONAL" class="text-black">Menú tradicional</option>
+                        <option value="VEGETARIANO" class="text-black">Menú vegetariano</option>
+                     </select>
+                  </div>
+                  <p class="participant-menu-note text-xs text-white/50"></p>
+               </div>
+            </div>
+         </template>
+
+         <div class="pt-8 flex justify-between border-t border-white/10">
+            <button type="button" class="px-6 py-2 text-white/50 hover:text-white transition-colors btn-prev">
+               &larr; Atrás
+            </button>
+            <button type="button" class="px-8 py-3 bg-brand-teal text-white font-bold rounded-full hover:bg-brand-medium transition-colors btn-next shadow-[0_0_20px_rgba(45,212,191,0.3)]">
+               Continuar a pago &rarr;
+            </button>
+         </div>
+      </div>
+
+
+      <!-- STEP 4: Payment & Confirm -->
+      <div id="step-4" class="step-content hidden space-y-8">
          <h2 class="text-2xl font-bold text-white">Confirma tu Reserva</h2>
          
          <div class="space-y-4">
@@ -550,6 +640,8 @@ const formatTestAmount = (value, currency) =>
           btnsPrev: document.querySelectorAll('.btn-prev'),
           indicators: document.querySelectorAll('.step-btn'),
           countryInput: document.getElementById('country-group'),
+          leaderDocType: document.querySelector('select[name="leader_document_type"]'),
+          leaderDocNumber: document.querySelector('input[name="leader_id"]'),
           leaderName: document.querySelector('input[name="leader_name"]'),
           leaderEmail: document.querySelector('input[name="leader_email"]'),
           leaderAuthBtn: document.getElementById('leader-auth-btn'),
@@ -562,6 +654,8 @@ const formatTestAmount = (value, currency) =>
           inputAge: document.getElementById('input-age'),
           inputLodging: document.getElementById('input-lodging'),
           list: document.getElementById('participants-list'),
+          detailsContainer: document.getElementById('participants-details'),
+          detailsTemplate: document.getElementById('participant-details-template'),
           sidebarList: document.getElementById('sidebar-list'),
           emptyMsg: document.getElementById('empty-msg'),
           totalDisplay: document.getElementById('summary-total'),
@@ -597,6 +691,14 @@ const formatTestAmount = (value, currency) =>
           this.dom.leaderName.addEventListener('input', () => this.updateLeaderName());
        }
 
+       if (this.dom.leaderDocType) {
+          this.dom.leaderDocType.addEventListener('change', () => this.updateLeaderDocs());
+       }
+
+       if (this.dom.leaderDocNumber) {
+          this.dom.leaderDocNumber.addEventListener('input', () => this.updateLeaderDocs());
+       }
+
        if (this.dom.leaderPackage) {
           this.dom.leaderPackage.addEventListener('change', () => this.updateLeaderPackage());
        }
@@ -628,6 +730,11 @@ const formatTestAmount = (value, currency) =>
           this.dom.installmentFrequencyInputs.forEach(input => {
              input.addEventListener('change', () => this.updateInstallmentPreview());
           });
+       }
+
+       if (this.dom.detailsContainer) {
+          this.dom.detailsContainer.addEventListener('input', (event) => this.handleDetailsInput(event));
+          this.dom.detailsContainer.addEventListener('change', (event) => this.handleDetailsInput(event));
        }
     },
 
@@ -678,6 +785,9 @@ const formatTestAmount = (value, currency) =>
           alert('Debes agregar al menos un participante');
           return;
        }
+       if(this.step === 3 && !this.validateStep3()) {
+          return;
+       }
        this.step++;
        this.render();
     },
@@ -711,16 +821,27 @@ const formatTestAmount = (value, currency) =>
        if (this.leaderOptOut) return;
        const name = this.getLeaderName();
        if (!name) return;
+       const docType = this.dom.leaderDocType?.value || '';
+       const docNumber = this.dom.leaderDocNumber?.value?.trim() || '';
 
        const existing = this.participants.find(p => p.isLeader);
        if (existing) {
           existing.name = name;
           existing.packageType = this.getLeaderPackageType();
+          existing.documentType = docType;
+          existing.documentNumber = docNumber;
           return;
        }
 
        const packageType = this.getLeaderPackageType();
-       this.participants.unshift({ name, packageType, id: this.leaderId, isLeader: true });
+       this.participants.unshift({
+          name,
+          packageType,
+          id: this.leaderId,
+          isLeader: true,
+          documentType: docType,
+          documentNumber: docNumber,
+       });
     },
 
     updateLeaderName() {
@@ -733,12 +854,265 @@ const formatTestAmount = (value, currency) =>
        this.updateTotals();
     },
 
+    updateLeaderDocs() {
+       const leader = this.participants.find(p => p.isLeader);
+       if (!leader) return;
+       const docType = this.dom.leaderDocType?.value || '';
+       const docNumber = this.dom.leaderDocNumber?.value?.trim() || '';
+       leader.documentType = docType;
+       leader.documentNumber = docNumber;
+       if (this.step === 3) {
+          this.renderDetails();
+       }
+    },
+
     updateLeaderPackage() {
        const leader = this.participants.find(p => p.isLeader);
        if (!leader) return;
        leader.packageType = this.getLeaderPackageType();
        this.renderList();
        this.updateTotals();
+    },
+
+    getParticipantById(id) {
+       return this.participants.find(p => String(p.id) === String(id));
+    },
+
+    getMenuConfig(participant) {
+       if (participant.packageType === 'child_0_7') {
+          return {
+             value: 'SIN ALIMENTACION',
+             label: 'Sin alimentación (0-4)',
+             locked: true,
+             note: 'Este paquete no incluye alimentación.',
+          };
+       }
+       if (participant.packageType === 'child_7_13') {
+          return {
+             value: 'INFANTIL',
+             label: 'Menú infantil (5-10)',
+             locked: true,
+             note: 'Menú infantil asignado automáticamente.',
+          };
+       }
+       return {
+          value: participant.menuType || 'TRADICIONAL',
+          label: '',
+          locked: false,
+          note: 'Selecciona tradicional o vegetariano según necesidad.',
+       };
+    },
+
+    parseDocType(value) {
+       if (!value) return { type: '', other: '' };
+       const raw = value.toString().trim();
+       const upper = raw.toUpperCase();
+       if (upper.startsWith('OTRO:')) {
+          return { type: 'OTHER', other: raw.slice(raw.indexOf(':') + 1).trim() };
+       }
+       return { type: raw, other: '' };
+    },
+
+    isMinorParticipant(participant) {
+       if (participant.packageType === 'child_0_7' || participant.packageType === 'child_7_13') return true;
+       if (typeof participant.age === 'number') return participant.age <= 17;
+       return false;
+    },
+
+    getDocOptions(participant) {
+       const group = this.countryGroup || 'CO';
+       const isMinor = this.isMinorParticipant(participant);
+       if (group === 'CO') {
+          if (isMinor) {
+             return [
+                { value: 'RC', label: 'RC - Registro civil' },
+                { value: 'TI', label: 'TI - Tarjeta de identidad' },
+             ];
+          }
+          return [
+             { value: 'CC', label: 'CC - Cédula de ciudadanía' },
+             { value: 'CE', label: 'CE - Cédula de extranjería' },
+             { value: 'PASSPORT', label: 'Pasaporte' },
+          ];
+       }
+       return [
+          { value: 'PASSPORT', label: 'Pasaporte' },
+          { value: 'NATIONAL_ID', label: 'ID nacional' },
+          { value: 'OTHER', label: 'Otro documento' },
+       ];
+    },
+
+    getDocDefault(participant) {
+       const group = this.countryGroup || 'CO';
+       if (group !== 'CO') return 'PASSPORT';
+       if (typeof participant.age === 'number') {
+          if (participant.age <= 6) return 'RC';
+          if (participant.age <= 17) return 'TI';
+       }
+       if (participant.packageType === 'child_0_7') return 'RC';
+       if (participant.packageType === 'child_7_13') return 'TI';
+       if (this.isMinorParticipant(participant)) return 'TI';
+       return 'CC';
+    },
+
+    applyParticipantDefaults(participant) {
+       if (participant.documentType) {
+          const parsed = this.parseDocType(participant.documentType);
+          if (parsed.type === 'OTHER') {
+             participant.documentType = 'OTHER';
+             if (!participant.documentOtherType && parsed.other) {
+                participant.documentOtherType = parsed.other;
+             }
+          } else {
+             participant.documentType = parsed.type;
+          }
+       }
+
+       const docOptions = this.getDocOptions(participant);
+       const optionValues = docOptions.map((opt) => opt.value);
+       if (!participant.documentType || !optionValues.includes(participant.documentType)) {
+          const leaderDoc = this.dom.leaderDocType?.value;
+          if (participant.isLeader && leaderDoc && optionValues.includes(leaderDoc)) {
+             participant.documentType = leaderDoc;
+          } else {
+             participant.documentType = this.getDocDefault(participant);
+          }
+       }
+
+       if (!participant.documentNumber && participant.isLeader && this.dom.leaderDocNumber?.value) {
+          participant.documentNumber = this.dom.leaderDocNumber.value.trim();
+       }
+
+       const menuInfo = this.getMenuConfig(participant);
+       if (!participant.menuType || menuInfo.locked) {
+          participant.menuType = menuInfo.value;
+       }
+       return menuInfo;
+    },
+
+    renderDetails() {
+       if (!this.dom.detailsContainer || !this.dom.detailsTemplate) return;
+       this.dom.detailsContainer.innerHTML = '';
+
+       if (!this.participants.length) {
+          this.dom.detailsContainer.innerHTML = '<p class="text-white/50 text-sm">No hay participantes para completar.</p>';
+          return;
+       }
+
+       this.participants.forEach((participant, index) => {
+          const node = this.dom.detailsTemplate.content.cloneNode(true);
+          const nameEl = node.querySelector('.participant-name');
+          const typeEl = node.querySelector('.participant-type');
+          const badgeEl = node.querySelector('.participant-badge');
+          const docTypeEl = node.querySelector('.participant-doc-type');
+          const docNumberEl = node.querySelector('.participant-doc-number');
+          const docOtherWrap = node.querySelector('.participant-doc-other');
+          const docOtherInput = node.querySelector('.participant-doc-other-input');
+          const birthdateEl = node.querySelector('.participant-birthdate');
+          const genderEl = node.querySelector('.participant-gender');
+          const menuEl = node.querySelector('.participant-menu');
+          const menuNoteEl = node.querySelector('.participant-menu-note');
+
+          if (nameEl) nameEl.textContent = participant.name || `Participante ${index + 1}`;
+          if (typeEl) typeEl.textContent = this.getTypeLabel(participant.packageType);
+          if (badgeEl && participant.isLeader) badgeEl.classList.remove('hidden');
+
+          const menuInfo = this.applyParticipantDefaults(participant);
+          const docOptions = this.getDocOptions(participant);
+          const idValue = String(participant.id);
+
+          if (docTypeEl) {
+             docTypeEl.dataset.id = idValue;
+             docTypeEl.innerHTML = docOptions
+                .map((opt) => `<option value="${opt.value}">${opt.label}</option>`)
+                .join('');
+             docTypeEl.value = participant.documentType || docOptions[0]?.value || '';
+          }
+          if (docNumberEl) {
+             docNumberEl.dataset.id = idValue;
+             docNumberEl.value = participant.documentNumber || '';
+          }
+          if (docOtherInput) {
+             docOtherInput.dataset.id = idValue;
+             docOtherInput.value = participant.documentOtherType || '';
+          }
+          if (docOtherWrap) {
+             docOtherWrap.classList.toggle('hidden', participant.documentType !== 'OTHER');
+          }
+          if (birthdateEl) {
+             birthdateEl.dataset.id = idValue;
+             birthdateEl.value = participant.birthdate || '';
+          }
+          if (genderEl) {
+             genderEl.dataset.id = idValue;
+             genderEl.value = participant.gender || '';
+          }
+          if (menuEl) {
+             menuEl.dataset.id = idValue;
+             if (menuInfo.locked) {
+                menuEl.innerHTML = `<option value="${menuInfo.value}">${menuInfo.label}</option>`;
+                menuEl.value = menuInfo.value;
+                menuEl.disabled = true;
+             } else {
+                menuEl.disabled = false;
+                menuEl.value = participant.menuType || menuInfo.value || '';
+             }
+          }
+          if (menuNoteEl) {
+             menuNoteEl.textContent = menuInfo.note || '';
+          }
+
+          this.dom.detailsContainer.appendChild(node);
+       });
+    },
+
+    handleDetailsInput(event) {
+       const target = event?.target;
+       if (!target || !target.dataset) return;
+       const field = target.dataset.field;
+       const id = target.dataset.id;
+       if (!field || !id) return;
+       const participant = this.getParticipantById(id);
+       if (!participant) return;
+       if (field === 'documentType') {
+          participant.documentType = target.value;
+          if (participant.documentType !== 'OTHER') {
+             participant.documentOtherType = '';
+          }
+          const card = target.closest('.participant-card');
+          const otherWrap = card?.querySelector('.participant-doc-other');
+          if (otherWrap) {
+             otherWrap.classList.toggle('hidden', participant.documentType !== 'OTHER');
+          }
+          return;
+       }
+       if (field === 'documentOtherType') {
+          participant.documentOtherType = target.value.trim();
+          return;
+       }
+       const value = field === 'documentNumber' ? target.value.trim() : target.value;
+       participant[field] = value;
+    },
+
+    validateStep3() {
+       for (const participant of this.participants) {
+          const missing = [];
+          if (!participant.documentType) missing.push('tipo de documento');
+          if (participant.documentType === 'OTHER' && !participant.documentOtherType) {
+             missing.push('otro documento');
+          }
+          if (!participant.documentNumber) missing.push('documento');
+          if (!participant.birthdate) missing.push('fecha de nacimiento');
+          if (!participant.gender) missing.push('género');
+          const needsMenu = participant.packageType === 'lodging' || participant.packageType === 'no_lodging';
+          if (needsMenu && !participant.menuType) missing.push('menú');
+          if (missing.length) {
+             const label = participant.name || 'el participante';
+             alert(`Completa ${missing.join(', ')} de ${label}.`);
+             return false;
+          }
+       }
+       return true;
     },
 
     parseAge(value) {
@@ -810,7 +1184,14 @@ const formatTestAmount = (value, currency) =>
        }
 
        const packageType = this.getPackageTypeFromAge(age, lodgingChoice);
-       this.participants.push({ name, age, packageType, id: Date.now() });
+       const docType = this.getDocDefault({ age, packageType });
+       this.participants.push({
+          name,
+          age,
+          packageType,
+          id: Date.now(),
+          documentType: docType,
+       });
        this.dom.inputName.value = '';
        if (this.dom.inputAge) this.dom.inputAge.value = '';
        this.renderList();
@@ -1045,11 +1426,18 @@ const formatTestAmount = (value, currency) =>
         this.currency = group === 'CO' ? 'COP' : 'USD';
         this.updateTotals();
         this.renderList();
+        if (this.step === 3) {
+           this.renderDetails();
+        }
     },
 
     render() {
        this.dom.steps.forEach(el => el.classList.add('hidden'));
        document.getElementById(`step-${this.step}`).classList.remove('hidden');
+
+       if (this.step === 3) {
+          this.renderDetails();
+       }
        
        this.dom.indicators.forEach((el, idx) => {
           if(idx + 1 === this.step) {
@@ -1069,21 +1457,37 @@ const formatTestAmount = (value, currency) =>
 
     async handleSubmit(e) {
        e.preventDefault();
+       if (!this.validateStep3()) {
+          this.step = 3;
+          this.render();
+          return;
+       }
        const fd = new FormData(this.dom.form);
        const leaderDocType = fd.get('leader_document_type');
        const leaderDocNumber = fd.get('leader_id');
-       const participantsPayload = this.participants.map((participant) => ({
-          fullName: participant.name,
-          packageType: participant.packageType,
-          ...(participant.isLeader
-             ? { documentType: leaderDocType, documentNumber: leaderDocNumber }
-             : {}),
-       }));
+       const participantsPayload = this.participants.map((participant) => {
+          let documentType = participant.documentType || (participant.isLeader ? leaderDocType : '');
+          if (documentType === 'OTHER') {
+             const other = (participant.documentOtherType || '').trim();
+             documentType = other ? `OTRO:${other}` : 'OTRO:';
+          }
+          return {
+             fullName: participant.name,
+             packageType: participant.packageType,
+             documentType,
+             documentNumber: participant.documentNumber || (participant.isLeader ? leaderDocNumber : ''),
+             birthdate: participant.birthdate || '',
+             gender: participant.gender || '',
+             menuType: participant.menuType || '',
+          };
+       });
        const testMode = this.testModeEnabled && this.testMode;
        const data = {
           contactName: fd.get('leader_name'),
           email: fd.get('leader_email'),
           phone: fd.get('leader_phone'),
+          contactDocumentType: leaderDocType,
+          contactDocumentNumber: leaderDocNumber,
           countryGroup: fd.get('countryGroup') || this.countryGroup,
           participants: participantsPayload,
           turnstile: fd.get('cf-turnstile-response'),
@@ -1119,6 +1523,8 @@ const formatTestAmount = (value, currency) =>
           if (bookingData?.bookingId && bookingToken) {
              try {
                 localStorage.setItem(`cumbre-token:${bookingData.bookingId}`, bookingToken);
+                localStorage.setItem('cumbre-last-booking', bookingData.bookingId);
+                localStorage.setItem('cumbre-last-token', bookingToken);
              } catch (e) {
                 console.warn('No se pudo guardar token en localStorage');
              }
@@ -1192,7 +1598,7 @@ const formatTestAmount = (value, currency) =>
   window.addEventListener('DOMContentLoaded', () => APP.init());
 
 </script>
-<script>
+<script nonce={cspNonce}>
   // Password toggle functionality
   const initPasswordToggles = () => {
     const pwdToggle = document.getElementById('leader-password-toggle');

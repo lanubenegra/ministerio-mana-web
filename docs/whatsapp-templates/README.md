@@ -14,6 +14,9 @@ Variables sugeridas:
 - {{5}} = valor formateado (ej. $ 55.00 USD)
 - {{6}} = link de pago
 
+Env var sugerida:
+- `WHATSAPP_CUMBRE_REMINDER_CONTENT_SID`
+
 ## 2) Pago recibido
 Archivo: `cumbre_payment_received.txt`
 
@@ -21,6 +24,9 @@ Variables sugeridas:
 - {{1}} = nombre
 - {{2}} = valor formateado
 - {{3}} = booking id
+
+Env var sugerida (si se implementa):
+- `WHATSAPP_CUMBRE_PAYMENT_RECEIVED_CONTENT_SID`
 
 ## 3) Registro incompleto
 Archivo: `cumbre_registration_incomplete.txt`

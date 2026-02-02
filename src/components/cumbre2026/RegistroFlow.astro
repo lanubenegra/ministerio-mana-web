@@ -1,4 +1,5 @@
 ---
+const cspNonce = Astro.locals?.cspNonce;
 ---
 
 <div id="registro-app" class="max-w-4xl mx-auto space-y-8">
@@ -84,14 +85,22 @@
               <select name="docType" class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-teal">
                  <option value="CC">Cédula de Ciudadanía</option>
                  <option value="TI">Tarjeta de Identidad</option>
+                 <option value="RC">Registro civil</option>
                  <option value="PASSPORT">Pasaporte</option>
                  <option value="CE">Cédula de Extranjería</option>
+                 <option value="NATIONAL_ID">ID nacional</option>
+                 <option value="OTHER">Otro documento</option>
               </select>
            </div>
            <div>
               <label class="block text-xs text-white/60 mb-2 uppercase font-bold">Número Documento</label>
               <input type="text" name="docNumber" class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-teal" placeholder="123456789">
            </div>
+        </div>
+
+        <div class="doc-other hidden">
+           <label class="block text-xs text-white/60 mb-2 uppercase font-bold">Otro documento (especifica)</label>
+           <input type="text" name="docOtherType" class="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-teal" placeholder="Ej: ID nacional, licencia">
         </div>
 
         <div class="grid md:grid-cols-2 gap-4">
@@ -123,8 +132,10 @@
               <option value="">Seleccionar</option>
               <option value="TRADICIONAL">Menú tradicional</option>
               <option value="VEGETARIANO">Menú vegetariano</option>
+              <option value="INFANTIL">Menú infantil</option>
+              <option value="SIN ALIMENTACION">Sin alimentación (0-4)</option>
            </select>
-           <p class="text-xs text-white/30 mt-1">Solo contamos con menú tradicional o vegetariano.</p>
+           <p class="text-xs text-white/30 mt-1">Menú tradicional, vegetariano o infantil según el paquete.</p>
         </div>
      </div>
   </div>
@@ -180,7 +191,6 @@
   }
 </style>
 
-<script>
+<script nonce={cspNonce}>
   import '@scripts/registro-flow.js';
 </script>
-

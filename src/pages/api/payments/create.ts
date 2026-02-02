@@ -150,8 +150,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const reference = buildPaymentReference(bookingId, paymentIndex);
     const baseUrl = resolveBaseUrl(request);
     const tokenParam = payload.token ? `&token=${encodeURIComponent(payload.token)}` : '';
-    const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}${tokenParam}`;
-    const registerUrl = `${baseUrl}/eventos/cumbre-mundial-2026/registro?bookingId=${bookingId}${tokenParam}`;
+    const statusUrl = `${baseUrl}/eventos/cumbre-mundial-2026/estado?bookingId=${bookingId}${tokenParam}&source=payment`;
 
     if (booking.currency === 'COP') {
       await recordPayment({
@@ -168,7 +167,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         amountInCents: Math.round(amount * 100),
         currency: 'COP',
         description: 'Cumbre Mundial 2026',
-        redirectUrl: registerUrl,
+        redirectUrl: statusUrl,
         reference,
         email: booking.contact_email || undefined,
       });
@@ -197,7 +196,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       amountUsd: amount,
       currency: 'USD',
       description: 'Cumbre Mundial 2026',
-      successUrl: registerUrl,
+      successUrl: statusUrl,
       cancelUrl: statusUrl,
       metadata: {
         cumbre_booking_id: bookingId,

@@ -38,6 +38,23 @@ function getTestAmount(currency: string): number {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function normalizeDate(value: unknown): string | null {
+  const raw = (value ?? '').toString().trim();
+  if (!raw) return null;
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+}
+
+function normalizeGender(value: unknown): string | null {
+  const raw = sanitizePlainText((value ?? '').toString(), 20).toUpperCase();
+  if (raw === 'M' || raw === 'F') return raw;
+  return null;
+}
+
+function normalizeMenuType(value: unknown): string | null {
+  const raw = sanitizePlainText((value ?? '').toString(), 40).toUpperCase();
+  return raw || null;
+}
+
 function parseParticipants(raw: unknown) {
   if (!Array.isArray(raw)) return [];
   return raw;
@@ -146,23 +163,28 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     const participantsInput = parseParticipants(participantsRaw);
     const participants = participantsInput
-      .map((entry: any) => sanitizeParticipant({
-        fullName: entry?.fullName ?? entry?.name ?? '',
-        packageType: entry?.packageType ?? entry?.type,
-        relationship: entry?.relationship ?? '',
-        documentType: entry?.documentType ?? entry?.document_type ?? entry?.docType ?? '',
-        documentNumber: entry?.documentNumber ?? entry?.document_number ?? entry?.docNumber ?? '',
-      }))
-      .filter(Boolean) as ReturnType<typeof sanitizeParticipant>[];
+      .map((entry: any) => {
+        const safe = sanitizeParticipant({
+          fullName: entry?.fullName ?? entry?.name ?? '',
+          packageType: entry?.packageType ?? entry?.type,
+          relationship: entry?.relationship ?? '',
+          documentType: entry?.documentType ?? entry?.document_type ?? entry?.docType ?? '',
+          documentNumber: entry?.documentNumber ?? entry?.document_number ?? entry?.docNumber ?? '',
+        });
+        if (!safe) return null;
+        return { safe, raw: entry ?? {} };
+      })
+      .filter(Boolean) as Array<{ safe: NonNullable<ReturnType<typeof sanitizeParticipant>>; raw: any }>;
 
-    if (!participants.length) {
+    const safeParticipants = participants.map((item) => item.safe);
+    if (!safeParticipants.length) {
       return new Response(JSON.stringify({ ok: false, error: 'Agrega al menos una persona' }), {
         status: 400,
         headers: { 'content-type': 'application/json' },
       });
     }
 
-    let totalAmount = calculateTotals(currency, participants);
+    let totalAmount = calculateTotals(currency, safeParticipants);
     if (testMode) {
       totalAmount = getTestAmount(currency);
     }
@@ -208,13 +230,16 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       });
     }
 
-    const participantRows = participants.map((participant) => ({
+    const participantRows = participants.map(({ safe, raw }) => ({
       booking_id: booking.id,
-      full_name: participant.fullName,
-      package_type: participant.packageType,
-      relationship: participant.relationship,
-      document_type: participant.documentType,
-      document_number: participant.documentNumber,
+      full_name: safe.fullName,
+      package_type: safe.packageType,
+      relationship: safe.relationship,
+      document_type: safe.documentType,
+      document_number: safe.documentNumber,
+      birthdate: normalizeDate(raw?.birthdate),
+      gender: normalizeGender(raw?.gender),
+      diet_type: normalizeMenuType(raw?.dietType ?? raw?.menuType),
     }));
 
     const { data: participantData, error: participantsError } = await supabaseAdmin

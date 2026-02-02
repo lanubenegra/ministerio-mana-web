@@ -43,11 +43,29 @@ export const POST: APIRoute = async ({ request }) => {
   const internalSignature = request.headers.get('x-internal-signature');
   const wompiSignature = request.headers.get('x-wompi-signature');
 
-  if (!validInternalSignature(payload, internalSignature)) {
+  const internalOk = validInternalSignature(payload, internalSignature);
+  let wompiOk = false;
+
+  if (wompiSignature) {
+    try {
+      wompiOk = verifyWompiWebhook(payload, wompiSignature);
+    } catch (error: any) {
+      if (!internalOk) {
+        console.error('[wompi.forwarded] wompi signature error', error);
+        void logSecurityEvent({
+          type: 'webhook_invalid',
+          identifier: 'wompi.forwarded',
+          detail: error?.message || 'Firma Wompi invalida',
+        });
+      }
+    }
+  }
+
+  if (!internalOk && !wompiOk) {
     void logSecurityEvent({
       type: 'webhook_invalid',
       identifier: 'wompi.forwarded',
-      detail: 'Firma interna invalida',
+      detail: 'Firma invalida',
     });
     return new Response(JSON.stringify({ ok: false, error: 'Firma invalida' }), {
       status: 401,
@@ -109,26 +127,6 @@ export const POST: APIRoute = async ({ request }) => {
       status: 200,
       headers: { 'content-type': 'application/json' },
     });
-  }
-
-  if (wompiSignature) {
-    try {
-      const ok = verifyWompiWebhook(payload, wompiSignature);
-      if (!ok) {
-        throw new Error('Firma Wompi invalida');
-      }
-    } catch (error: any) {
-      console.error('[wompi.forwarded] wompi signature error', error);
-      void logSecurityEvent({
-        type: 'webhook_invalid',
-        identifier: 'wompi.forwarded',
-        detail: error?.message || 'Firma Wompi invalida',
-      });
-      return new Response(JSON.stringify({ ok: true, stored: true, ignored: true }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      });
-    }
   }
 
   try {

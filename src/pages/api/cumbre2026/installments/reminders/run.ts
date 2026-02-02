@@ -67,6 +67,8 @@ function diffDays(fromDate: string, toDate: string): number {
 async function sendWhatsappMessage(params: {
   to: string;
   message: string;
+  contentSid?: string | null;
+  contentVariables?: Record<string, string>;
   meta?: Record<string, unknown>;
 }): Promise<boolean> {
   const webhookUrl = env('WHATSAPP_WEBHOOK_URL');
@@ -80,6 +82,8 @@ async function sendWhatsappMessage(params: {
     body: JSON.stringify({
       to: params.to,
       message: params.message,
+      ...(params.contentSid ? { contentSid: params.contentSid } : {}),
+      ...(params.contentVariables ? { contentVariables: params.contentVariables } : {}),
       meta: params.meta ?? null,
     }),
   });
@@ -263,6 +267,17 @@ export const POST: APIRoute = async ({ request }) => {
         channel: 'whatsapp',
       });
       if (!alreadySent) {
+        const whatsappTemplateSid = env('WHATSAPP_CUMBRE_REMINDER_CONTENT_SID');
+        const templateVariables = whatsappTemplateSid
+          ? {
+              '1': booking.contact_name || 'amigo',
+              '2': String(installment.installment_index || ''),
+              '3': String(plan.installment_count || ''),
+              '4': dueDateLabel,
+              '5': amountLabel,
+              '6': paymentLink,
+            }
+          : undefined;
         const message = `Cumbre Mundial 2026: Hola${booking.contact_name ? ` ${booking.contact_name}` : ''}. ` +
           `Tu cuota ${installment.installment_index}/${plan.installment_count} vence el ${dueDateLabel}. ` +
           `Valor: ${amountLabel}. ` +
@@ -273,6 +288,8 @@ export const POST: APIRoute = async ({ request }) => {
           const ok = await sendWhatsappMessage({
             to: booking.contact_phone,
             message,
+            contentSid: whatsappTemplateSid || null,
+            contentVariables: templateVariables,
             meta: {
               bookingId: booking.id,
               planId: plan.id,
@@ -281,6 +298,7 @@ export const POST: APIRoute = async ({ request }) => {
               amount,
               currency: plan.currency,
               paymentLink,
+              contentSid: whatsappTemplateSid || null,
             },
           });
           await recordInstallmentReminder({

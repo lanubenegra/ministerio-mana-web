@@ -19,6 +19,7 @@ Guia corta para cron de cuotas, export CSV y acceso de cuenta.
 - `CUMBRE_EMAIL_FROM` (opcional, default `info@ministeriomana.org`)
 - `WHATSAPP_WEBHOOK_URL` (opcional para recordatorios por WhatsApp)
 - `WHATSAPP_WEBHOOK_TOKEN` (opcional, si tu webhook requiere auth)
+- `WHATSAPP_CUMBRE_REMINDER_CONTENT_SID` (opcional, template Twilio para recordatorios)
 
 > Nota: puedes reutilizar `SUPABASE_URL` y `SUPABASE_ANON_KEY` como `PUBLIC_*`.
 > El modo prueba solo se permite fuera de produccion.
