@@ -10,6 +10,7 @@ const DONATION_TYPES = new Set([
   'misiones',
   'campus',
   'evento',
+  'peregrinaciones',
   'general',
 ]);
 

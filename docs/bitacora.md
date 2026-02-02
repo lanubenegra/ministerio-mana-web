@@ -14,6 +14,17 @@
 
 ## Entradas
 
+### 2026-02-02 (Portal Finanzas: ingresos reales + alertas)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Finanzas: “Últimas Transacciones” ahora solo muestra pagos APPROVED/PAID (ingresos reales).
+  - Finanzas: nuevo resumen por categorías (diezmos, ofrendas, misiones, campus, eventos, peregrinaciones, general).
+  - Finanzas: sección “Alertas de pago” para pendientes/fallidos con motivo y acciones rápidas (correo/WhatsApp/copiar).
+  - Donaciones: se habilita categoría “peregrinaciones” en el formulario.
+- Pruebas: N/A
+- Pendientes:
+  - Validar en producción la extracción de motivos desde webhooks (pending/failed).
+
 ### 2026-02-02 (Portal Cumbre: Centro de Soluciones + higiene de datos)
 - Responsable: Delta (Codex)
 - Cambios:

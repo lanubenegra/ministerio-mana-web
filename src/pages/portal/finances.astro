@@ -35,6 +35,20 @@ import Sidebar from '@components/portal/Sidebar.astro';
                 </div>
             </div>
 
+            <!-- Category Summary -->
+            <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8">
+                <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-[#293C74]">Resumen por categoría</h3>
+                        <p class="text-xs text-slate-400">Solo pagos aprobados (ingresos reales).</p>
+                    </div>
+                    <p class="text-[10px] uppercase tracking-widest text-slate-400">Mes actual</p>
+                </div>
+                <div id="finances-categories" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <!-- Cards injected by JS -->
+                </div>
+            </div>
+
             <!-- Transactions List -->
             <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8">
                 <h3 class="text-lg font-bold text-[#293C74] mb-6">Últimas Transacciones</h3>
@@ -58,6 +72,21 @@ import Sidebar from '@components/portal/Sidebar.astro';
                     </table>
                 </div>
                 <div id="finances-empty" class="hidden text-center py-10 text-slate-400 text-sm">No hay registros financieros recientes.</div>
+            </div>
+
+            <!-- Payment Alerts -->
+            <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8">
+                <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-[#293C74]">Alertas de pago</h3>
+                        <p class="text-xs text-slate-400">Pendientes o fallidos. No se cuentan como ingresos.</p>
+                    </div>
+                    <p class="text-[10px] uppercase tracking-widest text-slate-400">Acción rápida</p>
+                </div>
+                <div id="finances-issues-list" class="space-y-4">
+                    <!-- Cards injected by JS -->
+                </div>
+                <div id="finances-issues-empty" class="hidden text-center py-6 text-slate-400 text-sm">No hay alertas de pago por ahora.</div>
             </div>
 
          </div>
