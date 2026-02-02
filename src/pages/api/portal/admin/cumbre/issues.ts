@@ -142,7 +142,10 @@ export const GET: APIRoute = async ({ request }) => {
     const bookingPayments = paymentsMap[booking.id] || [];
 
     const missingFields = buildMissingFields(bookingParticipants);
-    const hasPaid = isPaidBooking(booking);
+    const approvedPayments = bookingPayments.filter((p: any) => p.status === 'APPROVED');
+    const hasApprovedPayments = approvedPayments.length > 0;
+    const hasPaid = isPaidBooking(booking) || hasApprovedPayments;
+
     if (hasPaid && missingFields.length) {
       items.push({
         type: 'registration_incomplete',
@@ -162,7 +165,7 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     const noChurch = !booking.church_id && !booking.contact_church;
-    if (noChurch) {
+    if (hasPaid && noChurch) {
       items.push({
         type: 'no_church',
         id: booking.id,
@@ -179,10 +182,9 @@ export const GET: APIRoute = async ({ request }) => {
       counts.no_church = (counts.no_church || 0) + 1;
     }
 
-    const approvedPayments = bookingPayments.filter((p: any) => p.status === 'APPROVED');
     const pendingPayments = bookingPayments.filter((p: any) => PENDING_PAYMENT_STATUSES.has(p.status));
 
-    if (pendingPayments.length && booking.status === 'PENDING') {
+    if (hasPaid && pendingPayments.length && booking.status === 'PENDING') {
       const latestPending = pendingPayments
         .slice()
         .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];

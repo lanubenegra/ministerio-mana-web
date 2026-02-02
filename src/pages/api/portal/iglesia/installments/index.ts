@@ -96,7 +96,12 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
-  const bookingIds = (bookings || []).map((b: any) => b.id);
+  const eligibleBookings = (bookings || []).filter((booking: any) => {
+    const totalPaid = Number(booking.total_paid || 0);
+    return totalPaid > 0 || booking.status === 'DEPOSIT_OK' || booking.status === 'PAID';
+  });
+
+  const bookingIds = eligibleBookings.map((b: any) => b.id);
   if (!bookingIds.length) {
     return new Response(JSON.stringify({ ok: true, installments: [] }), {
       status: 200,
@@ -108,6 +113,7 @@ export const GET: APIRoute = async ({ request }) => {
     .from('cumbre_installments')
     .select('id, booking_id, plan_id, installment_index, due_date, amount, currency, status, provider_reference, provider_tx_id, paid_at, created_at, booking:cumbre_bookings(id, contact_name, contact_email, contact_phone, contact_church, church_id, total_amount, total_paid, status, currency), plan:cumbre_payment_plans(id, status, provider, currency, installment_count, provider_payment_method_id, provider_subscription_id)')
     .in('booking_id', bookingIds)
+    .in('status', ['PENDING', 'FAILED'])
     .order('due_date', { ascending: true })
     .limit(500);
 
@@ -119,7 +125,19 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
-  const installmentIds = (installments || []).map((row: any) => row.id);
+  const nextByPlan = new Map<string, any>();
+  (installments || []).forEach((row: any) => {
+    const planId = row.plan_id || row.plan?.id;
+    if (!planId) return;
+    if (row.plan?.status && row.plan.status !== 'ACTIVE') return;
+    if (!nextByPlan.has(planId)) {
+      nextByPlan.set(planId, row);
+    }
+  });
+
+  const nextInstallments = Array.from(nextByPlan.values());
+
+  const installmentIds = nextInstallments.map((row: any) => row.id);
   const reminderMap: Record<string, any> = {};
   const linkMap: Record<string, any> = {};
 
@@ -149,7 +167,7 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
-  const response = (installments || []).map((row: any) => ({
+  const response = nextInstallments.map((row: any) => ({
     ...row,
     last_reminder: reminderMap[row.id] || null,
     last_link: linkMap[row.id] || null,

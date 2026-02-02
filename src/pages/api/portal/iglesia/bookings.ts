@@ -128,8 +128,13 @@ export const GET: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ ok: false, error: 'Error interno' }), { status: 500 });
   }
 
+  const enrolledBookings = (bookings || []).filter((booking: any) => {
+    const totalPaid = Number(booking.total_paid || 0);
+    return totalPaid > 0 || booking.status === 'DEPOSIT_OK' || booking.status === 'PAID';
+  });
+
   // Participant Counts
-  const bookingIds = (bookings || []).map((b: any) => b.id);
+  const bookingIds = enrolledBookings.map((b: any) => b.id);
   let counts: Record<string, number> = {};
   if (bookingIds.length) {
     const { data: participants } = await supabaseAdmin
@@ -142,7 +147,7 @@ export const GET: APIRoute = async ({ request }) => {
     }, {});
   }
 
-  const response = (bookings || []).map((booking: any) => ({
+  const response = enrolledBookings.map((booking: any) => ({
     ...booking,
     participant_count: counts[booking.id] || 0,
     // Helper fields for frontend
