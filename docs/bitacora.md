@@ -14,6 +14,17 @@
 
 ## Entradas
 
+### 2026-02-02 (Cumbre 2026: registro previo al pago)
+- Responsable: Codex
+- Cambios:
+  - Cumbre 2026: nuevo paso “Datos de asistentes” antes del pago (documento, nacimiento, género, menú).
+  - Documentos por país/edad: CO menores RC/TI, adultos CC/CE/Pasaporte; INT Pasaporte/ID nacional/Otro (OTRO:).
+  - Registro: prefill + autosave con “Otro documento”; /estado ajusta CTA a Completar/Modificar y muestra estado de pago.
+  - Checkout: statusUrl con `source=payment`, redirección post‑pago a /estado, webhook Wompi acepta firma directa, parsing de referencias configurable, CSP nonces y CTA de retorno en landing.
+- Pruebas: N/A
+- Pendientes:
+  - QA end‑to‑end en staging (Stripe/Wompi, menores, internacional, cuotas).
+
 ### 2026-02-01 (Donaciones Stripe: identidad opcional y oculta)
 - Responsable: Codex
 - Cambios:
