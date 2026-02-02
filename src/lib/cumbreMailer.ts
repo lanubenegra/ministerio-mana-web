@@ -119,10 +119,6 @@ function buildTemplateData(kind: CumbreEmailKind, payload: CumbreEmailPayload, s
   const nextDueLabel = nextDueDate
     ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'America/Bogota' }).format(nextDueDate)
     : '';
-  const nextDueDate = payload.nextDueDate ? new Date(`${payload.nextDueDate}T00:00:00-05:00`) : null;
-  const nextDueLabel = nextDueDate
-    ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'America/Bogota' }).format(nextDueDate)
-    : '';
   const missingFields = Array.isArray(payload.missingFields)
     ? payload.missingFields.join(', ')
     : (payload.missingFields || '');
