@@ -14,6 +14,22 @@
 
 ## Entradas
 
+### 2026-02-02 (Portal Cumbre: Centro de Soluciones + higiene de datos)
+- Responsable: Delta (Codex)
+- Cambios:
+  - Portal Maná: nuevo “Centro de Soluciones” para admins con filtros (registro incompleto, pago pendiente, descuadre, duplicados, sin iglesia) y acciones rápidas (correo, WhatsApp, asignar iglesia, recalcular).
+  - API Admin Cumbre: endpoints `issues`, `notify` (registro incompleto + pago pendiente), `recompute`, `assign-church`, `link`, y `followups`.
+  - Mailer Cumbre: soporte para nuevos tipos (payment_pending, plan_created, final_payment_due, link_ready/expired, registration_complete) + payload extendido (next_due_date, installments_count, etc).
+  - WhatsApp templates: registro incompleto, pago pendiente, pago con inconsistencia, sin iglesia.
+  - Portal datos: “Inscritos” solo con pago real (total_paid > 0 o status DEPOSIT_OK/PAID).
+  - Cuotas pendientes: solo próxima cuota por plan y solo con pago real.
+  - Últimos pagos: solo pagos APPROVED (filtro en API y frontend).
+  - Fallback de columnas: si `payment_method/payment_status` no existen en `cumbre_bookings`, endpoints hacen fallback para evitar error 42703.
+- Pruebas: N/A
+- Pendientes:
+  - Validar en producción los filtros nuevos y que el Centro de Soluciones cargue sin errores.
+  - (Opcional) limpiar intentos de reserva sin pago si se desea mantener la vista 100% limpia.
+
 ### 2026-02-02 (Cumbre 2026: registro previo al pago)
 - Responsable: Codex
 - Cambios:
