@@ -13,3 +13,6 @@ alter table cumbre_bookings
 
 alter table cumbre_bookings
   add column if not exists contact_church text;
+
+alter table cumbre_bookings
+  add column if not exists updated_at timestamptz default now();
