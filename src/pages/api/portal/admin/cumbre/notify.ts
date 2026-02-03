@@ -172,7 +172,6 @@ export const POST: APIRoute = async ({ request }) => {
       .from('cumbre_bookings')
       .update({
         token_hash: tokenPair.hash,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', bookingId);
 

@@ -132,6 +132,34 @@ const onboardCountry = document.getElementById('onboard-country');
 const onboardAffiliation = document.getElementById('onboard-affiliation');
 const onboardChurchWrapper = document.getElementById('onboard-church-wrapper');
 const onboardChurchName = document.getElementById('onboard-church-name');
+const portalAlertModal = document.getElementById('portal-alert-modal');
+const portalAlertTitle = document.getElementById('portal-alert-title');
+const portalAlertMessage = document.getElementById('portal-alert-message');
+const portalAlertClose = document.getElementById('portal-alert-close');
+const portalAlertOk = document.getElementById('portal-alert-ok');
+
+function hidePortalAlert() {
+  if (!portalAlertModal) return;
+  portalAlertModal.classList.add('hidden');
+  portalAlertModal.classList.remove('flex');
+}
+
+function showPortalAlert(message, options = {}) {
+  if (!portalAlertModal || !portalAlertMessage || !portalAlertTitle) {
+    window.alert(message);
+    return;
+  }
+  portalAlertMessage.textContent = message;
+  portalAlertTitle.textContent = options.title || 'Atención';
+  portalAlertModal.classList.remove('hidden');
+  portalAlertModal.classList.add('flex');
+}
+
+portalAlertClose?.addEventListener('click', hidePortalAlert);
+portalAlertOk?.addEventListener('click', hidePortalAlert);
+portalAlertModal?.addEventListener('click', (event) => {
+  if (event.target === portalAlertModal) hidePortalAlert();
+});
 
 let supabase = null;
 let supabaseInitError = null;
@@ -2130,7 +2158,7 @@ async function handlePlanAction(event) {
     await loadAccount();
   } catch (err) {
     console.error(err);
-    alert('No pudimos actualizar tu plan. Intenta nuevamente.');
+    showPortalAlert('No pudimos actualizar tu plan. Intenta nuevamente.');
     target.textContent = originalText;
     target.disabled = false;
   }
@@ -2161,7 +2189,7 @@ async function handleInstallmentPay(event) {
   } catch (err) {
     console.error(err);
     target.textContent = originalText;
-    alert(err.message || 'No se pudo generar el link.');
+    showPortalAlert(err.message || 'No se pudo generar el link.');
   } finally {
     setTimeout(() => {
       target.disabled = false;
@@ -2187,7 +2215,7 @@ adminUsersList?.addEventListener('change', async (event) => {
     if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo actualizar');
   } catch (err) {
     console.error(err);
-    alert(err.message || 'No se pudo actualizar el rol.');
+    showPortalAlert(err.message || 'No se pudo actualizar el rol.');
   }
 });
 
@@ -2218,7 +2246,7 @@ adminUsersList?.addEventListener('click', async (event) => {
     console.error(err);
     target.textContent = 'Reset contraseña';
     target.removeAttribute('disabled');
-    alert(err.message || 'No se pudo enviar.');
+    showPortalAlert(err.message || 'No se pudo enviar.');
   }
 });
 
@@ -2254,7 +2282,7 @@ adminFollowupsList?.addEventListener('click', async (event) => {
       target.textContent = originalText;
       target.removeAttribute('disabled');
       if (adminFollowupsStatus) adminFollowupsStatus.textContent = err?.message || 'No se pudo enviar el correo.';
-      alert(err?.message || 'No se pudo enviar el correo.');
+      showPortalAlert(err?.message || 'No se pudo enviar el correo.');
     }
     return;
   }
@@ -2282,7 +2310,7 @@ adminFollowupsList?.addEventListener('click', async (event) => {
       target.textContent = originalText;
       target.removeAttribute('disabled');
       if (adminFollowupsStatus) adminFollowupsStatus.textContent = err?.message || 'No se pudo recalcular.';
-      alert(err?.message || 'No se pudo recalcular.');
+      showPortalAlert(err?.message || 'No se pudo recalcular.');
     }
     return;
   }
@@ -2321,7 +2349,7 @@ adminFollowupsList?.addEventListener('click', async (event) => {
       target.textContent = originalText;
       target.removeAttribute('disabled');
       if (adminFollowupsStatus) adminFollowupsStatus.textContent = err?.message || 'No se pudo asignar.';
-      alert(err?.message || 'No se pudo asignar.');
+      showPortalAlert(err?.message || 'No se pudo asignar.');
     }
     return;
   }
@@ -2370,7 +2398,7 @@ adminFollowupsList?.addEventListener('click', async (event) => {
           } else {
             try {
               await navigator.clipboard.writeText(message);
-              alert('Mensaje copiado. Pégalo en WhatsApp.');
+              showPortalAlert('Mensaje copiado. Pégalo en WhatsApp.');
             } catch (copyErr) {
               window.prompt('Copia este mensaje para WhatsApp:', message);
             }
@@ -2381,7 +2409,7 @@ adminFollowupsList?.addEventListener('click', async (event) => {
           if (adminFollowupsStatus) {
             adminFollowupsStatus.textContent = fallbackErr?.message || err?.message || 'No se pudo preparar WhatsApp.';
           }
-          alert(fallbackErr?.message || err?.message || 'No se pudo preparar WhatsApp.');
+          showPortalAlert(fallbackErr?.message || err?.message || 'No se pudo preparar WhatsApp.');
         }
       }
     } finally {
@@ -2433,7 +2461,7 @@ churchInstallmentsList?.addEventListener('click', async (event) => {
   } catch (err) {
     console.error(err);
     target.textContent = original;
-    alert(err.message || 'No se pudo completar la acción.');
+    showPortalAlert(err.message || 'No se pudo completar la acción.');
   } finally {
     setTimeout(() => {
       target.removeAttribute('disabled');
@@ -2491,7 +2519,7 @@ churchFormToggle?.addEventListener('click', () => {
 
   // Validation: Check if admin has selected a church
   if (portalIsAdmin && !resolveSelectedChurchId() && !portalIsCustomChurch) {
-    alert('Por favor selecciona una iglesia en el panel superior antes de registrar.');
+    showPortalAlert('Por favor selecciona una iglesia en el panel superior antes de registrar.');
     return;
   }
 
