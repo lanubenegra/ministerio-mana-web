@@ -23,17 +23,17 @@ async function getAdminContext(request: Request) {
   if (user?.email) {
     const profile = await ensureUserProfile(user);
     if (!profile || !isAdminRole(profile.role)) {
-      return { ok: false, role: null };
+      return { ok: false, role: null, email: null, name: null };
     }
-    return { ok: true, role: profile.role };
+    return { ok: true, role: profile.role, email: profile.email, name: profile.full_name || null };
   }
 
   const passwordSession = readPasswordSession(request);
   if (!passwordSession?.email) {
-    return { ok: false, role: null };
+    return { ok: false, role: null, email: null, name: null };
   }
 
-  return { ok: true, role: 'superadmin' };
+  return { ok: true, role: 'superadmin', email: passwordSession.email, name: passwordSession.email };
 }
 
 function buildMissingFields(participants: any[]) {
@@ -82,6 +82,26 @@ function buildWhatsappFallback(params: {
   }
 }
 
+async function recordAdminNotification(params: {
+  bookingId: string;
+  kind: string;
+  channel: string;
+  sentByEmail?: string | null;
+  sentByName?: string | null;
+}) {
+  if (!supabaseAdmin) return;
+  const { error } = await supabaseAdmin.from('cumbre_admin_notifications').insert({
+    booking_id: params.bookingId,
+    kind: params.kind,
+    channel: params.channel,
+    sent_by_email: params.sentByEmail ?? null,
+    sent_by_name: params.sentByName ?? null,
+  });
+  if (error) {
+    console.error('[portal.admin.cumbre.notify] notification insert error', error);
+  }
+}
+
 export const POST: APIRoute = async ({ request }) => {
   if (!supabaseAdmin) {
     return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), {
@@ -109,6 +129,7 @@ export const POST: APIRoute = async ({ request }) => {
   const bookingId = String(payload.bookingId);
   const kind = String(payload.kind);
   const channel = String(payload.channel || 'email');
+  const force = Boolean(payload.force);
   if (!['email', 'whatsapp'].includes(channel)) {
     return new Response(JSON.stringify({ ok: false, error: 'Canal no soportado' }), {
       status: 400,
@@ -137,6 +158,34 @@ export const POST: APIRoute = async ({ request }) => {
       status: 404,
       headers: { 'content-type': 'application/json' },
     });
+  }
+
+  const { data: lastNotification, error: lastNotificationError } = await supabaseAdmin
+    .from('cumbre_admin_notifications')
+    .select('sent_at, sent_by_email, sent_by_name')
+    .eq('booking_id', bookingId)
+    .eq('kind', kind)
+    .eq('channel', channel)
+    .order('sent_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastNotificationError) {
+    console.error('[portal.admin.cumbre.notify] notification lookup error', lastNotificationError);
+  }
+
+  if (!force && lastNotification?.sent_at) {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        alreadySent: true,
+        sent_at: lastNotification.sent_at,
+        sent_by_email: lastNotification.sent_by_email,
+        sent_by_name: lastNotification.sent_by_name,
+        error: 'Ya se envió un mensaje para esta alerta.',
+      }),
+      { status: 409, headers: { 'content-type': 'application/json' } },
+    );
   }
 
   if (channel === 'email' && !booking.contact_email) {
@@ -233,6 +282,13 @@ export const POST: APIRoute = async ({ request }) => {
         });
       }
     }
+    await recordAdminNotification({
+      bookingId,
+      kind,
+      channel,
+      sentByEmail: ctx.email,
+      sentByName: ctx.name,
+    });
   }
 
   if (kind === 'payment_pending') {
@@ -289,6 +345,13 @@ export const POST: APIRoute = async ({ request }) => {
         });
       }
     }
+    await recordAdminNotification({
+      bookingId,
+      kind,
+      channel,
+      sentByEmail: ctx.email,
+      sentByName: ctx.name,
+    });
   }
 
   if (isWhatsapp && kind === 'payment_mismatch') {
@@ -313,6 +376,13 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'content-type': 'application/json' },
       });
     }
+    await recordAdminNotification({
+      bookingId,
+      kind,
+      channel,
+      sentByEmail: ctx.email,
+      sentByName: ctx.name,
+    });
   }
 
   if (isWhatsapp && kind === 'overpaid') {
@@ -337,6 +407,13 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'content-type': 'application/json' },
       });
     }
+    await recordAdminNotification({
+      bookingId,
+      kind,
+      channel,
+      sentByEmail: ctx.email,
+      sentByName: ctx.name,
+    });
   }
 
   if (isWhatsapp && kind === 'no_church') {
@@ -361,6 +438,13 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'content-type': 'application/json' },
       });
     }
+    await recordAdminNotification({
+      bookingId,
+      kind,
+      channel,
+      sentByEmail: ctx.email,
+      sentByName: ctx.name,
+    });
   }
 
   return new Response(JSON.stringify({ ok: true, channel }), {

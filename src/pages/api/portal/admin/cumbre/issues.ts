@@ -122,6 +122,16 @@ export const GET: APIRoute = async ({ request }) => {
     console.error('[portal.admin.cumbre.issues] payments error', paymentsRes.error);
   }
 
+  const notificationsRes = await supabaseAdmin
+    .from('cumbre_admin_notifications')
+    .select('booking_id, kind, channel, sent_at, sent_by_email, sent_by_name')
+    .in('booking_id', bookingIds)
+    .order('sent_at', { ascending: false });
+
+  if (notificationsRes.error) {
+    console.error('[portal.admin.cumbre.issues] notifications error', notificationsRes.error);
+  }
+
   const participantsMap = (participantsRes.data || []).reduce((acc: Record<string, any[]>, row: any) => {
     if (!acc[row.booking_id]) acc[row.booking_id] = [];
     acc[row.booking_id].push(row);
@@ -131,6 +141,12 @@ export const GET: APIRoute = async ({ request }) => {
   const paymentsMap = (paymentsRes.data || []).reduce((acc: Record<string, any[]>, row: any) => {
     if (!acc[row.booking_id]) acc[row.booking_id] = [];
     acc[row.booking_id].push(row);
+    return acc;
+  }, {});
+
+  const notificationsMap = (notificationsRes.data || []).reduce((acc: Record<string, any>, row: any) => {
+    const key = `${row.booking_id}:${row.kind}:${row.channel}`;
+    if (!acc[key]) acc[key] = row;
     return acc;
   }, {});
 
@@ -147,6 +163,7 @@ export const GET: APIRoute = async ({ request }) => {
     const hasPaid = isPaidBooking(booking) || hasApprovedPayments;
 
     if (hasPaid && missingFields.length) {
+      const lastWhatsapp = notificationsMap[`${booking.id}:registration_incomplete:whatsapp`];
       items.push({
         type: 'registration_incomplete',
         id: booking.id,
@@ -160,12 +177,14 @@ export const GET: APIRoute = async ({ request }) => {
         currency: booking.currency,
         created_at: booking.created_at,
         missing_fields: missingFields,
+        last_whatsapp: lastWhatsapp,
       });
       counts.registration_incomplete = (counts.registration_incomplete || 0) + 1;
     }
 
     const noChurch = !booking.church_id && !booking.contact_church;
     if (hasPaid && noChurch) {
+      const lastWhatsapp = notificationsMap[`${booking.id}:no_church:whatsapp`];
       items.push({
         type: 'no_church',
         id: booking.id,
@@ -178,6 +197,7 @@ export const GET: APIRoute = async ({ request }) => {
         total_paid: booking.total_paid,
         currency: booking.currency,
         created_at: booking.created_at,
+        last_whatsapp: lastWhatsapp,
       });
       counts.no_church = (counts.no_church || 0) + 1;
     }
@@ -188,6 +208,7 @@ export const GET: APIRoute = async ({ request }) => {
       const latestPending = pendingPayments
         .slice()
         .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+      const lastWhatsapp = notificationsMap[`${booking.id}:payment_pending:whatsapp`];
       items.push({
         type: 'payment_pending',
         id: booking.id,
@@ -201,6 +222,7 @@ export const GET: APIRoute = async ({ request }) => {
         currency: booking.currency,
         created_at: booking.created_at,
         payment: latestPending || null,
+        last_whatsapp: lastWhatsapp,
       });
       counts.payment_pending = (counts.payment_pending || 0) + 1;
     }
@@ -209,6 +231,7 @@ export const GET: APIRoute = async ({ request }) => {
       const approvedTotal = approvedPayments.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
       const totalPaid = Number(booking.total_paid || 0);
       if (approvedTotal > 0 && totalPaid + 0.01 < approvedTotal) {
+        const lastWhatsapp = notificationsMap[`${booking.id}:payment_mismatch:whatsapp`];
         items.push({
           type: 'payment_mismatch',
           id: booking.id,
@@ -224,12 +247,14 @@ export const GET: APIRoute = async ({ request }) => {
           payment: approvedPayments[0] || null,
           approved_total: approvedTotal,
           approved_count: approvedPayments.length,
+          last_whatsapp: lastWhatsapp,
         });
         counts.payment_mismatch = (counts.payment_mismatch || 0) + 1;
       }
 
       const totalAmount = Number(booking.total_amount || 0);
       if (totalAmount > 0 && totalPaid > totalAmount + 0.01) {
+        const lastWhatsapp = notificationsMap[`${booking.id}:overpaid:whatsapp`];
         items.push({
           type: 'overpaid',
           id: booking.id,
@@ -245,6 +270,7 @@ export const GET: APIRoute = async ({ request }) => {
           payment: approvedPayments[0] || null,
           approved_total: approvedTotal,
           approved_count: approvedPayments.length,
+          last_whatsapp: lastWhatsapp,
         });
         counts.overpaid = (counts.overpaid || 0) + 1;
       }

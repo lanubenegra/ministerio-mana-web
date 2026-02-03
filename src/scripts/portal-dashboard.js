@@ -1513,6 +1513,11 @@ function renderAdminFollowups(items, counts = {}) {
     const paymentInfo = item.payment
       ? `${item.payment.provider || 'Pago'} · ${item.payment.status || ''} · ${paymentAmountLabel}`
       : '';
+    const lastWhatsapp = item.last_whatsapp;
+    const whatsappSender = lastWhatsapp?.sent_by_name || lastWhatsapp?.sent_by_email || '';
+    const whatsappStatusLabel = lastWhatsapp?.sent_at
+      ? `WhatsApp enviado${whatsappSender ? ` por ${whatsappSender}` : ''} · ${formatDateTime(lastWhatsapp.sent_at)}`
+      : '';
 
     let detail = '';
     if (item.type === 'registration_incomplete') {
@@ -1563,6 +1568,7 @@ function renderAdminFollowups(items, counts = {}) {
       <div class="rounded-xl bg-slate-50/70 border border-slate-100 px-3 py-2 text-xs text-slate-600">
         ${detail || 'Alerta pendiente de revisión.'}
       </div>
+      <p class="text-[10px] uppercase tracking-widest text-slate-400" data-field="whatsapp-status">${whatsappStatusLabel}</p>
       ${canAssignChurch ? `
         <div class="flex flex-col md:flex-row md:items-center gap-2">
           <select data-role="assign-church" class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-[#293C74]">
@@ -2370,10 +2376,28 @@ adminFollowupsList?.addEventListener('click', async (event) => {
         headers: { 'content-type': 'application/json', ...portalAuthHeaders },
         body: JSON.stringify({ bookingId, kind: item.type, channel: 'whatsapp' }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo enviar WhatsApp');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        if (data?.alreadySent) {
+          const sender = data.sent_by_name || data.sent_by_email || '';
+          const statusEl = card?.querySelector('[data-field="whatsapp-status"]');
+          if (statusEl && data.sent_at) {
+            statusEl.textContent = `WhatsApp enviado${sender ? ` por ${sender}` : ''} · ${formatDateTime(data.sent_at)}`;
+            statusEl.classList.add('text-emerald-600');
+          }
+          if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Ya estaba enviado.';
+          return;
+        }
+        throw new Error(data.error || 'No se pudo enviar WhatsApp');
+      }
       sentViaApi = true;
       if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'WhatsApp enviado.';
+      const statusEl = card?.querySelector('[data-field="whatsapp-status"]');
+      if (statusEl) {
+        const sentAt = new Date();
+        statusEl.textContent = `WhatsApp enviado · ${sentAt.toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}`;
+        statusEl.classList.add('text-emerald-600');
+      }
     } catch (err) {
       console.error(err);
       if (!sentViaApi) {
@@ -2404,6 +2428,12 @@ adminFollowupsList?.addEventListener('click', async (event) => {
             }
           }
           if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Mensaje listo.';
+          const statusEl = card?.querySelector('[data-field="whatsapp-status"]');
+          if (statusEl) {
+            const sentAt = new Date();
+            statusEl.textContent = `Mensaje preparado · ${sentAt.toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}`;
+            statusEl.classList.add('text-amber-600');
+          }
         } catch (fallbackErr) {
           console.error(fallbackErr);
           if (adminFollowupsStatus) {
