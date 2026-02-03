@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { resolveBaseUrl } from '@lib/url';
 import { logSecurityEvent } from '@lib/securityEvents';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
+import { sendWhatsappMessage } from '@lib/whatsapp';
 import {
   createInstallmentLinkToken,
   listInstallmentsByDueDates,
@@ -62,32 +63,6 @@ function diffDays(fromDate: string, toDate: string): number {
   const from = new Date(`${fromDate}T00:00:00-05:00`).getTime();
   const to = new Date(`${toDate}T00:00:00-05:00`).getTime();
   return Math.round((to - from) / (1000 * 60 * 60 * 24));
-}
-
-async function sendWhatsappMessage(params: {
-  to: string;
-  message: string;
-  contentSid?: string | null;
-  contentVariables?: Record<string, string>;
-  meta?: Record<string, unknown>;
-}): Promise<boolean> {
-  const webhookUrl = env('WHATSAPP_WEBHOOK_URL');
-  if (!webhookUrl) return false;
-  const token = env('WHATSAPP_WEBHOOK_TOKEN');
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(webhookUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      to: params.to,
-      message: params.message,
-      ...(params.contentSid ? { contentSid: params.contentSid } : {}),
-      ...(params.contentVariables ? { contentVariables: params.contentVariables } : {}),
-      meta: params.meta ?? null,
-    }),
-  });
-  return res.ok;
 }
 
 function hasEmailProvider(): boolean {

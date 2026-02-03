@@ -4,6 +4,7 @@ import { createWompiPaymentSource, verifyWompiWebhook } from '@lib/wompi';
 import { logSecurityEvent } from '@lib/securityEvents';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { parseReferenceBookingId, parseReferencePlanId } from '@lib/cumbre2026';
+import { formatCurrency } from '@lib/fx';
 import {
   recordPayment,
   recomputeBookingTotals,
@@ -16,13 +17,20 @@ import {
   updatePaymentPlan,
   refreshPlanNextDueDate,
   markInstallmentLinksUsed,
+  hasInstallmentReminder,
+  recordInstallmentReminder,
 } from '@lib/cumbreStore';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
+import { sendWhatsappMessage } from '@lib/whatsapp';
 
 export const prerender = false;
 
 function env(key: string): string | undefined {
   return import.meta.env?.[key] ?? process.env?.[key];
+}
+
+function hasWhatsappProvider(): boolean {
+  return Boolean(env('WHATSAPP_WEBHOOK_URL'));
 }
 
 function validInternalSignature(payload: string, signature: string | null): boolean {
@@ -220,8 +228,14 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    const pendingNotify = normalizedStatus === 'PENDING'
+      && bookingId
+      && paymentMethodType
+      && paymentMethodType !== 'CARD';
+    const shouldLookupBooking = Boolean(bookingId && (normalizedStatus === 'APPROVED' || pendingNotify));
+    const booking = shouldLookupBooking ? await getBookingById(bookingId!) : null;
+
     if (normalizedStatus === 'APPROVED' && bookingId) {
-      const booking = await getBookingById(bookingId);
       if (booking?.contact_email) {
         await sendCumbreEmail('payment_received', {
           to: booking.contact_email,
@@ -234,6 +248,119 @@ export const POST: APIRoute = async ({ request }) => {
         });
       }
       await recomputeBookingTotals(bookingId);
+    }
+
+    if (booking?.contact_phone && hasWhatsappProvider()) {
+      if (normalizedStatus === 'APPROVED') {
+        const reminderKey = 'PAYMENT_RECEIVED';
+        const alreadySent = installmentId
+          ? await hasInstallmentReminder({ installmentId, reminderKey, channel: 'whatsapp' })
+          : false;
+        if (!alreadySent) {
+          const amountLabel = formatCurrency(amount, normalizedCurrency as any);
+          const contentSid = env('WHATSAPP_CUMBRE_PAYMENT_RECEIVED_CONTENT_SID');
+          const contentVariables = contentSid
+            ? {
+                '1': booking.contact_name || 'amigo',
+                '2': amountLabel,
+                '3': bookingId || '',
+              }
+            : undefined;
+          const message = `Cumbre Mundial 2026: Hola${booking.contact_name ? ` ${booking.contact_name}` : ''}. ` +
+            `Confirmamos tu pago de ${amountLabel}. Booking: ${(bookingId || '').slice(0, 8).toUpperCase()}.`;
+          const ok = await sendWhatsappMessage({
+            to: booking.contact_phone,
+            message,
+            contentSid: contentSid || null,
+            contentVariables,
+            meta: {
+              bookingId,
+              planId,
+              installmentId,
+              provider: 'wompi',
+              reference,
+              providerTxId,
+              amount,
+              currency: normalizedCurrency,
+            },
+          });
+          if (installmentId) {
+            await recordInstallmentReminder({
+              installmentId,
+              reminderKey,
+              channel: 'whatsapp',
+              payload: {
+                bookingId,
+                planId,
+                reference,
+                providerTxId,
+                amount,
+                currency: normalizedCurrency,
+                contentSid: contentSid || null,
+                ok,
+              },
+              error: ok ? null : 'WhatsApp failed',
+            });
+          }
+        }
+      }
+
+      if (pendingNotify && bookingId) {
+        const reminderKey = 'PAYMENT_PENDING';
+        const alreadySent = installmentId
+          ? await hasInstallmentReminder({ installmentId, reminderKey, channel: 'whatsapp' })
+          : false;
+        if (!alreadySent) {
+          const contentSid = env('WHATSAPP_CUMBRE_PAYMENT_PENDING_CONTENT_SID');
+          const contentVariables = contentSid
+            ? {
+                '1': booking.contact_name || 'amigo',
+                '2': bookingId || '',
+              }
+            : undefined;
+          const message = `Cumbre Mundial 2026: Hola${booking.contact_name ? ` ${booking.contact_name}` : ''}. ` +
+            `Tu pago esta en verificacion. Si pagaste con PSE/Nequi/ahorros puede tardar unos minutos. ` +
+            `No hagas otro pago. Booking: ${(bookingId || '').slice(0, 8).toUpperCase()}.`;
+          const ok = await sendWhatsappMessage({
+            to: booking.contact_phone,
+            message,
+            contentSid: contentSid || null,
+            contentVariables,
+            meta: {
+              bookingId,
+              planId,
+              installmentId,
+              provider: 'wompi',
+              reference,
+              providerTxId,
+              amount,
+              currency: normalizedCurrency,
+              status: normalizedStatus,
+              paymentMethodType,
+            },
+          });
+          if (installmentId) {
+            await recordInstallmentReminder({
+              installmentId,
+              reminderKey,
+              channel: 'whatsapp',
+              payload: {
+                bookingId,
+                planId,
+                reference,
+                providerTxId,
+                amount,
+                currency: normalizedCurrency,
+                status: normalizedStatus,
+                paymentMethodType,
+                contentSid: contentSid || null,
+                ok,
+              },
+              error: ok ? null : 'WhatsApp failed',
+            });
+          }
+        }
+      }
     }
   } catch (error: any) {
     console.error('[wompi.forwarded] processing error', error);

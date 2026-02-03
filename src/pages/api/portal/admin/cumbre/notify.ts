@@ -6,8 +6,17 @@ import { readPasswordSession } from '@lib/portalPasswordSession';
 import { sendCumbreEmail } from '@lib/cumbreMailer';
 import { generateAccessToken } from '@lib/cumbre2026';
 import { resolveBaseUrl } from '@lib/url';
+import { sendWhatsappMessage } from '@lib/whatsapp';
 
 export const prerender = false;
+
+function env(key: string): string | undefined {
+  return import.meta.env?.[key] ?? process.env?.[key];
+}
+
+function hasWhatsappProvider(): boolean {
+  return Boolean(env('WHATSAPP_WEBHOOK_URL'));
+}
 
 async function getAdminContext(request: Request) {
   const user = await getUserFromRequest(request);
@@ -45,6 +54,34 @@ function buildMissingFields(participants: any[]) {
   return missing;
 }
 
+function buildWhatsappFallback(params: {
+  kind: string;
+  name: string;
+  bookingId: string;
+  missingFields?: string[];
+  ctaUrl?: string;
+}): string {
+  const bookingRef = (params.bookingId || '').slice(0, 8).toUpperCase();
+  const name = params.name || 'hola';
+  switch (params.kind) {
+    case 'registration_incomplete': {
+      const missing = params.missingFields?.length ? params.missingFields.join(', ') : 'datos del registro';
+      const linkText = params.ctaUrl ? ` Completa aqui: ${params.ctaUrl}.` : '';
+      return `Hola ${name}, gracias por tu inscripcion a la Cumbre Mundial 2026. Faltan: ${missing}.${linkText} Booking: ${bookingRef}.`;
+    }
+    case 'payment_pending':
+      return `Hola ${name}, tu pago esta en verificacion. Si pagaste con PSE/Nequi puede tardar unos minutos. No hagas otro pago. Booking: ${bookingRef}.`;
+    case 'payment_mismatch':
+      return `Hola ${name}, detectamos una inconsistencia con tu pago y ya estamos revisando. Booking: ${bookingRef}.`;
+    case 'overpaid':
+      return `Hola ${name}, detectamos un pago adicional en tu reserva y lo estamos revisando. Booking: ${bookingRef}.`;
+    case 'no_church':
+      return `Hola ${name}, necesitamos confirmar tu iglesia/sede y ciudad para completar tu registro. Booking: ${bookingRef}.`;
+    default:
+      return `Hola ${name}, estamos revisando tu registro de la Cumbre Mundial 2026. Booking: ${bookingRef}.`;
+  }
+}
+
 export const POST: APIRoute = async ({ request }) => {
   if (!supabaseAdmin) {
     return new Response(JSON.stringify({ ok: false, error: 'Supabase no configurado' }), {
@@ -71,8 +108,19 @@ export const POST: APIRoute = async ({ request }) => {
 
   const bookingId = String(payload.bookingId);
   const kind = String(payload.kind);
-  if (!['registration_incomplete', 'payment_pending'].includes(kind)) {
-    return new Response(JSON.stringify({ ok: false, error: 'Tipo de correo no soportado' }), {
+  const channel = String(payload.channel || 'email');
+  if (!['email', 'whatsapp'].includes(channel)) {
+    return new Response(JSON.stringify({ ok: false, error: 'Canal no soportado' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  const isWhatsapp = channel === 'whatsapp';
+  const allowedKinds = isWhatsapp
+    ? ['registration_incomplete', 'payment_pending', 'payment_mismatch', 'overpaid', 'no_church']
+    : ['registration_incomplete', 'payment_pending'];
+  if (!allowedKinds.includes(kind)) {
+    return new Response(JSON.stringify({ ok: false, error: 'Tipo de aviso no soportado' }), {
       status: 400,
       headers: { 'content-type': 'application/json' },
     });
@@ -80,7 +128,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: booking, error } = await supabaseAdmin
     .from('cumbre_bookings')
-    .select('id, contact_name, contact_email, total_amount, total_paid, currency, status')
+    .select('id, contact_name, contact_email, contact_phone, total_amount, total_paid, currency, status')
     .eq('id', bookingId)
     .maybeSingle();
 
@@ -91,9 +139,23 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
-  if (!booking.contact_email) {
+  if (channel === 'email' && !booking.contact_email) {
     return new Response(JSON.stringify({ ok: false, error: 'Reserva sin email' }), {
       status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  if (isWhatsapp && !booking.contact_phone) {
+    return new Response(JSON.stringify({ ok: false, error: 'Reserva sin telefono' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  if (isWhatsapp && !hasWhatsappProvider()) {
+    return new Response(JSON.stringify({ ok: false, error: 'WhatsApp no configurado' }), {
+      status: 500,
       headers: { 'content-type': 'application/json' },
     });
   }
@@ -125,44 +187,184 @@ export const POST: APIRoute = async ({ request }) => {
     const baseUrl = resolveBaseUrl(request);
     const ctaUrl = `${baseUrl}/eventos/cumbre-mundial-2026/registro?bookingId=${bookingId}&token=${tokenPair.token}`;
 
-    await sendCumbreEmail('registration_incomplete', {
-      to: booking.contact_email,
-      fullName: booking.contact_name || '',
-      bookingId: booking.id,
-      totalAmount: booking.total_amount,
-      totalPaid: booking.total_paid,
-      currency: booking.currency,
-      missingFields,
-      ctaUrl,
-      ctaLabel: 'Completar registro',
-    });
+    if (channel === 'email') {
+      await sendCumbreEmail('registration_incomplete', {
+        to: booking.contact_email,
+        fullName: booking.contact_name || '',
+        bookingId: booking.id,
+        totalAmount: booking.total_amount,
+        totalPaid: booking.total_paid,
+        currency: booking.currency,
+        missingFields,
+        ctaUrl,
+        ctaLabel: 'Completar registro',
+      });
+    } else {
+      const contentSid = env('WHATSAPP_CUMBRE_REG_INCOMPLETE_CONTENT_SID');
+      const contentVariables = contentSid
+        ? {
+            '1': booking.contact_name || 'amigo',
+            '2': missingFields.join(', ') || 'datos del registro',
+            '3': ctaUrl,
+            '4': bookingId,
+          }
+        : undefined;
+      const message = buildWhatsappFallback({
+        kind,
+        name: booking.contact_name || 'amigo',
+        bookingId,
+        missingFields,
+        ctaUrl,
+      });
+      const ok = await sendWhatsappMessage({
+        to: booking.contact_phone,
+        message,
+        contentSid: contentSid || null,
+        contentVariables,
+        meta: {
+          bookingId,
+          kind,
+          channel,
+        },
+      });
+      if (!ok) {
+        return new Response(JSON.stringify({ ok: false, error: 'WhatsApp failed' }), {
+          status: 502,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+    }
   }
 
   if (kind === 'payment_pending') {
-    const { data: payment } = await supabaseAdmin
-      .from('cumbre_payments')
-      .select('amount, currency, status, provider')
-      .eq('booking_id', bookingId)
-      .eq('status', 'PENDING')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (channel === 'email') {
+      const { data: payment } = await supabaseAdmin
+        .from('cumbre_payments')
+        .select('amount, currency, status, provider')
+        .eq('booking_id', bookingId)
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    const baseUrl = resolveBaseUrl(request);
-    await sendCumbreEmail('payment_pending', {
-      to: booking.contact_email,
-      fullName: booking.contact_name || '',
-      bookingId: booking.id,
-      amount: payment?.amount,
-      currency: payment?.currency || booking.currency,
-      totalAmount: booking.total_amount,
-      totalPaid: booking.total_paid,
-      ctaUrl: `${baseUrl}/eventos/cumbre-mundial-2026`,
-      ctaLabel: 'Ver detalles',
-    });
+      const baseUrl = resolveBaseUrl(request);
+      await sendCumbreEmail('payment_pending', {
+        to: booking.contact_email,
+        fullName: booking.contact_name || '',
+        bookingId: booking.id,
+        amount: payment?.amount,
+        currency: payment?.currency || booking.currency,
+        totalAmount: booking.total_amount,
+        totalPaid: booking.total_paid,
+        ctaUrl: `${baseUrl}/eventos/cumbre-mundial-2026`,
+        ctaLabel: 'Ver detalles',
+      });
+    } else {
+      const contentSid = env('WHATSAPP_CUMBRE_PAYMENT_PENDING_CONTENT_SID');
+      const contentVariables = contentSid
+        ? {
+            '1': booking.contact_name || 'amigo',
+            '2': bookingId,
+          }
+        : undefined;
+      const message = buildWhatsappFallback({
+        kind,
+        name: booking.contact_name || 'amigo',
+        bookingId,
+      });
+      const ok = await sendWhatsappMessage({
+        to: booking.contact_phone,
+        message,
+        contentSid: contentSid || null,
+        contentVariables,
+        meta: {
+          bookingId,
+          kind,
+          channel,
+        },
+      });
+      if (!ok) {
+        return new Response(JSON.stringify({ ok: false, error: 'WhatsApp failed' }), {
+          status: 502,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+    }
   }
 
-  return new Response(JSON.stringify({ ok: true }), {
+  if (isWhatsapp && kind === 'payment_mismatch') {
+    const contentSid = env('WHATSAPP_CUMBRE_PAYMENT_ISSUE_CONTENT_SID');
+    const contentVariables = contentSid
+      ? {
+          '1': booking.contact_name || 'amigo',
+          '2': bookingId,
+        }
+      : undefined;
+    const message = buildWhatsappFallback({ kind, name: booking.contact_name || 'amigo', bookingId });
+    const ok = await sendWhatsappMessage({
+      to: booking.contact_phone,
+      message,
+      contentSid: contentSid || null,
+      contentVariables,
+      meta: { bookingId, kind, channel },
+    });
+    if (!ok) {
+      return new Response(JSON.stringify({ ok: false, error: 'WhatsApp failed' }), {
+        status: 502,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+  }
+
+  if (isWhatsapp && kind === 'overpaid') {
+    const contentSid = env('WHATSAPP_CUMBRE_PAYMENT_ISSUE_CONTENT_SID');
+    const contentVariables = contentSid
+      ? {
+          '1': booking.contact_name || 'amigo',
+          '2': bookingId,
+        }
+      : undefined;
+    const message = buildWhatsappFallback({ kind, name: booking.contact_name || 'amigo', bookingId });
+    const ok = await sendWhatsappMessage({
+      to: booking.contact_phone,
+      message,
+      contentSid: contentSid || null,
+      contentVariables,
+      meta: { bookingId, kind, channel },
+    });
+    if (!ok) {
+      return new Response(JSON.stringify({ ok: false, error: 'WhatsApp failed' }), {
+        status: 502,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+  }
+
+  if (isWhatsapp && kind === 'no_church') {
+    const contentSid = env('WHATSAPP_CUMBRE_NO_CHURCH_CONTENT_SID');
+    const contentVariables = contentSid
+      ? {
+          '1': booking.contact_name || 'amigo',
+          '2': bookingId,
+        }
+      : undefined;
+    const message = buildWhatsappFallback({ kind, name: booking.contact_name || 'amigo', bookingId });
+    const ok = await sendWhatsappMessage({
+      to: booking.contact_phone,
+      message,
+      contentSid: contentSid || null,
+      contentVariables,
+      meta: { bookingId, kind, channel },
+    });
+    if (!ok) {
+      return new Response(JSON.stringify({ ok: false, error: 'WhatsApp failed' }), {
+        status: 502,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+  }
+
+  return new Response(JSON.stringify({ ok: true, channel }), {
     status: 200,
     headers: { 'content-type': 'application/json' },
   });

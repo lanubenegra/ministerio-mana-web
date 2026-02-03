@@ -2332,40 +2332,58 @@ adminFollowupsList?.addEventListener('click', async (event) => {
     const item = adminIssuesData.find((entry) => entry.id === bookingId && (!issueType || entry.type === issueType));
     if (!item) return;
     const originalText = target.textContent;
-    target.textContent = 'Preparando...';
+    target.textContent = 'Enviando...';
     target.setAttribute('disabled', 'disabled');
-    if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Preparando WhatsApp...';
+    if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Enviando WhatsApp...';
+    let sentViaApi = false;
     try {
-      let ctaUrl = '';
-      if (item.type === 'registration_incomplete') {
-        const res = await fetch('/api/portal/admin/cumbre/link', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', ...portalAuthHeaders },
-          body: JSON.stringify({ bookingId }),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo generar el link');
-        ctaUrl = data.ctaUrl || '';
-      }
-
-      const message = buildWhatsappMessage(item, ctaUrl);
-      const phone = normalizeWhatsappPhone(item.contact_phone || '');
-      if (phone) {
-        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        try {
-          await navigator.clipboard.writeText(message);
-          alert('Mensaje copiado. Pégalo en WhatsApp.');
-        } catch (err) {
-          window.prompt('Copia este mensaje para WhatsApp:', message);
-        }
-      }
-      if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Mensaje listo.';
+      const res = await fetch('/api/portal/admin/cumbre/notify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+        body: JSON.stringify({ bookingId, kind: item.type, channel: 'whatsapp' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo enviar WhatsApp');
+      sentViaApi = true;
+      if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'WhatsApp enviado.';
     } catch (err) {
       console.error(err);
-      if (adminFollowupsStatus) adminFollowupsStatus.textContent = err?.message || 'No se pudo preparar WhatsApp.';
-      alert(err?.message || 'No se pudo preparar WhatsApp.');
+      if (!sentViaApi) {
+        try {
+          let ctaUrl = '';
+          if (item.type === 'registration_incomplete') {
+            const linkRes = await fetch('/api/portal/admin/cumbre/link', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+              body: JSON.stringify({ bookingId }),
+            });
+            const linkData = await linkRes.json();
+            if (!linkRes.ok || !linkData.ok) throw new Error(linkData.error || 'No se pudo generar el link');
+            ctaUrl = linkData.ctaUrl || '';
+          }
+
+          const message = buildWhatsappMessage(item, ctaUrl);
+          const phone = normalizeWhatsappPhone(item.contact_phone || '');
+          if (phone) {
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+          } else {
+            try {
+              await navigator.clipboard.writeText(message);
+              alert('Mensaje copiado. Pégalo en WhatsApp.');
+            } catch (copyErr) {
+              window.prompt('Copia este mensaje para WhatsApp:', message);
+            }
+          }
+          if (adminFollowupsStatus) adminFollowupsStatus.textContent = 'Mensaje listo.';
+        } catch (fallbackErr) {
+          console.error(fallbackErr);
+          if (adminFollowupsStatus) {
+            adminFollowupsStatus.textContent = fallbackErr?.message || err?.message || 'No se pudo preparar WhatsApp.';
+          }
+          alert(fallbackErr?.message || err?.message || 'No se pudo preparar WhatsApp.');
+        }
+      }
     } finally {
       target.textContent = originalText;
       target.removeAttribute('disabled');

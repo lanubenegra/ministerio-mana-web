@@ -37,12 +37,18 @@ Variables sugeridas:
 - {{3}} = link de registro
 - {{4}} = booking id
 
+Env var sugerida:
+- `WHATSAPP_CUMBRE_REG_INCOMPLETE_CONTENT_SID`
+
 ## 4) Pago en verificacion
 Archivo: `cumbre_payment_pending.txt`
 
 Variables sugeridas:
 - {{1}} = nombre
 - {{2}} = booking id
+
+Env var sugerida:
+- `WHATSAPP_CUMBRE_PAYMENT_PENDING_CONTENT_SID`
 
 ## 5) Pago con inconsistencia
 Archivo: `cumbre_payment_issue.txt`
@@ -51,9 +57,15 @@ Variables sugeridas:
 - {{1}} = nombre
 - {{2}} = booking id
 
+Env var sugerida:
+- `WHATSAPP_CUMBRE_PAYMENT_ISSUE_CONTENT_SID`
+
 ## 6) Sin iglesia asignada
 Archivo: `cumbre_no_church.txt`
 
 Variables sugeridas:
 - {{1}} = nombre
 - {{2}} = booking id
+
+Env var sugerida:
+- `WHATSAPP_CUMBRE_NO_CHURCH_CONTENT_SID`
