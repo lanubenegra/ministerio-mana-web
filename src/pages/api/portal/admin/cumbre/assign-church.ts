@@ -57,18 +57,28 @@ export const POST: APIRoute = async ({ request }) => {
     churchName = churchName || 'Ministerio Virtual';
   }
 
-  const updatePayload: Record<string, any> = {
-    updated_at: new Date().toISOString(),
+  const basePayload: Record<string, any> = {
     church_id: churchId || null,
     contact_church: churchName || null,
   };
 
-  const { data, error } = await supabaseAdmin
+  let { data, error } = await supabaseAdmin
     .from('cumbre_bookings')
-    .update(updatePayload)
+    .update({ ...basePayload, updated_at: new Date().toISOString() })
     .eq('id', bookingId)
     .select('id, church_id, contact_church')
     .maybeSingle();
+
+  if (error && error.code === 'PGRST204' && String(error.message || '').includes('updated_at')) {
+    const retry = await supabaseAdmin
+      .from('cumbre_bookings')
+      .update(basePayload)
+      .eq('id', bookingId)
+      .select('id, church_id, contact_church')
+      .maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     console.error('[portal.admin.cumbre.assign-church] error', error);
