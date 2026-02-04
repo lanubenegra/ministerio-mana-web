@@ -827,16 +827,24 @@ if (churchSelectorInput) {
 
 // Helper: Update Church Stats Cards
 function updateChurchStats() {
-  const total = churchBookingsData.length;
-  const paid = churchBookingsData.filter(b => b.is_paid_full || b.status === 'PAID').length;
-  const pending = total - paid;
+  const totals = churchBookingsData.reduce((acc, booking) => {
+    let count = Number(booking.participant_count || 0);
+    if (!Number.isFinite(count) || count <= 0) count = 1;
+    acc.total += count;
+    const totalPaid = Number(booking.total_paid || 0);
+    if (totalPaid > 0 || booking.status === 'DEPOSIT_OK' || booking.status === 'PAID') {
+      acc.abonos += count;
+    }
+    return acc;
+  }, { total: 0, abonos: 0 });
+  const pending = Math.max(0, totals.total - totals.abonos);
 
   const totalEl = document.getElementById('stat-church-total');
   const paidEl = document.getElementById('stat-church-paid');
   const pendingEl = document.getElementById('stat-church-pending');
 
-  if (totalEl) totalEl.textContent = total;
-  if (paidEl) paidEl.textContent = paid;
+  if (totalEl) totalEl.textContent = totals.total;
+  if (paidEl) paidEl.textContent = totals.abonos;
   if (pendingEl) pendingEl.textContent = pending;
 }
 
@@ -917,7 +925,8 @@ function renderChurchBookings(list) {
 
     // Status Logic
     const isPaidFull = item.is_paid_full || item.total_paid >= item.total_amount;
-    const paymentMethod = item.payment_type || (item.payment_method === 'cash' ? 'Físico' : 'Online');
+    const paymentMethod = item.payment_type
+      || ((item.payment_method === 'cash' || item.payment_method === 'manual') ? 'Físico' : 'Online');
 
     // Badges
     const statusBadge = isPaidFull
@@ -1543,7 +1552,10 @@ function renderAdminFollowups(items, counts = {}) {
     const canEmail = ['registration_incomplete', 'payment_pending'].includes(item.type);
     const canRecompute = item.type === 'payment_mismatch';
     const canAssignChurch = item.type === 'no_church';
-    const whatsappLabel = item.contact_phone ? 'WhatsApp' : 'Copiar WhatsApp';
+    const hasPhone = Boolean(item.contact_phone);
+    const whatsappLabel = hasPhone
+      ? (lastWhatsapp?.sent_at ? 'Reenviar WhatsApp' : 'WhatsApp')
+      : 'Copiar WhatsApp';
 
     const card = document.createElement('div');
     card.className = 'admin-issue-card rounded-2xl border border-slate-200 bg-white p-4 space-y-3';
@@ -2375,7 +2387,7 @@ adminFollowupsList?.addEventListener('click', async (event) => {
       const res = await fetch('/api/portal/admin/cumbre/notify', {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...portalAuthHeaders },
-        body: JSON.stringify({ bookingId, kind: item.type, channel: 'whatsapp' }),
+        body: JSON.stringify({ bookingId, kind: item.type, channel: 'whatsapp', force: true }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {

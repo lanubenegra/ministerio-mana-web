@@ -74,7 +74,7 @@
 
     <!-- Results List (Virtual Scroll) -->
     <div class="h-96 overflow-y-auto" id="church-results-container">
-      <div id="church-results-list" class="divide-y divide-white/5 py-1">
+      <div id="church-results-list" class="space-y-2 px-2 pb-2 pt-1">
         <!-- Populated dynamically -->
       </div>
       <div id="church-no-results" class="hidden text-center py-12 text-white/40">
@@ -102,7 +102,10 @@
 <style>
   .church-item {
     cursor: pointer;
-    padding: 14px 24px;
+    padding: 14px 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
     transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   }
   .church-item:hover {

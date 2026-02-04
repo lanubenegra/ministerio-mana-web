@@ -79,7 +79,7 @@ export const GET: APIRoute = async ({ request }) => {
   const requestedChurch = url.searchParams.get('churchId');
   const includeAllSources = isAdmin && !requestedChurch;
 
-  const baseSelect = 'id, contact_name, contact_email, total_amount, total_paid, currency, status, created_at, church_id, contact_church';
+  const baseSelect = 'id, contact_name, contact_email, total_amount, total_paid, currency, status, created_at, church_id, contact_church, source';
   const extendedSelect = `${baseSelect}, payment_method, payment_status`;
 
   const buildQuery = (select: string) => {
@@ -147,13 +147,20 @@ export const GET: APIRoute = async ({ request }) => {
     }, {});
   }
 
-  const response = enrolledBookings.map((booking: any) => ({
-    ...booking,
-    participant_count: counts[booking.id] || 0,
-    // Helper fields for frontend
-    is_paid_full: booking.status === 'PAID' || booking.total_paid >= booking.total_amount,
-    payment_type: booking.payment_method === 'cash' ? 'Físico' : 'Online' // Default mapping
-  }));
+  const response = enrolledBookings.map((booking: any) => {
+    const paymentMethod = String(booking.payment_method || '').toLowerCase();
+    const isManual =
+      paymentMethod === 'cash' ||
+      paymentMethod === 'manual' ||
+      booking.source === 'portal-iglesia';
+    return {
+      ...booking,
+      participant_count: counts[booking.id] || 0,
+      // Helper fields for frontend
+      is_paid_full: booking.status === 'PAID' || booking.total_paid >= booking.total_amount,
+      payment_type: isManual ? 'Físico' : 'Online',
+    };
+  });
 
   return new Response(JSON.stringify({ ok: true, bookings: response }), {
     status: 200,

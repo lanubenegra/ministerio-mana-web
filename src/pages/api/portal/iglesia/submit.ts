@@ -220,6 +220,7 @@ export const POST: APIRoute = async ({ request }) => {
         total_paid: 0,
         status: 'PENDING',
         deposit_threshold: threshold,
+        payment_method: 'manual',
         token_hash: tokenPair.hash,
         source: 'portal-iglesia',
         church_id: resolvedChurchId || null,
