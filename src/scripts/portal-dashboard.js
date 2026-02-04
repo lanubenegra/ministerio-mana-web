@@ -380,10 +380,12 @@ async function loadDashboardData(authResult) {
     if (navLinkCampus) navLinkCampus.style.display = 'none';
 
     const myRole = portalProfile?.role || 'user';
+    const membershipRoles = (portalMemberships || []).map((m) => m?.role).filter(Boolean);
+    const hasChurchMembership = membershipRoles.some((role) => ['church_admin', 'church_member'].includes(role));
     const allowedDashboardRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator', 'church_admin'];
 
     // Tab Iglesia (Eventos) - Show to ALL users, but content varies by role
-    const isManagementRole = allowedDashboardRoles.includes(myRole);
+    const isManagementRole = allowedDashboardRoles.includes(myRole) || hasChurchMembership;
 
 
     if (tabIglesia) {
@@ -902,7 +904,12 @@ function filterChurchBookings(list) {
       .join(' ')
       .toLowerCase();
     if (query && !searchable.includes(query)) return false;
-    if (status && item.status !== status) return false;
+    if (status) {
+      const isPaidFull = item.is_paid_full || item.status === 'PAID' || Number(item.total_paid || 0) >= Number(item.total_amount || 0);
+      if (status === 'paid' && !isPaidFull) return false;
+      if (status === 'pending' && isPaidFull) return false;
+      if (!['paid', 'pending'].includes(status) && item.status !== status) return false;
+    }
     return true;
   });
 }
@@ -2514,6 +2521,21 @@ churchInstallmentsList?.addEventListener('click', async (event) => {
 });
 
 churchBookingsSearch?.addEventListener('input', () => {
+  renderChurchBookings(filterChurchBookings(churchBookingsData));
+});
+document.getElementById('church-bookings-filters')?.addEventListener('click', (event) => {
+  const target = event.target.closest('.church-bookings-filter');
+  if (!target) return;
+  const filter = target.dataset.filter || 'all';
+  if (churchBookingsStatus) {
+    churchBookingsStatus.value = filter;
+  }
+  document.querySelectorAll('.church-bookings-filter').forEach((btn) => {
+    btn.classList.remove('bg-[#293C74]', 'text-white', 'shadow-sm');
+    btn.classList.add('bg-white', 'text-slate-500', 'border', 'border-slate-100');
+  });
+  target.classList.remove('bg-white', 'text-slate-500', 'border', 'border-slate-100');
+  target.classList.add('bg-[#293C74]', 'text-white', 'shadow-sm');
   renderChurchBookings(filterChurchBookings(churchBookingsData));
 });
 churchBookingsStatus?.addEventListener('change', () => {

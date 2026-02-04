@@ -403,10 +403,11 @@ import Sidebar from '@components/portal/Sidebar.astro';
                       
                       <div class="p-0">
                         <!-- Filters Bar -->
-                        <div class="px-8 py-3 bg-slate-50/50 border-b border-slate-50 flex gap-2 overflow-x-auto">
-                            <button class="px-3 py-1 rounded-full bg-[#293C74] text-white text-[10px] font-bold uppercase tracking-widest shadow-sm">Todos</button>
-                            <button class="px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">Pagados</button>
-                            <button class="px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">Pendientes</button>
+                        <div id="church-bookings-filters" class="px-8 py-3 bg-slate-50/50 border-b border-slate-50 flex gap-2 overflow-x-auto">
+                            <button data-filter="all" class="church-bookings-filter px-3 py-1 rounded-full bg-[#293C74] text-white text-[10px] font-bold uppercase tracking-widest shadow-sm">Todos</button>
+                            <button data-filter="paid" class="church-bookings-filter px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">Pagados</button>
+                            <button data-filter="pending" class="church-bookings-filter px-3 py-1 rounded-full bg-white text-slate-500 hover:text-[#293C74] text-[10px] font-bold uppercase tracking-widest border border-slate-100">Pendientes</button>
+                            <input type="hidden" id="church-bookings-status" value="all" />
                         </div>
 
                         <div class="p-6">
@@ -480,8 +481,8 @@ import Sidebar from '@components/portal/Sidebar.astro';
                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Invitar Colaborador</p>
                                 <input id="church-invite-email" type="email" class="w-full bg-white border-slate-200 rounded-xl px-3 py-2 text-xs" placeholder="Correo electrónico">
                                 <select id="church-invite-role" class="w-full bg-white border-slate-200 rounded-xl px-3 py-2 text-xs">
-                                   <option value="church_member">Delegado (Ver)</option>
-                                   <option value="church_admin">Pastor (Editar)</option>
+                                   <option value="church_member">Colaborador (Registrar)</option>
+                                   <option value="church_admin">Pastor (Admin)</option>
                                 </select>
                                 <button id="church-invite-btn" class="w-full bg-[#293C74] text-white py-2 rounded-xl text-xs font-bold hover:bg-[#293C74]/90">Enviar Invitación</button>
                                 <p id="church-invite-status" class="text-[10px] text-slate-500 text-center min-h-[1rem]"></p>

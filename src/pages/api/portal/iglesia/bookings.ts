@@ -31,11 +31,17 @@ export const GET: APIRoute = async ({ request }) => {
     const profile = await ensureUserProfile(user);
     if (!profile) return new Response(JSON.stringify({ ok: false, error: 'Perfil no encontrado' }), { status: 403 });
 
+    const memberships = await listUserMemberships(user.id);
+    const activeMembership = memberships.find((m: any) =>
+      ['church_admin', 'church_member'].includes(m?.role) && m?.status !== 'pending',
+    );
+    const hasChurchRole = Boolean(activeMembership);
+
     const role = profile.role || 'user';
 
     // 1. Roles allowed to view dashboard data
     const allowedRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator', 'church_admin'];
-    if (!allowedRoles.includes(role)) {
+    if (!allowedRoles.includes(role) && !hasChurchRole) {
       // Regular users cannot see this data
       return new Response(JSON.stringify({ ok: false, error: 'Acceso denegado a datos operativos' }), { status: 403 });
     }
@@ -71,7 +77,7 @@ export const GET: APIRoute = async ({ request }) => {
     } else {
       // Local Scope (Pastor / Collaborator)
       isAllowed = true;
-      churchId = profile.church_id; // Forced to assigned church
+      churchId = profile.church_id || activeMembership?.church?.id || null; // Forced to assigned church
     }
   }
 

@@ -29,10 +29,16 @@ export const GET: APIRoute = async ({ request }) => {
     profile = await ensureUserProfile(user);
     if (!profile) return new Response(JSON.stringify({ ok: false, error: 'Perfil no encontrado' }), { status: 403 });
 
+    const memberships = await listUserMemberships(user.id);
+    const activeMembership = memberships.find((m: any) =>
+      ['church_admin', 'church_member'].includes(m?.role) && m?.status !== 'pending',
+    );
+    const hasChurchRole = Boolean(activeMembership);
+
     const role = profile.role || 'user';
     const allowedRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator', 'church_admin'];
 
-    if (!allowedRoles.includes(role)) {
+    if (!allowedRoles.includes(role) && !hasChurchRole) {
       return new Response(JSON.stringify({ ok: false, error: 'Acceso denegado a datos operativos' }), { status: 403 });
     }
 
@@ -56,7 +62,7 @@ export const GET: APIRoute = async ({ request }) => {
       }
     } else {
       isAllowed = true;
-      churchId = profile.church_id;
+      churchId = profile.church_id || activeMembership?.church?.id || null;
     }
   }
 

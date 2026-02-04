@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
-import { ensureUserProfile } from '@lib/portalAuth';
+import { ensureUserProfile, listUserMemberships } from '@lib/portalAuth';
 import { readPasswordSession } from '@lib/portalPasswordSession';
 import {
     normalizeCountryGroup,
@@ -78,11 +78,17 @@ export const POST: APIRoute = async ({ request }) => {
             return new Response(JSON.stringify({ ok: false, error: 'Perfil no encontrado' }), { status: 403 });
         }
 
+        const memberships = await listUserMemberships(user.id);
+        const activeMembership = memberships.find((m: any) =>
+            ['church_admin', 'church_member'].includes(m?.role) && m?.status !== 'pending',
+        );
+        const hasChurchRole = Boolean(activeMembership);
+
         const role = profile.role || 'user';
         const allowedRoles = ['superadmin', 'admin', 'national_pastor', 'pastor', 'local_collaborator', 'church_admin'];
 
         // STRICT: Block regular users
-        if (!allowedRoles.includes(role)) {
+        if (!allowedRoles.includes(role) && !hasChurchRole) {
             return new Response(JSON.stringify({ ok: false, error: 'No tienes permisos para registrar participantes' }), { status: 403 });
         }
 
@@ -99,7 +105,7 @@ export const POST: APIRoute = async ({ request }) => {
         } else {
             // Local Pastor / Collaborator: ONLY their assigned church
             isAllowed = true;
-            allowedChurchId = profile.church_id;
+            allowedChurchId = profile.church_id || activeMembership?.church?.id || null;
             if (!allowedChurchId) {
                 return new Response(JSON.stringify({ ok: false, error: 'Sin iglesia asignada' }), { status: 403 });
             }
