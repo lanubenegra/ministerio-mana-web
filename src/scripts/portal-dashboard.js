@@ -829,25 +829,21 @@ if (churchSelectorInput) {
 
 // Helper: Update Church Stats Cards
 function updateChurchStats() {
-  const totals = churchBookingsData.reduce((acc, booking) => {
+  const totalParticipants = churchBookingsData.reduce((sum, booking) => {
     let count = Number(booking.participant_count || 0);
-    if (!Number.isFinite(count) || count <= 0) count = 1;
-    acc.total += count;
-    const totalPaid = Number(booking.total_paid || 0);
-    if (totalPaid > 0 || booking.status === 'DEPOSIT_OK' || booking.status === 'PAID') {
-      acc.abonos += count;
-    }
-    return acc;
-  }, { total: 0, abonos: 0 });
-  const pending = Math.max(0, totals.total - totals.abonos);
+    if (!Number.isFinite(count) || count < 0) count = 0;
+    return sum + count;
+  }, 0);
+  const totalPayments = (churchPaymentsData || []).length;
+  const pendingInstallments = (churchInstallmentsData || []).length;
 
   const totalEl = document.getElementById('stat-church-total');
   const paidEl = document.getElementById('stat-church-paid');
   const pendingEl = document.getElementById('stat-church-pending');
 
-  if (totalEl) totalEl.textContent = totals.total;
-  if (paidEl) paidEl.textContent = totals.abonos;
-  if (pendingEl) pendingEl.textContent = pending;
+  if (totalEl) totalEl.textContent = totalParticipants;
+  if (paidEl) paidEl.textContent = totalPayments;
+  if (pendingEl) pendingEl.textContent = pendingInstallments;
 }
 
 async function saveChurchSelection(churchId, headers = {}) {
@@ -1213,6 +1209,7 @@ async function loadChurchInstallments(headers = {}) {
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchInstallmentsData = payload.installments || [];
     renderChurchInstallments(filterChurchInstallments(churchInstallmentsData));
+    updateChurchStats();
     if (churchInstallmentsStatusMsg) {
       churchInstallmentsStatusMsg.textContent = '';
     }
@@ -1243,6 +1240,7 @@ async function loadChurchPayments(headers = {}) {
     churchPaymentsData = payload.payments || [];
     const filtered = filterChurchPayments(churchPaymentsData);
     renderChurchPayments(filtered);
+    updateChurchStats();
   } catch (err) {
     console.error(err);
   }
@@ -2101,6 +2099,11 @@ function renderMemberships(memberships) {
   churchMembershipsEmpty.classList.add('hidden');
   churchMembershipsList.classList.remove('hidden');
   memberships.forEach((membership) => {
+    const roleLabel = membership.role === 'church_admin'
+      ? 'Pastor (Admin)'
+      : membership.role === 'church_member'
+        ? 'Colaborador (Registrar)'
+        : (membership.role || '—');
     const card = document.createElement('div');
     card.className = 'rounded-2xl border border-slate-100 bg-slate-50/80 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3';
     const statusLabel = membership.status === 'approved' ? 'Aprobado' : membership.status === 'rejected' ? 'Rechazado' : 'Pendiente';
@@ -2111,7 +2114,7 @@ function renderMemberships(memberships) {
         <p class="text-xs text-slate-500">${membership.church?.city || ''} ${membership.church?.country ? `· ${membership.church.country}` : ''}</p>
       </div>
       <div class="flex items-center gap-3">
-        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white border border-slate-200 text-slate-500">${membership.role}</span>
+        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white border border-slate-200 text-slate-500">${roleLabel}</span>
         <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${membership.status === 'approved' ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}">${statusLabel}</span>
       </div>
     `;

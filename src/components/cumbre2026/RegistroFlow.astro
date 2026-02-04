@@ -202,6 +202,6 @@ const cspNonce = Astro.locals?.cspNonce;
   }
 </style>
 
-<script nonce={cspNonce}>
+<script type="module" nonce={cspNonce}>
   import '@scripts/registro-flow.js';
 </script>
