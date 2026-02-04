@@ -16,6 +16,7 @@ const {
   disableSmoothScroll = true,
 } = Astro.props;
 const cspNonce = Astro.locals?.cspNonce;
+const appModalScript = new URL('../scripts/app-modal.js', import.meta.url);
 ---
 <!doctype html>
 <html lang="es" class="scroll-smooth">
@@ -114,6 +115,6 @@ const cspNonce = Astro.locals?.cspNonce;
       });
     </script>
     )}
-    <script type="module" src={Astro.resolve('../scripts/app-modal.js')} nonce={cspNonce}></script>
+    <script type="module" src={appModalScript} nonce={cspNonce}></script>
   </body>
 </html>
