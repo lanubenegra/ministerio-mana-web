@@ -49,6 +49,8 @@ export class RegistrationModal {
         this.leaderAge = document.getElementById('reg-leader-age');
         this.leaderPackage = document.getElementById('reg-leader-package');
         this.leaderMenu = document.getElementById('reg-leader-menu');
+        this.leaderBirthdate = document.getElementById('reg-leader-birthdate');
+        this.leaderGender = document.getElementById('reg-leader-gender');
 
         // Companion form
         this.btnAddCompanion = document.getElementById('btn-add-companion');
@@ -61,6 +63,8 @@ export class RegistrationModal {
         this.companionAge = document.getElementById('companion-age');
         this.companionPackage = document.getElementById('companion-package');
         this.companionMenu = document.getElementById('companion-menu');
+        this.companionBirthdate = document.getElementById('companion-birthdate');
+        this.companionGender = document.getElementById('companion-gender');
         this.companionPackageContainer = document.getElementById('companion-package-container');
 
         this.btnSaveCompanion = document.getElementById('btn-save-companion');
@@ -126,6 +130,15 @@ export class RegistrationModal {
         });
         this.leaderPackage?.addEventListener('change', () => this.updateLeaderParticipant());
         this.leaderMenu?.addEventListener('change', () => this.updateLeaderParticipant());
+        this.leaderBirthdate?.addEventListener('change', () => {
+            const age = this.getAgeFromBirthdate(this.leaderBirthdate?.value);
+            if (age !== null && this.leaderAge) {
+                this.leaderAge.value = String(age);
+            }
+            this.updateMenuOptions(this.leaderMenu, age);
+            this.updateLeaderParticipant();
+        });
+        this.leaderGender?.addEventListener('change', () => this.updateLeaderParticipant());
         this.countryInput?.addEventListener('change', () => this.updateCurrencyFromCountry(this.countryInput?.value));
         this.countryInput?.addEventListener('blur', () => this.updateCurrencyFromCountry(this.countryInput?.value));
 
@@ -162,6 +175,14 @@ export class RegistrationModal {
             } else if (age !== null && age >= 18 && this.companionDocType) {
                 this.companionDocType.value = 'CC';
             }
+        });
+        this.companionBirthdate?.addEventListener('change', () => {
+            const age = this.getAgeFromBirthdate(this.companionBirthdate?.value);
+            if (age !== null && this.companionAge) {
+                this.companionAge.value = String(age);
+            }
+            this.updateMenuOptions(this.companionMenu, age);
+            this.updateCompanionPackageVisibility();
         });
 
         // Payment options
@@ -260,6 +281,8 @@ export class RegistrationModal {
         const age = this.parseAge(this.leaderAge?.value);
         const packageChoice = this.leaderPackage?.value || 'lodging';
         const menuChoice = this.leaderMenu?.value || 'general';
+        const birthdate = this.leaderBirthdate?.value || '';
+        const gender = this.leaderGender?.value || '';
 
         if (!name) return;
 
@@ -271,6 +294,8 @@ export class RegistrationModal {
             existing.age = age;
             existing.packageType = packageType;
             existing.menu = menuChoice;
+            existing.birthdate = birthdate;
+            existing.gender = gender;
         } else {
             this.participants.unshift({
                 id: this.leaderId,
@@ -278,6 +303,8 @@ export class RegistrationModal {
                 age,
                 packageType,
                 menu: menuChoice,
+                birthdate,
+                gender,
                 isLeader: true
             });
         }
@@ -309,6 +336,8 @@ export class RegistrationModal {
         if (this.companionDocNumber) this.companionDocNumber.value = '';
         // Reset doc type to TI default or empty
         if (this.companionDocType) this.companionDocType.value = 'TI';
+        if (this.companionBirthdate) this.companionBirthdate.value = '';
+        if (this.companionGender) this.companionGender.value = '';
 
         // Reset package options
         if (this.companionPackage) {
@@ -342,6 +371,8 @@ export class RegistrationModal {
         const age = this.parseAge(this.companionAge?.value);
         const packageChoice = this.companionPackage?.value || 'lodging';
         const menuChoice = this.companionMenu?.value || 'general';
+        const birthdate = this.companionBirthdate?.value || '';
+        const gender = this.companionGender?.value || '';
 
         if (!docNumber) {
             this.showAlert('Ingresa el número de documento del acompañante');
@@ -358,6 +389,16 @@ export class RegistrationModal {
             return;
         }
 
+        if (!birthdate) {
+            this.showAlert('Ingresa la fecha de nacimiento del acompañante');
+            return;
+        }
+
+        if (!gender) {
+            this.showAlert('Selecciona el género del acompañante');
+            return;
+        }
+
         const packageType = this.getPackageTypeFromAge(age, packageChoice);
 
         this.participants.push({
@@ -368,6 +409,8 @@ export class RegistrationModal {
             age,
             packageType,
             menu: menuChoice,
+            birthdate,
+            gender,
             isLeader: false
         });
 
@@ -454,6 +497,23 @@ export class RegistrationModal {
             this.currency = nextCurrency;
             this.updateSummary();
         }
+    }
+
+    getAgeFromBirthdate(value) {
+        if (!value) return null;
+        const parts = value.split('-').map((item) => Number(item));
+        if (parts.length !== 3) return null;
+        const [year, month, day] = parts;
+        if (!year || !month || !day) return null;
+        const birth = new Date(Date.UTC(year, month - 1, day));
+        if (Number.isNaN(birth.getTime())) return null;
+        const now = new Date();
+        let age = now.getUTCFullYear() - birth.getUTCFullYear();
+        const monthDiff = now.getUTCMonth() - birth.getUTCMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && now.getUTCDate() < birth.getUTCDate())) {
+            age -= 1;
+        }
+        return age < 0 ? null : age;
     }
 
     parseAge(value) {
@@ -575,6 +635,12 @@ export class RegistrationModal {
             return;
         }
 
+        const missingParticipant = this.participants.find(p => !p.birthdate || !p.gender);
+        if (missingParticipant) {
+            this.showAlert('Falta fecha de nacimiento y género en uno o más participantes');
+            return;
+        }
+
         if (!this.selectedChurch) {
             this.showAlert('Selecciona una iglesia para continuar');
             return;
@@ -639,6 +705,8 @@ export class RegistrationModal {
         const leaderDocNumber = document.getElementById('reg-leader-doc-number')?.value || '';
         const leaderEmail = document.getElementById('reg-leader-email')?.value || '';
         const leaderPhone = document.getElementById('reg-leader-phone')?.value || '';
+        const leaderBirthdate = this.leaderBirthdate?.value || '';
+        const leaderGender = this.leaderGender?.value || '';
 
         const isManualChurch = this.selectedChurch?.id === 'MANUAL';
         const isSpecialChurch = Boolean(this.selectedChurch?.isSpecial) && !isManualChurch;
@@ -661,7 +729,10 @@ export class RegistrationModal {
                         document_type: leaderDocType,
                         document_number: leaderDocNumber,
                         email: leaderEmail,
-                        phone: leaderPhone
+                        phone: leaderPhone,
+                        birthdate: leaderBirthdate,
+                        gender: leaderGender,
+                        menu: p.menu || (this.leaderMenu?.value || 'general')
                     };
                 }
                 // For companions, the data in 'p' is already correct (saved from saveCompanion form)

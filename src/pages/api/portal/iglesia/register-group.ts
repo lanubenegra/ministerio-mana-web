@@ -305,6 +305,8 @@ export const POST: APIRoute = async ({ request }) => {
         relationship: participant.safe.relationship,
         document_type: participant.safe.documentType,
         document_number: participant.safe.documentNumber,
+        birthdate: participant.extra?.birthdate || null,
+        gender: sanitizePlainText(participant.extra?.gender ?? '', 20) || null,
         diet_type: sanitizePlainText(participant.extra?.menu ?? '', 40) || null,
     }));
 

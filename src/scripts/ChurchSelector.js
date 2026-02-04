@@ -184,22 +184,24 @@ export class ChurchSelector {
 
         // Virtual scrolling: render only visible items (simplified version)
         // For production, consider using a library like react-window or implement proper virtual scrolling
-        const html = this.filteredChurches.map(church => this.renderChurchItem(church)).join('');
+        const html = this.filteredChurches.map((church, index) => this.renderChurchItem(church, index)).join('');
         this.resultsList.innerHTML = html;
 
         // Bind click events
         this.resultsList.querySelectorAll('.church-item').forEach(item => {
             item.addEventListener('click', () => {
+                const index = Number(item.dataset.churchIndex);
                 const churchId = item.dataset.churchId;
-                const church = this.filteredChurches.find(c => c.id === churchId);
-                if (church) this.selectChurch(church);
+                const church = Number.isFinite(index) ? this.filteredChurches[index] : null;
+                const resolved = church || this.filteredChurches.find(c => c.id === churchId);
+                if (resolved) this.selectChurch(resolved);
             });
         });
     }
 
-    renderChurchItem(church) {
+    renderChurchItem(church, index) {
         return `
-      <div class="church-item" data-church-id="${church.id}">
+      <div class="church-item" data-church-id="${church.id}" data-church-index="${index}">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <h4 class="font-bold text-white text-sm mb-1">${church.name}</h4>
