@@ -299,6 +299,7 @@ async function loadDashboardData(authResult) {
 
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     portalAuthHeaders = headers;
+    window.portalAuthHeaders = headers;
     // 2. Parallelized Initial Data Fetching
 
     dlog('[DEBUG] Starting Promise.all for API requests...');

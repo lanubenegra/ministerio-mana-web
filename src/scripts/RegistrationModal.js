@@ -570,10 +570,16 @@ export class RegistrationModal {
         }
 
         try {
+            const authHeaders = (window.portalAuthHeaders && Object.keys(window.portalAuthHeaders).length)
+                ? window.portalAuthHeaders
+                : {};
+
             const response = await fetch('/api/portal/iglesia/register-group', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...authHeaders,
                 },
                 body: JSON.stringify(formData),
             });
