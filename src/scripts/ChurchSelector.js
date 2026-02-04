@@ -34,6 +34,7 @@ export class ChurchSelector {
         this.manualChurchContainer = document.getElementById('manual-church-container');
         this.manualChurchInput = document.getElementById('manual-church-input');
         this.manualChurchConfirm = document.getElementById('manual-church-confirm');
+        this.specialBtns = this.modal?.querySelectorAll('.special-church-btn') || [];
     }
 
     bindEvents() {

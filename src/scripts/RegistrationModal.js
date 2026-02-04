@@ -29,6 +29,9 @@ export class RegistrationModal {
         this.cacheDOM();
         this.bindEvents();
         this.updateSummary();
+        if (this.countryInput) {
+            this.updateCurrencyFromCountry(this.countryInput.value);
+        }
 
         // Set initial menu states
         this.updateMenuOptions(this.leaderMenu, null);
@@ -84,6 +87,8 @@ export class RegistrationModal {
         this.btnOpenChurchSelector = document.getElementById('btn-open-church-selector');
         this.selectedChurchDisplay = document.getElementById('selected-church-display');
         this.selectedChurchId = document.getElementById('selected-church-id');
+        this.countryInput = document.getElementById('reg-country');
+        this.cityInput = document.getElementById('reg-city');
 
         // Status
         this.statusMsg = document.getElementById('manual-reg-status');
@@ -121,6 +126,8 @@ export class RegistrationModal {
         });
         this.leaderPackage?.addEventListener('change', () => this.updateLeaderParticipant());
         this.leaderMenu?.addEventListener('change', () => this.updateLeaderParticipant());
+        this.countryInput?.addEventListener('change', () => this.updateCurrencyFromCountry(this.countryInput?.value));
+        this.countryInput?.addEventListener('blur', () => this.updateCurrencyFromCountry(this.countryInput?.value));
 
         // Companion form
         if (this.btnAddCompanion) {
@@ -438,6 +445,17 @@ export class RegistrationModal {
     }
 
     // Pricing Logic
+    updateCurrencyFromCountry(value) {
+        const raw = String(value || '').trim().toUpperCase();
+        const isColombia = raw === 'CO' || raw === 'COL' || raw.includes('COLOMBIA');
+        const isVirtual = raw === 'VIRTUAL' || raw === 'ONLINE' || raw === 'N/A';
+        const nextCurrency = (isColombia || isVirtual) ? 'COP' : 'USD';
+        if (this.currency !== nextCurrency) {
+            this.currency = nextCurrency;
+            this.updateSummary();
+        }
+    }
+
     parseAge(value) {
         const parsed = parseInt(value, 10);
         return Number.isFinite(parsed) ? parsed : null;
@@ -622,11 +640,18 @@ export class RegistrationModal {
         const leaderEmail = document.getElementById('reg-leader-email')?.value || '';
         const leaderPhone = document.getElementById('reg-leader-phone')?.value || '';
 
+        const isManualChurch = this.selectedChurch?.id === 'MANUAL';
+        const isSpecialChurch = Boolean(this.selectedChurch?.isSpecial) && !isManualChurch;
+        const churchId = (isManualChurch || isSpecialChurch) ? null : this.selectedChurch?.id;
+        const manualChurchName = isManualChurch
+            ? (this.selectedChurch.manual_name || this.selectedChurch.name)
+            : (isSpecialChurch ? this.selectedChurch?.name : null);
+
         return {
-            church_id: this.selectedChurch?.id === 'MANUAL' ? null : this.selectedChurch?.id,
-            manual_church_name: this.selectedChurch?.id === 'MANUAL' ? (this.selectedChurch.manual_name || this.selectedChurch.name) : null,
-            country: document.getElementById('reg-country')?.value || 'Colombia',
-            city: document.getElementById('reg-city')?.value || '',
+            church_id: churchId,
+            manual_church_name: manualChurchName,
+            country: this.countryInput?.value || 'Colombia',
+            city: this.cityInput?.value || '',
             participants: this.participants.map(p => {
                 if (p.isLeader) {
                     // For leader, we must grab the current values from the inputs
@@ -703,10 +728,9 @@ export class RegistrationModal {
 
         // Auto-fill city and country
         if (church.id !== 'MANUAL') {
-            const cityInput = document.getElementById('reg-city');
-            const countryInput = document.getElementById('reg-country');
-            if (cityInput && church.city) cityInput.value = church.city;
-            if (countryInput && church.country) countryInput.value = church.country;
+            if (this.cityInput && church.city) this.cityInput.value = church.city;
+            if (this.countryInput && church.country) this.countryInput.value = church.country;
+            this.updateCurrencyFromCountry(church.country);
         }
     }
 }

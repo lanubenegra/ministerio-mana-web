@@ -3,8 +3,54 @@ import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
 import { ensureUserProfile } from '@lib/portalAuth';
 import { readPasswordSession } from '@lib/portalPasswordSession';
+import {
+    normalizeCountryGroup,
+    currencyForGroup,
+    sanitizeParticipant,
+    calculateTotals,
+    depositThreshold,
+    generateAccessToken,
+    type PackageType,
+} from '@lib/cumbre2026';
+import { buildInstallmentSchedule, type InstallmentFrequency } from '@lib/cumbreInstallments';
+import { createPaymentPlan, recordPayment, recomputeBookingTotals, applyManualPaymentToPlan } from '@lib/cumbreStore';
+import { normalizeCityName, normalizeChurchName } from '@lib/normalization';
+import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
+import { buildDonationReference, createDonation } from '@lib/donationsStore';
 
 export const prerender = false;
+
+function normalizeFrequency(raw: string | null | undefined): InstallmentFrequency {
+    const value = (raw || '').toString().trim().toUpperCase();
+    if (value === 'BIWEEKLY' || value === 'QUINCENAL') return 'BIWEEKLY';
+    return 'MONTHLY';
+}
+
+function isUuid(value: string | null | undefined): boolean {
+    if (!value) return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function normalizeDocType(raw: unknown): string {
+    const value = sanitizePlainText(String(raw || ''), 10).toUpperCase();
+    if (value === 'PA') return 'PAS';
+    return value;
+}
+
+function resolveCountryGroup(rawCountryGroup: unknown, rawCountry: unknown): 'CO' | 'INT' {
+    const source = (rawCountryGroup || rawCountry || '').toString().trim().toUpperCase();
+    if (!source) return 'CO';
+    if (source === 'VIRTUAL' || source === 'ONLINE' || source === 'N/A') return 'CO';
+    return normalizeCountryGroup(source);
+}
+
+function packageTypeFromAge(ageRaw: unknown, lodgingRaw: unknown): PackageType {
+    const age = Number(ageRaw || 0);
+    const lodging = String(lodgingRaw || '').toLowerCase() !== 'no_lodging' && String(lodgingRaw || '').toLowerCase() !== 'no';
+    if (age <= 4) return 'child_0_7';
+    if (age <= 10) return 'child_7_13';
+    return lodging ? 'lodging' : 'no_lodging';
+}
 
 export const POST: APIRoute = async ({ request }) => {
     if (!supabaseAdmin) {
@@ -61,36 +107,122 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Parse request body
-    const body = await request.json();
-    const {
-        church_id,
-        country,
-        city,
-        participants = [],
-        payment_option,
-        installment_frequency,
-        total_amount,
-        currency = 'COP'
-    } = body;
-
-    // Validate required fields
-    if (!church_id || participants.length === 0) {
-        return new Response(JSON.stringify({ ok: false, error: 'Datos incompletos: se requiere iglesia y al menos un participante' }), { status: 400 });
+    const body = await request.json().catch(() => null);
+    if (!body) {
+        return new Response(JSON.stringify({ ok: false, error: 'Payload inválido' }), { status: 400 });
     }
 
+    const participantsRaw = Array.isArray(body.participants) ? body.participants : [];
+    if (participantsRaw.length === 0) {
+        return new Response(JSON.stringify({ ok: false, error: 'Agrega al menos un participante' }), { status: 400 });
+    }
+
+    const leader = participantsRaw.find((p: any) => p?.isLeader) || participantsRaw[0];
+    const contactName = sanitizePlainText(leader?.name ?? '', 120);
+    const contactEmail = (leader?.email ?? '').toString().trim().toLowerCase();
+    const contactPhone = sanitizePlainText(leader?.phone ?? '', 30);
+    const contactDocType = normalizeDocType(leader?.document_type ?? leader?.documentType ?? '');
+    const contactDocNumber = sanitizePlainText(leader?.document_number ?? leader?.documentNumber ?? '', 40);
+
+    if (!contactName || !contactPhone) {
+        return new Response(JSON.stringify({ ok: false, error: 'Datos de contacto incompletos' }), { status: 400 });
+    }
+
+    if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+        return new Response(JSON.stringify({ ok: false, error: 'Email inválido' }), { status: 400 });
+    }
+
+    if (containsBlockedSequence(contactName) || containsBlockedSequence(contactEmail) || containsBlockedSequence(contactPhone)) {
+        return new Response(JSON.stringify({ ok: false, error: 'Datos inválidos' }), { status: 400 });
+    }
+
+    let contactCountry = sanitizePlainText(body.country ?? '', 40);
+    let contactCity = normalizeCityName(body.city ?? '');
+    const manualChurchNameRaw = sanitizePlainText(body.manual_church_name ?? body.manualChurchName ?? '', 120);
+    const rawChurchId = body.church_id ?? body.churchId ?? '';
+    const rawChurchIdLower = String(rawChurchId || '').toLowerCase();
+
+    const paymentOption = (body.payment_option ?? body.paymentOption ?? 'FULL').toString().trim().toUpperCase();
+    const frequency = normalizeFrequency(body.installment_frequency ?? body.installmentFrequency);
+
     // STRICT RBAC: Validate requested church is within authorized scope
+    let resolvedChurchId: string | null = isUuid(rawChurchId) ? String(rawChurchId) : null;
+    let resolvedChurchName: string | null = null;
+    let skipChurchCreate = false;
+
+    if (!resolvedChurchId) {
+        if (rawChurchIdLower === 'virtual') {
+            resolvedChurchName = 'Ministerio Maná Virtual';
+        } else if (rawChurchIdLower === 'none') {
+            resolvedChurchName = 'No asisto a ninguna iglesia';
+            skipChurchCreate = true;
+        }
+    }
+
+    if (!resolvedChurchName && manualChurchNameRaw) {
+        resolvedChurchName = normalizeChurchName(manualChurchNameRaw);
+    }
+
+    if (resolvedChurchId) {
+        const { data: church, error: churchError } = await supabaseAdmin
+            .from('churches')
+            .select('id, name, city, country')
+            .eq('id', resolvedChurchId)
+            .maybeSingle();
+
+        if (churchError || !church) {
+            return new Response(JSON.stringify({ ok: false, error: 'Iglesia no encontrada' }), { status: 404 });
+        }
+
+        resolvedChurchName = church.name || resolvedChurchName;
+        if (!contactCity && church.city) {
+            contactCity = church.city;
+        }
+        if (!contactCountry && church.country) {
+            contactCountry = church.country;
+        }
+    }
+
+    if (!resolvedChurchId && resolvedChurchName && isAdmin && !skipChurchCreate) {
+        const { data: existing } = await supabaseAdmin
+            .from('churches')
+            .select('id, name')
+            .ilike('name', resolvedChurchName)
+            .maybeSingle();
+        if (existing?.id) {
+            resolvedChurchId = existing.id;
+            resolvedChurchName = existing.name || resolvedChurchName;
+        } else {
+            const { data: created } = await supabaseAdmin
+                .from('churches')
+                .insert({
+                    name: resolvedChurchName,
+                    city: contactCity || null,
+                    country: contactCountry || null,
+                    created_by: user?.id || null,
+                })
+                .select('id, name')
+                .single();
+            if (created?.id) {
+                resolvedChurchId = created.id;
+                resolvedChurchName = created.name || resolvedChurchName;
+            }
+        }
+    }
+
     if (!isAdmin) {
         if (allowedChurchId) {
-            // Local scope: must match exactly
-            if (church_id !== allowedChurchId) {
+            if (!resolvedChurchId || resolvedChurchId !== allowedChurchId) {
                 return new Response(JSON.stringify({ ok: false, error: 'Solo puedes registrar en tu iglesia asignada' }), { status: 403 });
             }
         } else if (allowedCountry) {
-            // Country scope: verify church is in country
+            if (!resolvedChurchId) {
+                return new Response(JSON.stringify({ ok: false, error: 'Solo puedes registrar en iglesias de tu país' }), { status: 403 });
+            }
             const { data: church, error: churchError } = await supabaseAdmin
                 .from('churches')
                 .select('country')
-                .eq('id', church_id)
+                .eq('id', resolvedChurchId)
                 .single();
 
             if (churchError || !church || church.country !== allowedCountry) {
@@ -99,133 +231,185 @@ export const POST: APIRoute = async ({ request }) => {
         }
     }
 
-    // Create a group identifier (booking_group_id)
-    const groupId = `GRP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    // Determine payment status
-    let paymentStatus = 'PENDING';
-    if (payment_option === 'FULL') {
-        paymentStatus = 'PAID';
-    } else if (payment_option === 'DEPOSIT') {
-        paymentStatus = 'PARTIAL';
+    if (!resolvedChurchId && !resolvedChurchName) {
+        return new Response(JSON.stringify({ ok: false, error: 'Selecciona una iglesia para continuar' }), { status: 400 });
     }
 
-    // Calculate amount paid (for tracking)
-    let amountPaid = 0;
-    if (payment_option === 'FULL') {
-        amountPaid = total_amount;
-    } else if (payment_option === 'DEPOSIT') {
-        amountPaid = Math.round(total_amount * 0.5);
+    const participants = participantsRaw
+        .map((participant: any) => {
+            const age = Number(participant?.age ?? 0);
+            const packageChoice = participant?.packageType ?? participant?.package_type ?? 'lodging';
+            const packageType = Number.isFinite(age) ? packageTypeFromAge(age, packageChoice) : packageChoice;
+            const relationship = participant?.isLeader ? 'responsable' : 'acompanante';
+            const documentType = normalizeDocType(participant?.document_type ?? participant?.documentType ?? '');
+            const documentNumber = sanitizePlainText(participant?.document_number ?? participant?.documentNumber ?? '', 50);
+            const safe = sanitizeParticipant({
+                fullName: participant?.name ?? participant?.full_name ?? '',
+                packageType,
+                relationship,
+                documentType,
+                documentNumber,
+            });
+            if (!safe) return null;
+            return {
+                safe,
+                extra: participant ?? {},
+            };
+        })
+        .filter(Boolean) as { safe: NonNullable<ReturnType<typeof sanitizeParticipant>>; extra: any }[];
+
+    if (!participants.length) {
+        return new Response(JSON.stringify({ ok: false, error: 'Agrega al menos una persona' }), { status: 400 });
     }
 
-    // Insert each participant as a cumbre_bookings record
-    const bookingRecords = participants.map((participant: any) => {
-        const priceMap = currency === 'COP'
-            ? { lodging: 850000, no_lodging: 660000, child_0_7: 300000, child_7_13: 550000 }
-            : { lodging: 220, no_lodging: 170, child_0_7: 80, child_7_13: 140 };
+    const countryGroup = resolveCountryGroup(body.country_group ?? body.countryGroup, contactCountry);
+    const currency = currencyForGroup(countryGroup);
+    const totalAmount = calculateTotals(currency, participants.map((p) => p.safe));
+    const threshold = depositThreshold(totalAmount);
+    const tokenPair = generateAccessToken();
 
-        const participantAmount = priceMap[participant.packageType as keyof typeof priceMap] || 0;
-
-        return {
-            booking_group_id: groupId,
-            name: participant.name,
-            email: participant.email || null,
-            phone: participant.phone || null,
-            country: country || 'Colombia',
-            city: city || '',
-            affiliation: church_id,
-            document_type: participant.document_type || 'CC',
-            document_number: participant.document_number || '',
-            age: participant.age || null,
-            package_type: participant.packageType,
-            amount: participantAmount,
-            currency,
-            payment_method: payment_option,
-            payment_status: paymentStatus,
-            is_leader: participant.isLeader || false,
-            registered_by: user?.id || profile?.id || null,
-            created_at: new Date().toISOString()
-        };
-    });
-
-    const { data: insertedBookings, error: bookingError } = await supabaseAdmin
+    const { data: booking, error: bookingError } = await supabaseAdmin
         .from('cumbre_bookings')
-        .insert(bookingRecords)
-        .select();
-
-    if (bookingError) {
-        console.error('Error inserting bookings:', bookingError);
-        return new Response(JSON.stringify({ error: `Error al crear registros: ${bookingError.message}` }), { status: 500 });
-    }
-
-    // Create payment plan if installments selected
-    if (payment_option === 'INSTALLMENTS' && installment_frequency) {
-        const deadline = '2026-05-15';
-        const installments = calculateInstallmentPlan(total_amount, installment_frequency, deadline);
-
-        const paymentPlanRecords = installments.map((inst, index) => ({
-            booking_group_id: groupId,
-            installment_number: index + 1,
-            amount: inst.amount,
-            due_date: inst.dueDate,
+        .insert({
+            contact_name: contactName,
+            contact_email: contactEmail || null,
+            contact_phone: contactPhone || null,
+            contact_document_type: contactDocType || null,
+            contact_document_number: contactDocNumber || null,
+            contact_country: contactCountry || null,
+            contact_city: contactCity || null,
+            contact_church: resolvedChurchName || null,
+            country_group: countryGroup,
             currency,
+            total_amount: totalAmount,
+            total_paid: 0,
             status: 'PENDING',
-            created_at: new Date().toISOString()
-        }));
+            deposit_threshold: threshold,
+            token_hash: tokenPair.hash,
+            source: 'portal-iglesia',
+            church_id: resolvedChurchId || null,
+            created_by: user?.id || profile?.user_id || null,
+        })
+        .select('id')
+        .single();
 
-        const { error: planError } = await supabaseAdmin
-            .from('cumbre_payment_plans')
-            .insert(paymentPlanRecords);
-
-        if (planError) {
-            console.warn('Error creating payment plan:', planError);
-            // Don't fail the entire request if payment plan creation fails
-        }
+    if (bookingError || !booking) {
+        console.error('Error inserting bookings:', bookingError);
+        return new Response(JSON.stringify({ ok: false, error: 'Error al crear registros' }), { status: 500 });
     }
 
-    // TODO: Send welcome emails if email is provided
-    // TODO: Activate event in participant portal
+    const participantRows = participants.map((participant) => ({
+        booking_id: booking.id,
+        full_name: participant.safe.fullName,
+        package_type: participant.safe.packageType,
+        relationship: participant.safe.relationship,
+        document_type: participant.safe.documentType,
+        document_number: participant.safe.documentNumber,
+        diet_type: sanitizePlainText(participant.extra?.menu ?? '', 40) || null,
+    }));
+
+    const { error: participantError } = await supabaseAdmin
+        .from('cumbre_participants')
+        .insert(participantRows);
+
+    if (participantError) {
+        return new Response(JSON.stringify({ ok: false, error: 'No se pudo guardar participantes' }), { status: 500 });
+    }
+
+    let planId: string | null = null;
+    if (paymentOption === 'INSTALLMENTS') {
+        const schedule = buildInstallmentSchedule({
+            totalAmount,
+            currency,
+            frequency,
+        });
+
+        const plan = await createPaymentPlan({
+            bookingId: booking.id,
+            frequency,
+            startDate: schedule.startDate,
+            endDate: schedule.endDate,
+            totalAmount,
+            currency,
+            installmentCount: schedule.installmentCount,
+            installmentAmount: schedule.installmentAmount,
+            provider: 'manual',
+            autoDebit: false,
+            installments: schedule.installments,
+        });
+        planId = plan.id;
+    }
+
+    let paymentAmount = 0;
+    if (paymentOption === 'FULL') {
+        paymentAmount = totalAmount;
+    } else if (paymentOption === 'DEPOSIT') {
+        paymentAmount = threshold;
+    }
+
+    if (paymentAmount > 0) {
+        const reference = buildDonationReference();
+        await recordPayment({
+            bookingId: booking.id,
+            provider: 'manual',
+            providerTxId: null,
+            reference,
+            amount: paymentAmount,
+            currency,
+            status: 'APPROVED',
+            planId,
+            rawEvent: {
+                source: 'portal-iglesia',
+                method: 'manual',
+            },
+        });
+
+        if (planId) {
+            await applyManualPaymentToPlan({
+                planId,
+                amount: paymentAmount,
+                reference,
+            });
+        }
+
+        await createDonation({
+            provider: 'physical',
+            status: 'APPROVED',
+            amount: paymentAmount,
+            currency,
+            reference,
+            provider_tx_id: null,
+            payment_method: 'manual',
+            donation_type: 'evento',
+            project_name: 'Cumbre Mundial 2026',
+            event_name: 'Cumbre Mundial 2026',
+            campus: resolvedChurchName || null,
+            church: resolvedChurchName || null,
+            church_city: contactCity || null,
+            donor_name: contactName,
+            donor_email: contactEmail || null,
+            donor_phone: contactPhone || null,
+            donor_document_type: contactDocType || null,
+            donor_document_number: contactDocNumber || null,
+            is_recurring: false,
+            donor_country: contactCountry || null,
+            donor_city: contactCity || null,
+            donation_description: null,
+            need_certificate: false,
+            source: 'portal-iglesia',
+            cumbre_booking_id: booking.id,
+            raw_event: null,
+        });
+    }
+
+    await recomputeBookingTotals(booking.id);
 
     return new Response(
         JSON.stringify({
             ok: true,
-            success: true,
             message: `Grupo registrado exitosamente (${participants.length} participante${participants.length > 1 ? 's' : ''})`,
-            group_id: groupId,
-            bookings: insertedBookings
+            booking_id: booking.id,
         }),
         { status: 200 }
     );
 };
-
-// Helper function to calculate installment plan
-function calculateInstallmentPlan(total: number, frequency: string, deadline: string): { amount: number; dueDate: string }[] {
-    const [year, month, day] = deadline.split('-').map(Number);
-    const end = new Date(Date.UTC(year, month - 1, day));
-    const now = new Date();
-    const current = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-
-    if (end < current) {
-        return [{ amount: total, dueDate: deadline }];
-    }
-
-    const dueDates = [];
-    let tempDate = new Date(current);
-
-    while (tempDate <= end) {
-        dueDates.push(new Date(tempDate).toISOString().split('T')[0]);
-        if (frequency === 'BIWEEKLY') {
-            tempDate.setUTCDate(tempDate.getUTCDate() + 14);
-        } else {
-            tempDate.setUTCMonth(tempDate.getUTCMonth() + 1);
-        }
-    }
-
-    const count = Math.max(1, dueDates.length);
-    const installmentAmount = Math.round(total / count);
-
-    return dueDates.map(dueDate => ({
-        amount: installmentAmount,
-        dueDate
-    }));
-}
