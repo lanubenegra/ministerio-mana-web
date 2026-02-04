@@ -78,9 +78,22 @@ import TurnstileWidget from '@components/TurnstileWidget.astro';
             </div>
           </form>
 
-          <div class="relative py-2 hidden">
+          <div class="relative py-4">
             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
-            <div class="relative flex justify-center"><span class="bg-white px-4 text-xs font-bold text-slate-300 uppercase tracking-widest">O</span></div>
+            <div class="relative flex justify-center">
+              <span class="bg-white px-4 text-[10px] font-bold text-slate-300 uppercase tracking-widest">O continuar con</span>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <button type="button" id="btn-oauth-google" class="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all group">
+              <span class="h-8 w-8 rounded-full border border-slate-200 flex items-center justify-center text-sm font-bold text-[#293C74] bg-white">G</span>
+              <span class="text-sm font-semibold text-slate-700 group-hover:text-[#293C74]">Continuar con Google</span>
+            </button>
+            <button type="button" id="btn-oauth-facebook" class="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all group">
+              <span class="h-8 w-8 rounded-full bg-[#1877F2]/10 flex items-center justify-center text-sm font-bold text-[#1877F2]">f</span>
+              <span class="text-sm font-semibold text-slate-700 group-hover:text-[#293C74]">Continuar con Facebook</span>
+            </button>
           </div>
 
           <!-- Secondary Options -->

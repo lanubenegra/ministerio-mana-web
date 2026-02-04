@@ -14,6 +14,43 @@
 
 ## Entradas
 
+### 2026-02-03 (Seguridad Supabase: vista Cumbre)
+- Responsable: Codex
+- Cambios:
+  - Vista `public.vw_cumbre_general`: se recrea con `security_invoker=true` (quita SECURITY DEFINER).
+  - Se revocan privilegios a `anon` y `authenticated`; se mantiene `SELECT` para `service_role`.
+- Pruebas:
+  - SQL: `reloptions` muestra `security_invoker=true`.
+  - SQL: grants verificados en `information_schema.role_table_grants`.
+- Pendientes:
+  - (Opcional) auditar otras vistas con SECURITY DEFINER.
+
+### 2026-02-03 (Auth: contraseñas fuertes + HIBP)
+- Responsable: Codex
+- Cambios:
+  - API signup y creación admin: validación de contraseña fuerte (mínimo 10, mayúscula, minúscula, número, símbolo).
+  - Chequeo HIBP k-anonymity antes de crear usuario; bloquea contraseñas filtradas.
+- Pruebas: N/A
+- Pendientes:
+  - (Opcional) mostrar requisitos en UI de registro/admin.
+
+### 2026-02-03 (Portal: OAuth Google/Facebook)
+- Responsable: Codex
+- Cambios:
+  - Portal login: botones OAuth Google/Facebook y flujo con `signInWithOAuth`.
+- Pruebas: N/A
+- Pendientes:
+  - Configurar providers en Supabase (Google/Facebook) y redirects del dominio.
+
+### 2026-02-04 (Legal: privacidad y eliminacion de datos)
+- Responsable: Codex
+- Cambios:
+  - Pagina de politica de privacidad en `/privacidad`.
+  - Pagina de eliminacion de datos en `/eliminar-datos` para requisito de Meta.
+  - Pagina de terminos de servicio en `/terminos`.
+  - Icono 1024x1024 para Meta en `public/images/app-icon-1024.png`.
+- Pruebas: N/A
+
 ### 2026-02-02 (Portal Finanzas: ingresos reales + alertas)
 - Responsable: Delta (Codex)
 - Cambios:

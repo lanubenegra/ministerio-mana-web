@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { sendAuthLink } from '@lib/authMailer';
+import { checkLeakedPassword, formatPasswordErrors, validatePasswordStrength } from '@lib/passwordSecurity';
 
 export const POST: APIRoute = async ({ request }) => {
     if (!supabaseAdmin) {
@@ -13,6 +14,19 @@ export const POST: APIRoute = async ({ request }) => {
 
         if (!email || !password || !firstName || !lastName) {
             return new Response(JSON.stringify({ ok: false, error: 'Faltan campos requeridos' }), { status: 400 });
+        }
+
+        const strength = validatePasswordStrength(password);
+        if (!strength.ok) {
+            return new Response(JSON.stringify({ ok: false, error: formatPasswordErrors(strength.errors) }), { status: 400 });
+        }
+
+        const leaked = await checkLeakedPassword(password);
+        if (leaked.leaked) {
+            return new Response(JSON.stringify({ ok: false, error: 'Esta contraseña aparece en filtraciones conocidas. Elige otra.' }), { status: 400 });
+        }
+        if (!leaked.checked && leaked.error) {
+            console.warn('[signup] HIBP check failed:', leaked.error);
         }
 
         // Check if user already exists

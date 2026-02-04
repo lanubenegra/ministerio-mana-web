@@ -26,6 +26,8 @@ const toggleMagicBtn = document.getElementById('btn-toggle-magic');
 const cancelMagicBtn = document.getElementById('btn-cancel-magic');
 const togglePasswordViewBtn = document.getElementById('toggle-password-view');
 const passkeyBtn = document.getElementById('btn-passkey');
+const oauthGoogleBtn = document.getElementById('btn-oauth-google');
+const oauthFacebookBtn = document.getElementById('btn-oauth-facebook');
 
 const statusContainer = document.getElementById('login-status-container');
 const statusEl = document.getElementById('login-status');
@@ -115,6 +117,57 @@ function showStatus(msg, type = 'loading') {
   gsap.from(statusContainer, { scale: 0.9, duration: 0.4, ease: 'back.out' });
 }
 
+async function startOAuth(provider, label, btn) {
+  if (!supabase) {
+    showStatus('El portal no está configurado. Escríbenos por WhatsApp.', 'error');
+    return;
+  }
+
+  const captcha = getTurnstileTokenIfRequired();
+  if (!captcha.ok) {
+    showStatus(captcha.error || 'Captcha inválido.', 'error');
+    resetTurnstile();
+    return;
+  }
+  if (captcha.token && !captcha.bypass) {
+    const captchaCheck = await verifyTurnstileToken(captcha.token);
+    if (!captchaCheck.ok) {
+      showStatus(captchaCheck.error || 'Captcha inválido.', 'error');
+      resetTurnstile();
+      return;
+    }
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+  }
+  showStatus(`Redirigiendo a ${label}...`, 'loading');
+
+  try {
+    const redirectTo = `${window.location.origin}/portal`;
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    });
+
+    if (error) throw error;
+    if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      showStatus('No se pudo iniciar la autenticación.', 'error');
+    }
+  } catch (err) {
+    console.error('[oauth] error', err);
+    showStatus('No se pudo iniciar la autenticación. Intenta de nuevo.', 'error');
+    resetTurnstile();
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('opacity-50');
+    }
+  }
+}
+
 let supabase = null;
 try {
   supabase = getSupabaseBrowserClient();
@@ -147,6 +200,14 @@ togglePasswordViewBtn?.addEventListener('click', () => {
   const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
   passwordInput.setAttribute('type', type);
   togglePasswordViewBtn.classList.toggle('text-[#293C74]');
+});
+
+oauthGoogleBtn?.addEventListener('click', () => {
+  startOAuth('google', 'Google', oauthGoogleBtn);
+});
+
+oauthFacebookBtn?.addEventListener('click', () => {
+  startOAuth('facebook', 'Facebook', oauthFacebookBtn);
 });
 
 magicForm?.addEventListener('submit', async (e) => {
