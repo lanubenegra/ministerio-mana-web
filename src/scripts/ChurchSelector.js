@@ -200,8 +200,9 @@ export class ChurchSelector {
     }
 
     renderChurchItem(church, index) {
+        const isSelected = this.selectedChurch && this.selectedChurch.id === church.id;
         return `
-      <div class="church-item" data-church-id="${church.id}" data-church-index="${index}">
+      <div class="church-item${isSelected ? ' selected' : ''}" data-church-id="${church.id}" data-church-index="${index}" role="button" tabindex="0">
         <div class="flex items-start justify-between">
           <div class="flex-1">
             <h4 class="font-bold text-white text-sm mb-1">${church.name}</h4>

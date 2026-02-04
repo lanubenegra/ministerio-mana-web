@@ -659,6 +659,8 @@ export class RegistrationModal {
 
     // Payment UI
     updatePaymentUI() {
+        const scrollContainer = document.getElementById('modal-scroll-container');
+        const previousScroll = scrollContainer ? scrollContainer.scrollTop : 0;
         const selected = document.querySelector('input[name="payment_option"]:checked');
         const value = selected?.value || 'FULL';
 
@@ -674,6 +676,12 @@ export class RegistrationModal {
         }
         if (value === 'DEPOSIT') {
             this.syncDepositSchedule();
+        }
+
+        if (scrollContainer) {
+            requestAnimationFrame(() => {
+                scrollContainer.scrollTop = previousScroll;
+            });
         }
     }
 
@@ -877,11 +885,17 @@ export class RegistrationModal {
         this.renderParticipants();
         this.updateSummary();
         if (this.statusMsg) this.statusMsg.textContent = '';
-        if (this.selectedChurchDisplay) this.selectedChurchDisplay.textContent = 'Seleccionar iglesia...';
+        if (this.selectedChurchDisplay) {
+            this.selectedChurchDisplay.textContent = 'Seleccionar iglesia...';
+            this.selectedChurchDisplay.classList.add('text-slate-400');
+            this.selectedChurchDisplay.classList.remove('text-[#293C74]', 'font-medium');
+        }
     }
 
     setChurch(church) {
         this.selectedChurch = church;
+        this.selectedChurchDisplay = document.getElementById('selected-church-display');
+        this.selectedChurchId = document.getElementById('selected-church-id');
         if (this.selectedChurchDisplay) {
             if (church.id === 'MANUAL') {
                 this.selectedChurchDisplay.textContent = `Manual: ${church.manual_name || church.name}`;

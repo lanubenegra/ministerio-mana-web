@@ -44,13 +44,13 @@
     <!-- Special Options -->
     <div class="px-6 py-3 bg-black/10 border-b border-white/10">
       <div class="flex flex-wrap gap-2">
-        <button data-special="virtual" class="special-church-btn px-4 py-2 bg-white/5 hover:bg-brand-teal/20 border border-white/10 hover:border-brand-teal rounded-xl text-xs font-bold text-white/80 hover:text-white transition-all">
+        <button data-special="virtual" class="special-church-btn px-4 py-2 bg-white/5 hover:bg-brand-teal/20 border border-white/10 hover:border-brand-teal rounded-xl text-xs font-bold text-white/80 hover:text-white transition-all cursor-pointer">
           🌐 Ministerio Maná Virtual
         </button>
-        <button data-special="none" class="special-church-btn px-4 py-2 bg-white/5 hover:bg-brand-teal/20 border border-white/10 hover:border-brand-teal rounded-xl text-xs font-bold text-white/80 hover:text-white transition-all">
+        <button data-special="none" class="special-church-btn px-4 py-2 bg-white/5 hover:bg-brand-teal/20 border border-white/10 hover:border-brand-teal rounded-xl text-xs font-bold text-white/80 hover:text-white transition-all cursor-pointer">
           ⛪ No asisto a ninguna iglesia
         </button>
-        <button data-special="other" class="special-church-btn px-4 py-2 bg-white/5 hover:bg-brand-teal/20 border border-white/10 hover:border-brand-teal rounded-xl text-xs font-bold text-white/80 hover:text-white transition-all">
+        <button data-special="other" class="special-church-btn px-4 py-2 bg-white/5 hover:bg-brand-teal/20 border border-white/10 hover:border-brand-teal rounded-xl text-xs font-bold text-white/80 hover:text-white transition-all cursor-pointer">
           ➕ Otra iglesia
         </button>
       </div>
@@ -74,7 +74,7 @@
 
     <!-- Results List (Virtual Scroll) -->
     <div class="h-96 overflow-y-auto" id="church-results-container">
-      <div id="church-results-list" class="divide-y divide-white/5">
+      <div id="church-results-list" class="divide-y divide-white/5 py-1">
         <!-- Populated dynamically -->
       </div>
       <div id="church-no-results" class="hidden text-center py-12 text-white/40">
@@ -101,18 +101,19 @@
 
 <style>
   .church-item {
-    @apply px-6 py-4 hover:bg-white/5 cursor-pointer transition-colors;
+    cursor: pointer;
+    padding: 14px 24px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   }
-  
   .church-item:hover {
-    @apply bg-gradient-to-r from-brand-teal/10 to-transparent;
+    background: linear-gradient(90deg, rgba(45, 212, 191, 0.15), rgba(255, 255, 255, 0));
   }
-  
   .church-item.selected {
-    @apply bg-brand-teal/20 border-l-4 border-brand-teal;
+    background: rgba(45, 212, 191, 0.18);
+    border-left: 4px solid #22d3ee;
   }
-  
   .special-church-btn:hover {
-    @apply scale-105 shadow-lg shadow-brand-teal/20;
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(45, 212, 191, 0.2);
   }
 </style>

@@ -79,12 +79,15 @@ import flatpickr from 'flatpickr';
         }
      },
      
-     async ensureAuth() {
-        if (this.isMock) return true;
-        const client = await getSupabase();
-        if (!client) return true; // allow access with token when Supabase env is missing
-        try {
-          const { data } = await client.auth.getSession();
+  async ensureAuth() {
+    if (this.isMock) return true;
+    // El enlace con bookingId + token ya es suficiente para completar el registro,
+    // incluso si la persona no tiene cuenta creada.
+    if (this.bookingId && this.token) return true;
+    const client = await getSupabase();
+    if (!client) return true; // allow access with token when Supabase env is missing
+    try {
+      const { data } = await client.auth.getSession();
           if (data?.session) return true;
         } catch (err) {
           console.error(err);
