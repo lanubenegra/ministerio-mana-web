@@ -505,7 +505,11 @@ const formatTestAmount = (value, currency) =>
             <!-- Deposit Schedule -->
             <div id="deposit-schedule" class="hidden mt-4 p-4 bg-white/5 rounded-xl space-y-4 border border-white/5">
                <h4 class="font-bold text-white text-sm">Agenda tu segundo pago</h4>
-               <p class="text-xs text-white/60">Elige una fecha para completar tu pago. Debe ser antes del 15 de mayo.</p>
+               <p class="text-xs text-white/60">
+                  Elige una fecha hasta
+                  <span id="deposit-deadline-label" class="font-semibold text-white">15 de mayo de 2026</span>
+                  (incluido).
+               </p>
                <div class="grid md:grid-cols-[1fr_auto] gap-4 items-end">
                   <div>
                      <label class="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">Fecha de segundo pago</label>
@@ -678,6 +682,7 @@ const formatTestAmount = (value, currency) =>
           depositSchedule: document.getElementById('deposit-schedule'),
           depositDueDate: document.getElementById('deposit-due-date'),
           depositAmount: document.getElementById('deposit-amount'),
+          depositDeadlineLabel: document.getElementById('deposit-deadline-label'),
           form: document.getElementById('booking-form'),
           errorMsg: document.getElementById('error-msg'),
           sideSubtotal: document.getElementById('side-subtotal'),
@@ -1430,6 +1435,9 @@ const formatTestAmount = (value, currency) =>
        const minDate = this.getDepositMinDate();
        this.dom.depositDueDate.min = minDate;
        this.dom.depositDueDate.max = deadline;
+       if (this.dom.depositDeadlineLabel) {
+          this.dom.depositDeadlineLabel.textContent = this.formatLongDateWithYear(deadline);
+       }
        const current = this.dom.depositDueDate.value;
        if (!current || current < minDate || current > deadline) {
           const next = deadline >= minDate ? deadline : minDate;
@@ -1442,9 +1450,10 @@ const formatTestAmount = (value, currency) =>
        const value = this.dom.depositDueDate.value;
        const deadline = this.getInstallmentDeadline();
        const minDate = this.getDepositMinDate();
+       const deadlineLabel = this.formatLongDateWithYear(deadline);
        if (!value) return 'Selecciona la fecha del segundo pago.';
-       if (value < minDate) return 'La fecha del segundo pago debe ser posterior a hoy.';
-       if (value > deadline) return 'La fecha del segundo pago debe ser antes del 15 de mayo de 2026.';
+       if (value < minDate) return 'La fecha del segundo pago debe ser desde mañana.';
+       if (value > deadline) return `La fecha del segundo pago debe ser hasta el ${deadlineLabel} (incluido).`;
        return '';
     },
 
@@ -1453,6 +1462,16 @@ const formatTestAmount = (value, currency) =>
           const [year, month, day] = value.split('-').map(Number);
           const date = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
           return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
+       } catch {
+          return value;
+       }
+    },
+
+    formatLongDateWithYear(value) {
+       try {
+          const [year, month, day] = value.split('-').map(Number);
+          const date = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
+          return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
        } catch {
           return value;
        }

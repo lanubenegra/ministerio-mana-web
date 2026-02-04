@@ -88,6 +88,7 @@ export class RegistrationModal {
         this.installmentAmount = document.getElementById('installment-amount');
         this.depositSchedule = document.getElementById('deposit-schedule');
         this.depositDueDate = document.getElementById('deposit-due-date');
+        this.depositDeadlineLabel = document.getElementById('deposit-deadline-label');
 
         // Church selector
         this.btnOpenChurchSelector = document.getElementById('btn-open-church-selector');
@@ -535,6 +536,16 @@ export class RegistrationModal {
         return `${year}-${month}-${day}`;
     }
 
+    formatLongDateWithYear(value) {
+        try {
+            const [year, month, day] = value.split('-').map(Number);
+            const date = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
+            return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+        } catch {
+            return value;
+        }
+    }
+
     getDepositMinDate() {
         const base = new Date();
         base.setDate(base.getDate() + 1);
@@ -547,6 +558,9 @@ export class RegistrationModal {
         const minDate = this.getDepositMinDate();
         this.depositDueDate.min = minDate;
         this.depositDueDate.max = deadline;
+        if (this.depositDeadlineLabel) {
+            this.depositDeadlineLabel.textContent = this.formatLongDateWithYear(deadline);
+        }
         const current = this.depositDueDate.value;
         if (!current || current < minDate || current > deadline) {
             const next = deadline >= minDate ? deadline : minDate;
@@ -559,9 +573,10 @@ export class RegistrationModal {
         const value = this.depositDueDate.value;
         const deadline = this.getInstallmentDeadline();
         const minDate = this.getDepositMinDate();
+        const deadlineLabel = this.formatLongDateWithYear(deadline);
         if (!value) return 'Selecciona la fecha del segundo pago';
-        if (value < minDate) return 'La fecha del segundo pago debe ser posterior a hoy';
-        if (value > deadline) return 'La fecha del segundo pago debe ser antes del 15 de mayo de 2026';
+        if (value < minDate) return 'La fecha del segundo pago debe ser desde mañana';
+        if (value > deadline) return `La fecha del segundo pago debe ser hasta el ${deadlineLabel} (incluido)`;
         return '';
     }
 
