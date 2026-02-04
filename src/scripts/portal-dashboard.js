@@ -2609,7 +2609,7 @@ manualRegForm?.addEventListener('submit', async (e) => {
     const leaderEmail = document.getElementById('reg-leader-email')?.value?.trim();
     const leaderPhone = document.getElementById('reg-leader-phone')?.value?.trim();
     const leaderAge = parseInt(document.getElementById('reg-leader-age')?.value) || null;
-    const leaderMenu = document.getElementById('reg-leader-menu')?.value || 'general';
+    const leaderMenu = document.getElementById('reg-leader-menu')?.value || 'TRADICIONAL';
     const leaderPackage = document.getElementById('reg-leader-package')?.value || 'lodging';
 
     // Validation
@@ -2639,7 +2639,8 @@ manualRegForm?.addEventListener('submit', async (e) => {
     ];
 
     // Determine payment option (FULL, DEPOSIT, INSTALLMENTS)
-    const paymentOption = document.getElementById('reg-payment-option')?.value || 'FULL';
+    const paymentOption = document.querySelector('input[name="payment_option"]:checked')?.value || 'FULL';
+    const depositDueDate = document.getElementById('deposit-due-date')?.value || '';
 
     // Calculate total amount based on all participants
     const currency = 'COP'; // TODO: Make dynamic if needed
@@ -2660,6 +2661,7 @@ manualRegForm?.addEventListener('submit', async (e) => {
       participants,
       payment_option: paymentOption,
       installment_frequency: paymentOption === 'INSTALLMENTS' ? 'MONTHLY' : null,
+      deposit_due_date: paymentOption === 'DEPOSIT' ? depositDueDate : null,
       total_amount: totalAmount,
       currency
     };

@@ -12,7 +12,7 @@ import {
     generateAccessToken,
     type PackageType,
 } from '@lib/cumbre2026';
-import { buildInstallmentSchedule, type InstallmentFrequency } from '@lib/cumbreInstallments';
+import { buildDepositSchedule, buildInstallmentSchedule, getInstallmentDeadline, isValidDateOnly, type InstallmentFrequency } from '@lib/cumbreInstallments';
 import { createPaymentPlan, recordPayment, recomputeBookingTotals, applyManualPaymentToPlan } from '@lib/cumbreStore';
 import { normalizeCityName, normalizeChurchName } from '@lib/normalization';
 import { sanitizePlainText, containsBlockedSequence } from '@lib/validation';
@@ -143,6 +143,7 @@ export const POST: APIRoute = async ({ request }) => {
     const rawChurchIdLower = String(rawChurchId || '').toLowerCase();
 
     const paymentOption = (body.payment_option ?? body.paymentOption ?? 'FULL').toString().trim().toUpperCase();
+    const depositDueDateRaw = (body.deposit_due_date ?? body.depositDueDate ?? '').toString().trim();
     const frequency = normalizeFrequency(body.installment_frequency ?? body.installmentFrequency);
 
     // STRICT RBAC: Validate requested church is within authorized scope
@@ -340,6 +341,41 @@ export const POST: APIRoute = async ({ request }) => {
             installments: schedule.installments,
         });
         planId = plan.id;
+    } else if (paymentOption === 'DEPOSIT') {
+        if (!isValidDateOnly(depositDueDateRaw)) {
+            return new Response(JSON.stringify({ ok: false, error: 'Fecha de segundo pago inválida' }), { status: 400 });
+        }
+        const deadline = getInstallmentDeadline();
+        const today = new Date();
+        const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        if (depositDueDateRaw < todayValue) {
+            return new Response(JSON.stringify({ ok: false, error: 'La fecha del segundo pago debe ser futura' }), { status: 400 });
+        }
+        if (depositDueDateRaw > deadline) {
+            return new Response(JSON.stringify({ ok: false, error: 'La fecha del segundo pago supera la fecha límite' }), { status: 400 });
+        }
+        const remaining = Math.max(totalAmount - threshold, 0);
+        if (remaining > 0) {
+            const schedule = buildDepositSchedule({
+                totalAmount: remaining,
+                currency,
+                dueDate: depositDueDateRaw,
+            });
+            const plan = await createPaymentPlan({
+                bookingId: booking.id,
+                frequency: 'DEPOSIT',
+                startDate: schedule.startDate,
+                endDate: schedule.endDate,
+                totalAmount: remaining,
+                currency,
+                installmentCount: schedule.installmentCount,
+                installmentAmount: schedule.installmentAmount,
+                provider: 'manual',
+                autoDebit: false,
+                installments: schedule.installments,
+            });
+            planId = plan.id;
+        }
     }
 
     let paymentAmount = 0;
@@ -366,7 +402,7 @@ export const POST: APIRoute = async ({ request }) => {
             },
         });
 
-        if (planId) {
+        if (planId && paymentOption === 'INSTALLMENTS') {
             await applyManualPaymentToPlan({
                 planId,
                 amount: paymentAmount,

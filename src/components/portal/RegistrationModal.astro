@@ -1,5 +1,6 @@
 ---
 // Advanced Registration Modal Component
+const installmentDeadline = (import.meta.env?.CUMBRE_INSTALLMENT_DEADLINE ?? '2026-05-15') as string;
 ---
 
 <!-- Manual Registration Modal -->
@@ -19,7 +20,7 @@
 
     <!-- Modal Body (Scrollable) -->
     <div id="modal-scroll-container" class="p-6 md:p-10 overflow-y-auto flex-1 bg-[#F8FAFC]">
-      <form id="manual-registration-form" class="grid lg:grid-cols-[2fr_1fr] gap-8">
+      <form id="manual-registration-form" class="grid lg:grid-cols-[2fr_1fr] gap-8" data-installment-deadline={installmentDeadline}>
         
         <!-- Left Column: Form Fields -->
         <div class="space-y-8">
@@ -80,8 +81,8 @@
                     <label class="text-[11px] font-bold text-[#293C74] uppercase tracking-widest ml-1">Alimentación</label>
                     <div class="relative">
                         <select id="reg-leader-menu" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-[#293C74] outline-none focus:border-[#293C74] focus:ring-1 focus:ring-[#293C74] appearance-none transition-all">
-                          <option value="general">Menú General</option>
-                          <option value="vegetarian">Vegetariano</option>
+                          <option value="TRADICIONAL">Menú tradicional</option>
+                          <option value="VEGETARIANO">Menú vegetariano</option>
                         </select>
                         <div class="absolute top-1/2 -translate-y-1/2 right-0 pr-4 flex items-center pointer-events-none text-[#293C74]">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -193,8 +194,8 @@
                   <div class="space-y-2">
                     <label class="text-[11px] font-bold text-slate-500 uppercase ml-1">Alimentación</label>
                     <select id="companion-menu" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold text-[#293C74] outline-none focus:border-[#293C74]">
-                      <option value="general">Menú General</option>
-                      <option value="vegetarian">Vegetariano</option>
+                      <option value="TRADICIONAL">Menú tradicional</option>
+                      <option value="VEGETARIANO">Menú vegetariano</option>
                     </select>
                   </div>
               </div>
@@ -319,6 +320,21 @@
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                   <span class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Finaliza</span>
                   <span class="block font-bold text-[#293C74] text-xl">Mayo</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Deposit Schedule -->
+            <div id="deposit-schedule" class="hidden mt-4 bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4 animate-fadeIn">
+              <h4 class="font-bold text-[#293C74] text-xs uppercase tracking-widest">Agenda tu segundo pago</h4>
+              <p class="text-xs text-slate-500">Elige una fecha antes del 15 de mayo de 2026.</p>
+              <div class="grid md:grid-cols-[1fr_auto] gap-4 items-end">
+                <div>
+                  <label class="block text-[11px] font-bold text-[#293C74] uppercase tracking-widest mb-2">Fecha de segundo pago</label>
+                  <input type="date" id="deposit-due-date" name="deposit_due_date" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-[#293C74] outline-none focus:border-brand-teal focus:ring-1 focus:ring-brand-teal transition-all">
+                </div>
+                <div class="text-[11px] text-slate-500">
+                  Se verá como próxima cuota en el panel.
                 </div>
               </div>
             </div>

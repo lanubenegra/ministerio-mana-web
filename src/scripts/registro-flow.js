@@ -177,6 +177,18 @@ import flatpickr from 'flatpickr';
         return 'CC';
      },
 
+     normalizeMenuValue(value) {
+        if (!value) return '';
+        const raw = value.toString().trim();
+        if (!raw) return '';
+        const upper = raw.toUpperCase();
+        if (upper === 'GENERAL' || upper === 'TRADICIONAL') return 'TRADICIONAL';
+        if (upper === 'KIDS' || upper === 'INFANTIL') return 'INFANTIL';
+        if (upper === 'VEGETARIAN' || upper === 'VEGETARIANO') return 'VEGETARIANO';
+        if (upper === 'SIN ALIMENTACION' || upper === 'SIN_ALIMENTACION') return 'SIN ALIMENTACION';
+        return raw;
+     },
+
      fillDocOptions(select, options) {
         if (!select) return;
         select.innerHTML = options.map((opt) => `<option value="${opt.value}">${opt.label}</option>`).join('');
@@ -292,7 +304,9 @@ import flatpickr from 'flatpickr';
            if (docNumberInput) docNumberInput.value = prefill.documentNumber || p.document_number || '';
            if (birthInput) birthInput.value = birthValue;
            if (genderInput) genderInput.value = prefill.gender || p.gender || '';
-           if (menuInput) menuInput.value = prefill.dietType || p.diet_type || '';
+           if (menuInput) {
+             menuInput.value = this.normalizeMenuValue(prefill.dietType || p.diet_type || '');
+           }
 
            if (docTypeSelect) {
              docTypeSelect.addEventListener('change', (event) => {
@@ -620,4 +634,8 @@ import flatpickr from 'flatpickr';
     }
   };
 
-  window.addEventListener('DOMContentLoaded', () => REGISTRO.init());
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', () => REGISTRO.init());
+  } else {
+    REGISTRO.init();
+  }

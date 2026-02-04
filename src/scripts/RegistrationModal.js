@@ -86,6 +86,8 @@ export class RegistrationModal {
         this.installmentFrequencyInputs = document.querySelectorAll('input[name="installment_frequency"]');
         this.installmentCount = document.getElementById('installment-count');
         this.installmentAmount = document.getElementById('installment-amount');
+        this.depositSchedule = document.getElementById('deposit-schedule');
+        this.depositDueDate = document.getElementById('deposit-due-date');
 
         // Church selector
         this.btnOpenChurchSelector = document.getElementById('btn-open-church-selector');
@@ -249,30 +251,50 @@ export class RegistrationModal {
         if (!selectElement) return;
 
         // Use current value to restore if possible
-        const currentValue = selectElement.value;
+        const currentValue = this.normalizeMenuValue(selectElement.value);
 
         // Rule: Age <= 10 -> Only "Menú Infantil"
-        // Rule: Age > 10 or null -> "Menú General", "Vegetariano"
+        // Rule: Age > 10 or null -> "Menú Tradicional", "Menú Vegetariano"
 
         if (age !== null && age <= 10) {
             selectElement.innerHTML = `
-        <option value="kids">Menú Infantil</option>
+        <option value="INFANTIL">Menú infantil</option>
       `;
-            // Always select kids
-            selectElement.value = 'kids';
+            // Always select infantil
+            selectElement.value = 'INFANTIL';
         } else {
             selectElement.innerHTML = `
-        <option value="general">Menú General</option>
-        <option value="vegetarian">Vegetariano</option>
+        <option value="TRADICIONAL">Menú tradicional</option>
+        <option value="VEGETARIANO">Menú vegetariano</option>
       `;
             // Restore previous value if it matches one of the new options
-            // Unless previous was 'kids', then switch to 'general'
-            if (currentValue === 'vegetarian') {
-                selectElement.value = 'vegetarian';
+            // Unless previous was infantil, then switch to tradicional
+            if (currentValue === 'VEGETARIANO') {
+                selectElement.value = 'VEGETARIANO';
             } else {
-                selectElement.value = 'general';
+                selectElement.value = 'TRADICIONAL';
             }
         }
+    }
+
+    normalizeMenuValue(value) {
+        if (!value) return '';
+        const raw = value.toString().trim();
+        if (!raw) return '';
+        const upper = raw.toUpperCase();
+        if (upper === 'GENERAL' || upper === 'TRADICIONAL') return 'TRADICIONAL';
+        if (upper === 'KIDS' || upper === 'INFANTIL') return 'INFANTIL';
+        if (upper === 'VEGETARIAN' || upper === 'VEGETARIANO') return 'VEGETARIANO';
+        return raw;
+    }
+
+    formatMenuLabel(value) {
+        const normalized = this.normalizeMenuValue(value);
+        if (!normalized) return '';
+        if (normalized === 'TRADICIONAL') return 'Tradicional';
+        if (normalized === 'VEGETARIANO') return 'Vegetariano';
+        if (normalized === 'INFANTIL') return 'Infantil';
+        return normalized;
     }
 
     // Participant Management
@@ -280,7 +302,7 @@ export class RegistrationModal {
         const name = this.leaderName?.value?.trim();
         const age = this.parseAge(this.leaderAge?.value);
         const packageChoice = this.leaderPackage?.value || 'lodging';
-        const menuChoice = this.leaderMenu?.value || 'general';
+        const menuChoice = this.normalizeMenuValue(this.leaderMenu?.value) || 'TRADICIONAL';
         const birthdate = this.leaderBirthdate?.value || '';
         const gender = this.leaderGender?.value || '';
 
@@ -370,7 +392,7 @@ export class RegistrationModal {
         const name = this.companionName?.value?.trim();
         const age = this.parseAge(this.companionAge?.value);
         const packageChoice = this.companionPackage?.value || 'lodging';
-        const menuChoice = this.companionMenu?.value || 'general';
+        const menuChoice = this.normalizeMenuValue(this.companionMenu?.value) || 'TRADICIONAL';
         const birthdate = this.companionBirthdate?.value || '';
         const gender = this.companionGender?.value || '';
 
@@ -458,7 +480,10 @@ export class RegistrationModal {
     renderParticipantItem(p) {
         const price = this.getPrice(p.packageType);
         const ageLabel = p.age !== null ? ` · ${p.age} años` : '';
-        const menuLabel = p.menu !== 'general' ? ` · 🍽️ ${p.menu}` : '';
+        const normalizedMenu = this.normalizeMenuValue(p.menu);
+        const menuLabel = normalizedMenu && normalizedMenu !== 'TRADICIONAL'
+            ? ` · 🍽️ ${this.formatMenuLabel(normalizedMenu)}`
+            : '';
         const docLabel = p.document_number ? ` · ${p.document_type} ${p.document_number}` : '';
 
         return `
@@ -497,6 +522,47 @@ export class RegistrationModal {
             this.currency = nextCurrency;
             this.updateSummary();
         }
+    }
+
+    getInstallmentDeadline() {
+        return this.form?.dataset?.installmentDeadline || '2026-05-15';
+    }
+
+    formatInputDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    getDepositMinDate() {
+        const base = new Date();
+        base.setDate(base.getDate() + 1);
+        return this.formatInputDate(base);
+    }
+
+    syncDepositSchedule() {
+        if (!this.depositDueDate) return;
+        const deadline = this.getInstallmentDeadline();
+        const minDate = this.getDepositMinDate();
+        this.depositDueDate.min = minDate;
+        this.depositDueDate.max = deadline;
+        const current = this.depositDueDate.value;
+        if (!current || current < minDate || current > deadline) {
+            const next = deadline >= minDate ? deadline : minDate;
+            this.depositDueDate.value = next;
+        }
+    }
+
+    validateDepositSchedule() {
+        if (!this.depositDueDate) return '';
+        const value = this.depositDueDate.value;
+        const deadline = this.getInstallmentDeadline();
+        const minDate = this.getDepositMinDate();
+        if (!value) return 'Selecciona la fecha del segundo pago';
+        if (value < minDate) return 'La fecha del segundo pago debe ser posterior a hoy';
+        if (value > deadline) return 'La fecha del segundo pago debe ser antes del 15 de mayo de 2026';
+        return '';
     }
 
     getAgeFromBirthdate(value) {
@@ -584,16 +650,22 @@ export class RegistrationModal {
         if (this.installmentDetails) {
             this.installmentDetails.classList.toggle('hidden', value !== 'INSTALLMENTS');
         }
+        if (this.depositSchedule) {
+            this.depositSchedule.classList.toggle('hidden', value !== 'DEPOSIT');
+        }
 
         if (value === 'INSTALLMENTS') {
             this.updateInstallmentPreview();
+        }
+        if (value === 'DEPOSIT') {
+            this.syncDepositSchedule();
         }
     }
 
     updateInstallmentPreview() {
         const total = this.getTotal();
         const frequency = document.querySelector('input[name="installment_frequency"]:checked')?.value || 'MONTHLY';
-        const deadline = '2026-05-15'; // Cumbre deadline
+        const deadline = this.getInstallmentDeadline();
 
         const [year, month, day] = deadline.split('-').map(Number);
         const end = new Date(Date.UTC(year, month - 1, day));
@@ -644,6 +716,15 @@ export class RegistrationModal {
         if (!this.selectedChurch) {
             this.showAlert('Selecciona una iglesia para continuar');
             return;
+        }
+
+        const paymentOption = document.querySelector('input[name="payment_option"]:checked')?.value || 'FULL';
+        if (paymentOption === 'DEPOSIT') {
+            const depositError = this.validateDepositSchedule();
+            if (depositError) {
+                this.showAlert(depositError);
+                return;
+            }
         }
 
         const formData = this.collectFormData();
@@ -699,6 +780,7 @@ export class RegistrationModal {
     collectFormData() {
         const paymentOption = document.querySelector('input[name="payment_option"]:checked')?.value || 'FULL';
         const installmentFrequency = document.querySelector('input[name="installment_frequency"]:checked')?.value || 'MONTHLY';
+        const depositDueDate = this.depositDueDate?.value || '';
 
         // Get fresh leader data from DOM
         const leaderDocType = document.getElementById('reg-leader-doc-type')?.value || 'CC';
@@ -732,7 +814,7 @@ export class RegistrationModal {
                         phone: leaderPhone,
                         birthdate: leaderBirthdate,
                         gender: leaderGender,
-                        menu: p.menu || (this.leaderMenu?.value || 'general')
+                        menu: p.menu || (this.normalizeMenuValue(this.leaderMenu?.value) || 'TRADICIONAL')
                     };
                 }
                 // For companions, the data in 'p' is already correct (saved from saveCompanion form)
@@ -745,6 +827,7 @@ export class RegistrationModal {
             }),
             payment_option: paymentOption,
             installment_frequency: installmentFrequency,
+            deposit_due_date: paymentOption === 'DEPOSIT' ? depositDueDate : null,
             total_amount: this.getTotal(),
             currency: this.currency,
         };

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { logSecurityEvent } from '@lib/securityEvents';
+import { getPrice, isValidPackageType } from '@lib/cumbre2026';
 
 export const prerender = false;
 
@@ -40,6 +41,81 @@ function normalizeProvider(raw: string | null): string | null {
   if (value === 'physical' || value === 'fisico') return 'manual';
   if (value === 'wompi' || value === 'stripe' || value === 'manual') return value;
   return null;
+}
+
+function normalizeText(value: string | null | undefined): string {
+  return (value ?? '').toString().trim();
+}
+
+function normalizeName(value: string | null | undefined): string {
+  return normalizeText(value).toLowerCase().replace(/\s+/g, ' ');
+}
+
+function splitName(value: string | null | undefined): { firstName: string; lastName: string } {
+  const cleaned = normalizeText(value);
+  if (!cleaned) return { firstName: '', lastName: '' };
+  const parts = cleaned.split(/\s+/);
+  if (parts.length === 1) return { firstName: cleaned, lastName: '' };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+}
+
+function formatPackageLabel(value: string | null | undefined): string {
+  const raw = normalizeText(value).toLowerCase();
+  if (raw === 'lodging') return 'Con alojamiento';
+  if (raw === 'no_lodging') return 'Sin alojamiento';
+  if (raw === 'child_0_7') return 'Nino 0-4';
+  if (raw === 'child_7_13') return 'Nino 5-10';
+  return normalizeText(value);
+}
+
+function formatDietLabel(value: string | null | undefined): string {
+  const raw = normalizeText(value).toUpperCase();
+  if (!raw) return '';
+  if (raw === 'GENERAL' || raw === 'TRADICIONAL') return 'TRADICIONAL';
+  if (raw === 'KIDS' || raw === 'INFANTIL') return 'INFANTIL';
+  if (raw === 'VEGETARIAN' || raw === 'VEGETARIANO') return 'VEGETARIANO';
+  if (raw === 'SIN ALIMENTACION' || raw === 'SIN_ALIMENTACION') return 'SIN ALIMENTACION';
+  return raw;
+}
+
+function isResponsibleRelationship(value: string | null | undefined): boolean {
+  const raw = normalizeName(value);
+  return raw.includes('responsable');
+}
+
+function resolveParticipantRole(
+  participant: any,
+  booking: any,
+  primaryId: string | undefined,
+  total: number,
+): string {
+  const relationship = normalizeText(participant?.relationship);
+  if (relationship) return relationship;
+  if (participant?.id && primaryId && participant.id === primaryId) return 'responsable';
+  if (total > 1) return 'acompanante';
+  const bookingName = normalizeName(booking?.contact_name);
+  const participantName = normalizeName(participant?.full_name);
+  if (bookingName && participantName && bookingName === participantName) return 'responsable';
+  return '';
+}
+
+function resolvePrimaryParticipantId(participants: any[], booking: any): string | undefined {
+  if (!participants?.length) return undefined;
+  const byRelationship = participants.find((p) => isResponsibleRelationship(p?.relationship));
+  if (byRelationship?.id) return byRelationship.id;
+  const bookingName = normalizeName(booking?.contact_name);
+  if (bookingName) {
+    const byName = participants.find((p) => normalizeName(p?.full_name) === bookingName);
+    if (byName?.id) return byName.id;
+  }
+  return participants[0]?.id;
+}
+
+function getParticipantPrice(currency: string | null | undefined, packageType: string | null | undefined): number | null {
+  if (!currency || !packageType) return null;
+  if (!isValidPackageType(packageType)) return null;
+  const normalizedCurrency = currency === 'USD' ? 'USD' : 'COP';
+  return getPrice(normalizedCurrency, packageType);
 }
 
 export const GET: APIRoute = async ({ request }) => {
@@ -177,6 +253,12 @@ export const GET: APIRoute = async ({ request }) => {
     'participant_allergies',
     'participant_diet_type',
     'participant_diet_notes',
+    'participant_first_name',
+    'participant_last_name',
+    'participant_package_label',
+    'participant_price',
+    'participant_role',
+    'participant_diet_label',
   ];
 
   const bookingIds = (bookings || []).map((row: any) => row.id);
@@ -246,14 +328,39 @@ export const GET: APIRoute = async ({ request }) => {
     bookingMap.set(booking.id, booking);
   }
 
+  const participantsByBooking = new Map<string, any[]>();
+  for (const participant of participants || []) {
+    const list = participantsByBooking.get(participant.booking_id) ?? [];
+    list.push(participant);
+    participantsByBooking.set(participant.booking_id, list);
+  }
+
+  const primaryParticipantByBooking = new Map<string, string>();
+  for (const [bookingId, list] of participantsByBooking) {
+    const booking = bookingMap.get(bookingId);
+    const primaryId = resolvePrimaryParticipantId(list, booking);
+    if (primaryId) {
+      primaryParticipantByBooking.set(bookingId, primaryId);
+    }
+  }
+
+  const emptyPaymentCells = Array(19).fill('');
   const rows: string[][] = [];
-  (participants || []).forEach((participant: any) => {
-    const booking = bookingMap.get(participant.booking_id);
-    const plan = plansByBooking.get(participant.booking_id);
-    const paymentRows = paymentsByBooking.get(participant.booking_id) ?? [];
+
+  for (const [bookingId, bookingParticipants] of participantsByBooking) {
+    const booking = bookingMap.get(bookingId);
+    const plan = plansByBooking.get(bookingId);
+    const paymentRows = paymentsByBooking.get(bookingId) ?? [];
+
+    if (!paymentRows.length) {
+      continue;
+    }
+
+    const primaryId = primaryParticipantByBooking.get(bookingId);
+    const participantTotal = bookingParticipants.length;
 
     const baseCells = [
-      csvEscape(participant.booking_id),
+      csvEscape(bookingId),
       csvEscape(booking?.contact_name),
       csvEscape(booking?.contact_email),
       csvEscape(booking?.contact_phone),
@@ -288,62 +395,74 @@ export const GET: APIRoute = async ({ request }) => {
       csvEscape(plan?.provider_subscription_id),
     ];
 
-    const participantCells = [
-      csvEscape(participant.id),
-      csvEscape(participant.full_name),
-      csvEscape(participant.package_type),
-      csvEscape(participant.relationship),
-      csvEscape(participant.birthdate),
-      csvEscape(participant.gender),
-      csvEscape(participant.nationality),
-      csvEscape(participant.document_type),
-      csvEscape(participant.document_number),
-      csvEscape(participant.room_preference),
-      csvEscape(participant.blood_type),
-      csvEscape(participant.allergies),
-      csvEscape(participant.diet_type),
-      csvEscape(participant.diet_notes),
-    ];
+    for (const participant of bookingParticipants) {
+      const { firstName, lastName } = splitName(participant?.full_name);
+      const packageLabel = formatPackageLabel(participant?.package_type);
+      const dietLabel = formatDietLabel(participant?.diet_type);
+      const participantRole = resolveParticipantRole(participant, booking, primaryId, participantTotal);
+      const participantPrice = getParticipantPrice(booking?.currency, participant?.package_type);
 
-    if (!paymentRows.length) {
-      return;
+      const participantCells = [
+        csvEscape(participant.id),
+        csvEscape(participant.full_name),
+        csvEscape(participant.package_type),
+        csvEscape(participant.relationship),
+        csvEscape(participant.birthdate),
+        csvEscape(participant.gender),
+        csvEscape(participant.nationality),
+        csvEscape(participant.document_type),
+        csvEscape(participant.document_number),
+        csvEscape(participant.room_preference),
+        csvEscape(participant.blood_type),
+        csvEscape(participant.allergies),
+        csvEscape(participant.diet_type),
+        csvEscape(participant.diet_notes),
+        csvEscape(firstName),
+        csvEscape(lastName),
+        csvEscape(packageLabel),
+        csvEscape(participantPrice),
+        csvEscape(participantRole),
+        csvEscape(dietLabel),
+      ];
+
+      if (participant.id === primaryId) {
+        for (const payment of paymentRows) {
+          const raw = payment?.raw_event && typeof payment.raw_event === 'object' ? payment.raw_event : {};
+          const method =
+            raw?.payment_method ||
+            raw?.payment_method_type ||
+            raw?.method ||
+            raw?.payment_method_types?.[0] ||
+            '';
+          const installment = payment?.installment_id ? installmentsById.get(payment.installment_id) : null;
+          const paymentCells = [
+            csvEscape(payment?.id),
+            csvEscape(payment?.reference),
+            csvEscape(payment?.provider),
+            csvEscape(payment?.provider_tx_id),
+            csvEscape(payment?.amount),
+            csvEscape(payment?.currency),
+            csvEscape(payment?.status),
+            csvEscape(payment?.installment_id),
+            csvEscape(method),
+            csvEscape(payment?.created_at),
+            csvEscape(installment?.id),
+            csvEscape(installment?.installment_index),
+            csvEscape(installment?.due_date),
+            csvEscape(installment?.amount),
+            csvEscape(installment?.currency),
+            csvEscape(installment?.status),
+            csvEscape(installment?.paid_at),
+            csvEscape(installment?.provider_reference),
+            csvEscape(installment?.provider_tx_id),
+          ];
+          rows.push([...baseCells, ...paymentCells, ...participantCells]);
+        }
+      } else {
+        rows.push([...baseCells, ...emptyPaymentCells, ...participantCells]);
+      }
     }
-
-    paymentRows.forEach((payment: any) => {
-      const raw = payment?.raw_event && typeof payment.raw_event === 'object' ? payment.raw_event : {};
-      const method =
-        raw?.payment_method ||
-        raw?.payment_method_type ||
-        raw?.method ||
-        raw?.payment_method_types?.[0] ||
-        '';
-      const installment = payment?.installment_id ? installmentsById.get(payment.installment_id) : null;
-
-      rows.push([
-        ...baseCells,
-        csvEscape(payment?.id),
-        csvEscape(payment?.reference),
-        csvEscape(payment?.provider),
-        csvEscape(payment?.provider_tx_id),
-        csvEscape(payment?.amount),
-        csvEscape(payment?.currency),
-        csvEscape(payment?.status),
-        csvEscape(payment?.installment_id),
-        csvEscape(method),
-        csvEscape(payment?.created_at),
-        csvEscape(installment?.id),
-        csvEscape(installment?.installment_index),
-        csvEscape(installment?.due_date),
-        csvEscape(installment?.amount),
-        csvEscape(installment?.currency),
-        csvEscape(installment?.status),
-        csvEscape(installment?.paid_at),
-        csvEscape(installment?.provider_reference),
-        csvEscape(installment?.provider_tx_id),
-        ...participantCells,
-      ]);
-    });
-  });
+  }
 
   const csv = [headers.join(','), ...rows.map((row: string[]) => row.join(','))].join('\n');
 

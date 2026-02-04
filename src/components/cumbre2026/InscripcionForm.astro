@@ -675,6 +675,8 @@ const formatTestAmount = (value, currency) =>
           installmentCount: document.getElementById('installment-count'),
           installmentAmount: document.getElementById('installment-amount'),
           installmentEnd: document.getElementById('installment-end'),
+          depositSchedule: document.getElementById('deposit-schedule'),
+          depositDueDate: document.getElementById('deposit-due-date'),
           depositAmount: document.getElementById('deposit-amount'),
           form: document.getElementById('booking-form'),
           errorMsg: document.getElementById('error-msg'),
@@ -1409,6 +1411,43 @@ const formatTestAmount = (value, currency) =>
        return this.dom.app?.dataset.installmentDeadline || '2026-05-15';
     },
 
+    formatInputDate(date) {
+       const year = date.getFullYear();
+       const month = String(date.getMonth() + 1).padStart(2, '0');
+       const day = String(date.getDate()).padStart(2, '0');
+       return `${year}-${month}-${day}`;
+    },
+
+    getDepositMinDate() {
+       const base = new Date();
+       base.setDate(base.getDate() + 1);
+       return this.formatInputDate(base);
+    },
+
+    syncDepositSchedule() {
+       if (!this.dom.depositDueDate) return;
+       const deadline = this.getInstallmentDeadline();
+       const minDate = this.getDepositMinDate();
+       this.dom.depositDueDate.min = minDate;
+       this.dom.depositDueDate.max = deadline;
+       const current = this.dom.depositDueDate.value;
+       if (!current || current < minDate || current > deadline) {
+          const next = deadline >= minDate ? deadline : minDate;
+          this.dom.depositDueDate.value = next;
+       }
+    },
+
+    validateDepositSchedule() {
+       if (!this.dom.depositDueDate) return '';
+       const value = this.dom.depositDueDate.value;
+       const deadline = this.getInstallmentDeadline();
+       const minDate = this.getDepositMinDate();
+       if (!value) return 'Selecciona la fecha del segundo pago.';
+       if (value < minDate) return 'La fecha del segundo pago debe ser posterior a hoy.';
+       if (value > deadline) return 'La fecha del segundo pago debe ser antes del 15 de mayo de 2026.';
+       return '';
+    },
+
     formatLongDate(value) {
        try {
           const [year, month, day] = value.split('-').map(Number);
@@ -1507,8 +1546,14 @@ const formatTestAmount = (value, currency) =>
        if (this.dom.installmentBox) {
           this.dom.installmentBox.classList.toggle('hidden', option !== 'INSTALLMENTS');
        }
+       if (this.dom.depositSchedule) {
+          this.dom.depositSchedule.classList.toggle('hidden', option !== 'DEPOSIT');
+       }
        if (option === 'INSTALLMENTS') {
           this.updateInstallmentPreview();
+       }
+       if (option === 'DEPOSIT') {
+          this.syncDepositSchedule();
        }
        const total = this.getEffectiveTotal();
        this.updatePayLabel(total);
@@ -1577,6 +1622,16 @@ const formatTestAmount = (value, currency) =>
           this.step = 3;
           this.render();
           return;
+       }
+       const paymentOption = this.getSelectedPaymentOption();
+       if (paymentOption === 'DEPOSIT') {
+          const depositError = this.validateDepositSchedule();
+          if (depositError) {
+             this.clearValidationErrors();
+             this.markElementError(this.dom.depositDueDate);
+             this.showValidationModal([depositError]);
+             return;
+          }
        }
        const fd = new FormData(this.dom.form);
        const leaderDocType = fd.get('leader_document_type');
@@ -1667,6 +1722,26 @@ const formatTestAmount = (value, currency) =>
              }
              window.location.href = planData.url;
              return;
+          }
+
+          if (paymentOption === 'DEPOSIT') {
+             const depositDate = this.dom.depositDueDate?.value || '';
+             const planRes = await fetch('/api/cumbre2026/installments/deposit', {
+                method: 'POST',
+                headers: {
+                   'content-type': 'application/json',
+                   accept: 'application/json',
+                },
+                body: JSON.stringify({
+                   bookingId: bookingData.bookingId,
+                   dueDate: depositDate,
+                   token: bookingToken,
+                }),
+             });
+             const planData = await planRes.json();
+             if (!planRes.ok || !planData?.ok) {
+                throw new Error(planData?.error || 'No se pudo agendar el segundo pago');
+             }
           }
 
           const paymentKind = paymentOption === 'FULL' ? 'full' : 'custom';
