@@ -842,7 +842,21 @@ function updateChurchStats() {
     return sum + count;
   }, 0);
   const totalPayments = (churchPaymentsData || []).length;
-  const pendingInstallments = (churchInstallmentsData || []).length;
+  const pendingInstallmentBookings = new Set(
+    (churchInstallmentsData || [])
+      .map((row) => row.booking_id || row.booking?.id)
+      .filter(Boolean),
+  );
+  const pendingBalanceBookings = new Set();
+  (churchBookingsData || []).forEach((booking) => {
+    const totalAmount = Number(booking.total_amount || 0);
+    const totalPaid = Number(booking.total_paid || 0);
+    if (totalAmount > totalPaid) {
+      pendingBalanceBookings.add(booking.id);
+    }
+  });
+  const pendingBookings = new Set([...pendingInstallmentBookings, ...pendingBalanceBookings]);
+  const pendingInstallments = pendingBookings.size;
 
   const totalEl = document.getElementById('stat-church-total');
   const paidEl = document.getElementById('stat-church-paid');
@@ -943,7 +957,10 @@ function filterChurchBookings(list, meta) {
       if (status === 'paid') {
         if (!meta?.lastPaymentByBooking?.has(item.id)) return false;
       } else if (status === 'pending') {
-        if (!meta?.nextInstallmentByBooking?.has(item.id)) return false;
+        const totalAmount = Number(item.total_amount || 0);
+        const totalPaid = Number(item.total_paid || 0);
+        const hasPendingBalance = totalAmount > totalPaid;
+        if (!meta?.nextInstallmentByBooking?.has(item.id) && !hasPendingBalance) return false;
       } else if (item.status !== status) {
         return false;
       }
