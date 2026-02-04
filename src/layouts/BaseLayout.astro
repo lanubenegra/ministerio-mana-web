@@ -114,8 +114,6 @@ const cspNonce = Astro.locals?.cspNonce;
       });
     </script>
     )}
-    <script type="module" nonce={cspNonce}>
-      import '@scripts/app-modal.js';
-    </script>
+    <script type="module" src={Astro.resolve('../scripts/app-modal.js')} nonce={cspNonce}></script>
   </body>
 </html>

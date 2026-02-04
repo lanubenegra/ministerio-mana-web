@@ -189,6 +189,7 @@ let adminIssuesFilter = 'all';
 let adminIssuesCounts = {};
 const ALL_CHURCHES_VALUE = '__all__';
 const CUSTOM_CHURCH_VALUE = '__custom__';
+const PAID_PAYMENT_STATUSES = new Set(['APPROVED', 'PAID']);
 
 function isAllChurchesSelected() {
   return portalSelectedChurchId === ALL_CHURCHES_VALUE;
@@ -217,6 +218,12 @@ function formatDateTime(value) {
   if (!value) return '-';
   const date = new Date(value);
   return date.toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function toDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function getAuthRedirectState() {
@@ -885,9 +892,41 @@ async function saveChurchSelection(churchId, headers = {}) {
   }
 }
 
-function filterChurchBookings(list) {
+function buildChurchBookingsMeta() {
+  const lastPaymentByBooking = new Map();
+  (churchPaymentsData || []).forEach((payment) => {
+    if (!payment?.booking_id) return;
+    const status = String(payment.status || '').toUpperCase();
+    if (!PAID_PAYMENT_STATUSES.has(status)) return;
+    const createdAt = toDate(payment.created_at);
+    const existing = lastPaymentByBooking.get(payment.booking_id);
+    if (!existing || (createdAt && existing._createdAt && createdAt > existing._createdAt) || (createdAt && !existing._createdAt)) {
+      lastPaymentByBooking.set(payment.booking_id, { ...payment, _createdAt: createdAt });
+    }
+  });
+
+  const nextInstallmentByBooking = new Map();
+  (churchInstallmentsData || []).forEach((installment) => {
+    const bookingId = installment.booking_id || installment.booking?.id;
+    if (!bookingId) return;
+    const dueDate = toDate(installment.due_date);
+    const existing = nextInstallmentByBooking.get(bookingId);
+    if (!existing) {
+      nextInstallmentByBooking.set(bookingId, { ...installment, _dueDate: dueDate });
+      return;
+    }
+    if (dueDate && (!existing._dueDate || dueDate < existing._dueDate)) {
+      nextInstallmentByBooking.set(bookingId, { ...installment, _dueDate: dueDate });
+    }
+  });
+
+  return { lastPaymentByBooking, nextInstallmentByBooking };
+}
+
+function filterChurchBookings(list, meta) {
   const query = churchBookingsSearch?.value?.trim().toLowerCase() || '';
-  const status = churchBookingsStatus?.value || '';
+  const rawStatus = churchBookingsStatus?.value || '';
+  const status = rawStatus === 'all' ? '' : rawStatus;
   return (list || []).filter((item) => {
     const searchable = [
       item.contact_name,
@@ -901,16 +940,45 @@ function filterChurchBookings(list) {
       .toLowerCase();
     if (query && !searchable.includes(query)) return false;
     if (status) {
-      const isPaidFull = item.is_paid_full || item.status === 'PAID' || Number(item.total_paid || 0) >= Number(item.total_amount || 0);
-      if (status === 'paid' && !isPaidFull) return false;
-      if (status === 'pending' && isPaidFull) return false;
-      if (!['paid', 'pending'].includes(status) && item.status !== status) return false;
+      if (status === 'paid') {
+        if (!meta?.lastPaymentByBooking?.has(item.id)) return false;
+      } else if (status === 'pending') {
+        if (!meta?.nextInstallmentByBooking?.has(item.id)) return false;
+      } else if (item.status !== status) {
+        return false;
+      }
     }
     return true;
   });
 }
 
-function renderChurchBookings(list) {
+function sortChurchBookings(list, meta, status) {
+  const normalized = status || 'all';
+  const items = [...(list || [])];
+  items.sort((a, b) => {
+    const lastPaymentA = meta?.lastPaymentByBooking?.get(a.id)?._createdAt || null;
+    const lastPaymentB = meta?.lastPaymentByBooking?.get(b.id)?._createdAt || null;
+    const nextDueA = meta?.nextInstallmentByBooking?.get(a.id)?._dueDate || null;
+    const nextDueB = meta?.nextInstallmentByBooking?.get(b.id)?._dueDate || null;
+
+    if (normalized === 'pending') {
+      const aKey = nextDueA ? nextDueA.getTime() : Number.POSITIVE_INFINITY;
+      const bKey = nextDueB ? nextDueB.getTime() : Number.POSITIVE_INFINITY;
+      return aKey - bKey;
+    }
+    if (normalized === 'paid') {
+      const aKey = lastPaymentA ? lastPaymentA.getTime() : 0;
+      const bKey = lastPaymentB ? lastPaymentB.getTime() : 0;
+      return bKey - aKey;
+    }
+    const aKey = Math.max(lastPaymentA ? lastPaymentA.getTime() : 0, nextDueA ? nextDueA.getTime() : 0);
+    const bKey = Math.max(lastPaymentB ? lastPaymentB.getTime() : 0, nextDueB ? nextDueB.getTime() : 0);
+    return bKey - aKey;
+  });
+  return items;
+}
+
+function renderChurchBookings(list, meta) {
   if (!churchBookingsList || !churchBookingsEmpty) return;
   churchBookingsList.innerHTML = '';
   if (!list.length) {
@@ -920,16 +988,23 @@ function renderChurchBookings(list) {
   }
   churchBookingsEmpty.classList.add('hidden');
   churchBookingsList.classList.remove('hidden');
-  list.forEach((item) => {
+  const activeFilter = churchBookingsStatus?.value || 'all';
+  const sortedList = sortChurchBookings(list, meta, activeFilter);
+  sortedList.forEach((item) => {
     const card = document.createElement('div');
     card.className = 'rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition-shadow';
     const churchName = item.contact_church || (isAllChurchesSelected() ? 'Sin iglesia / virtual' : 'Sin iglesia');
     const churchLabel = `<p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 truncate">${churchName}</p>`;
 
     // Status Logic
-    const isPaidFull = item.is_paid_full || item.total_paid >= item.total_amount;
+    const isPaidFull = item.is_paid_full || item.status === 'PAID' || Number(item.total_paid || 0) >= Number(item.total_amount || 0);
     const paymentMethod = item.payment_type
       || ((item.payment_method === 'cash' || item.payment_method === 'manual') ? 'Físico' : 'Online');
+    const lastPayment = meta?.lastPaymentByBooking?.get(item.id) || null;
+    const nextInstallment = meta?.nextInstallmentByBooking?.get(item.id) || null;
+    const pendingFallback = Math.max(0, Number(item.total_amount || 0) - Number(item.total_paid || 0));
+    const pendingAmount = Number(nextInstallment?.amount || pendingFallback || 0);
+    const pendingCurrency = nextInstallment?.currency || item.currency;
 
     // Badges
     const statusBadge = isPaidFull
@@ -952,6 +1027,47 @@ function renderChurchBookings(list) {
              Online
            </span>`;
 
+    const lastPaymentLabel = lastPayment
+      ? `${formatCurrency(lastPayment.amount, lastPayment.currency || item.currency)} · ${formatDate(lastPayment.created_at)}`
+      : '—';
+    const nextInstallmentLabel = nextInstallment
+      ? `${formatCurrency(nextInstallment.amount, nextInstallment.currency || item.currency)} · ${formatDate(nextInstallment.due_date)}`
+      : (pendingAmount > 0 ? `${formatCurrency(pendingAmount, pendingCurrency)} · Sin fecha` : '—');
+
+    let primaryLabel = 'Pagado';
+    let primaryValue = formatCurrency(item.total_paid, item.currency);
+    let secondaryLabel = 'Total';
+    let secondaryValue = formatCurrency(item.total_amount, item.currency);
+
+    if (activeFilter === 'paid' && lastPayment) {
+      primaryLabel = 'Último abono';
+      primaryValue = formatCurrency(lastPayment.amount, lastPayment.currency || item.currency);
+    } else if (activeFilter === 'pending') {
+      primaryLabel = 'Pendiente';
+      primaryValue = formatCurrency(pendingAmount, pendingCurrency);
+      secondaryLabel = 'Pagado';
+      secondaryValue = formatCurrency(item.total_paid, item.currency);
+    }
+
+    const metaParts = [];
+    if (lastPayment) {
+      metaParts.push(`
+        <span class="inline-flex items-center gap-2">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Último abono</span>
+          <span class="text-slate-600">${lastPaymentLabel}</span>
+        </span>
+      `);
+    }
+    if (nextInstallment || pendingAmount > 0) {
+      metaParts.push(`
+        <span class="inline-flex items-center gap-2">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Próxima cuota</span>
+          <span class="text-slate-600">${nextInstallmentLabel}</span>
+        </span>
+      `);
+    }
+    const metaHtml = metaParts.length ? `<div class="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">${metaParts.join('')}</div>` : '';
+
     card.innerHTML = `
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex-1 min-w-0">
@@ -969,15 +1085,16 @@ function renderChurchBookings(list) {
         
         <div class="flex items-center gap-4 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4 mt-2 md:mt-0">
             <div class="text-right">
-              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Pagado</p>
-              <p class="text-sm font-bold text-brand-teal">${formatCurrency(item.total_paid, item.currency)}</p>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">${primaryLabel}</p>
+              <p class="text-sm font-bold text-brand-teal">${primaryValue}</p>
             </div>
             <div class="text-right">
-              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total</p>
-              <p class="text-sm font-bold text-[#293C74]">${formatCurrency(item.total_amount, item.currency)}</p>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">${secondaryLabel}</p>
+              <p class="text-sm font-bold text-[#293C74]">${secondaryValue}</p>
             </div>
         </div>
       </div>
+      ${metaHtml}
       
       <div class="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400">
          <span class="flex items-center gap-1">
@@ -992,6 +1109,12 @@ function renderChurchBookings(list) {
 
   // Update stats after rendering
   updateChurchStats();
+}
+
+function updateChurchBookingsView() {
+  const meta = buildChurchBookingsMeta();
+  const filtered = filterChurchBookings(churchBookingsData, meta);
+  renderChurchBookings(filtered, meta);
 }
 
 function parseDateInput(value) {
@@ -1182,8 +1305,7 @@ async function loadChurchBookings(headers = {}) {
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchBookingsData = payload.bookings || [];
-    const filtered = filterChurchBookings(churchBookingsData);
-    renderChurchBookings(filtered);
+    updateChurchBookingsView();
   } catch (err) {
     console.error(err);
   }
@@ -1209,6 +1331,7 @@ async function loadChurchInstallments(headers = {}) {
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchInstallmentsData = payload.installments || [];
     renderChurchInstallments(filterChurchInstallments(churchInstallmentsData));
+    updateChurchBookingsView();
     updateChurchStats();
     if (churchInstallmentsStatusMsg) {
       churchInstallmentsStatusMsg.textContent = '';
@@ -1240,6 +1363,7 @@ async function loadChurchPayments(headers = {}) {
     churchPaymentsData = payload.payments || [];
     const filtered = filterChurchPayments(churchPaymentsData);
     renderChurchPayments(filtered);
+    updateChurchBookingsView();
     updateChurchStats();
   } catch (err) {
     console.error(err);
@@ -2524,7 +2648,7 @@ churchInstallmentsList?.addEventListener('click', async (event) => {
 });
 
 churchBookingsSearch?.addEventListener('input', () => {
-  renderChurchBookings(filterChurchBookings(churchBookingsData));
+  updateChurchBookingsView();
 });
 document.getElementById('church-bookings-filters')?.addEventListener('click', (event) => {
   const target = event.target.closest('.church-bookings-filter');
@@ -2539,10 +2663,10 @@ document.getElementById('church-bookings-filters')?.addEventListener('click', (e
   });
   target.classList.remove('bg-white', 'text-slate-500', 'border', 'border-slate-100');
   target.classList.add('bg-[#293C74]', 'text-white', 'shadow-sm');
-  renderChurchBookings(filterChurchBookings(churchBookingsData));
+  updateChurchBookingsView();
 });
 churchBookingsStatus?.addEventListener('change', () => {
-  renderChurchBookings(filterChurchBookings(churchBookingsData));
+  updateChurchBookingsView();
 });
 churchPaymentsSearch?.addEventListener('input', () => {
   renderChurchPayments(filterChurchPayments(churchPaymentsData));
