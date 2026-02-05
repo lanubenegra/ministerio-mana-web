@@ -1241,6 +1241,44 @@ function filterChurchInstallments(list) {
   });
 }
 
+function buildChurchInstallmentsView() {
+  const installmentBookingIds = new Set(
+    (churchInstallmentsData || [])
+      .map((row) => row.booking_id || row.booking?.id)
+      .filter(Boolean),
+  );
+  const pendingBalanceItems = (churchBookingsData || []).reduce((acc, booking) => {
+    const totalAmount = Number(booking.total_amount || 0);
+    const totalPaid = Number(booking.total_paid || 0);
+    if (totalAmount > totalPaid && !installmentBookingIds.has(booking.id)) {
+      acc.push({
+        id: `balance-${booking.id}`,
+        booking_id: booking.id,
+        amount: Math.max(0, totalAmount - totalPaid),
+        currency: booking.currency,
+        status: 'PENDING',
+        due_date: null,
+        provider_reference: booking.reference || booking.id,
+        booking,
+        plan: null,
+        is_balance_only: true,
+      });
+    }
+    return acc;
+  }, []);
+
+  const merged = [...(churchInstallmentsData || []), ...pendingBalanceItems];
+  const filtered = filterChurchInstallments(merged);
+  filtered.sort((a, b) => {
+    const aDate = toDate(a.due_date);
+    const bDate = toDate(b.due_date);
+    const aKey = aDate ? aDate.getTime() : Number.POSITIVE_INFINITY;
+    const bKey = bDate ? bDate.getTime() : Number.POSITIVE_INFINITY;
+    return aKey - bKey;
+  });
+  return filtered;
+}
+
 function renderChurchInstallments(list) {
   if (!churchInstallmentsList || !churchInstallmentsEmpty) return;
   churchInstallmentsList.innerHTML = '';
@@ -1262,23 +1300,26 @@ function renderChurchInstallments(list) {
         ? 'bg-red-100 text-red-700'
         : 'bg-yellow-100 text-yellow-700';
     const amountLabel = formatCurrency(item.amount, item.currency || plan.currency);
-    const dueLabel = formatDate(item.due_date);
+    const dueLabel = item.due_date ? formatDate(item.due_date) : 'Sin fecha';
     const reminderLabel = item.last_reminder?.sent_at ? formatDateTime(item.last_reminder.sent_at) : '—';
     const linkLabel = item.last_link?.created_at ? formatDateTime(item.last_link.created_at) : '—';
+    const isBalanceOnly = Boolean(item.is_balance_only);
     const isAuto = (plan.provider === 'wompi' && plan.provider_payment_method_id)
       || (plan.provider === 'stripe' && plan.provider_subscription_id);
     const chargeLabel = isAuto ? 'Auto' : 'Manual';
     const chargeClass = isAuto ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
-    const actionsHtml = isAuto
-      ? '<div class="text-xs font-semibold text-emerald-700">Cobro automático activo</div>'
-      : `
-        <button class="church-installment-action px-3 py-2 rounded-xl bg-[#293C74] text-white text-xs font-bold hover:shadow-md transition" data-action="copy-link" data-installment="${item.id}">
-          Copiar link
-        </button>
-        <button class="church-installment-action px-3 py-2 rounded-xl bg-white border border-slate-200 text-[#293C74] text-xs font-bold hover:bg-slate-50 transition" data-action="send-reminder" data-installment="${item.id}">
-          Enviar recordatorio
-        </button>
-      `;
+    const actionsHtml = isBalanceOnly
+      ? '<div class="text-xs font-semibold text-slate-500">Sin fecha asignada</div>'
+      : (isAuto
+        ? '<div class="text-xs font-semibold text-emerald-700">Cobro automático activo</div>'
+        : `
+          <button class="church-installment-action px-3 py-2 rounded-xl bg-[#293C74] text-white text-xs font-bold hover:shadow-md transition" data-action="copy-link" data-installment="${item.id}">
+            Copiar link
+          </button>
+          <button class="church-installment-action px-3 py-2 rounded-xl bg-white border border-slate-200 text-[#293C74] text-xs font-bold hover:bg-slate-50 transition" data-action="send-reminder" data-installment="${item.id}">
+            Enviar recordatorio
+          </button>
+        `);
 
     const card = document.createElement('div');
     card.className = 'rounded-2xl border border-slate-200 bg-white px-4 py-4';
@@ -1323,6 +1364,7 @@ async function loadChurchBookings(headers = {}) {
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchBookingsData = payload.bookings || [];
     updateChurchBookingsView();
+    renderChurchInstallments(buildChurchInstallmentsView());
   } catch (err) {
     console.error(err);
   }
@@ -1347,7 +1389,7 @@ async function loadChurchInstallments(headers = {}) {
     const payload = await res.json();
     if (!res.ok || !payload.ok) throw new Error(payload.error || 'No se pudo cargar');
     churchInstallmentsData = payload.installments || [];
-    renderChurchInstallments(filterChurchInstallments(churchInstallmentsData));
+    renderChurchInstallments(buildChurchInstallmentsView());
     updateChurchBookingsView();
     updateChurchStats();
     if (churchInstallmentsStatusMsg) {
@@ -2719,10 +2761,10 @@ churchPaymentsTo?.addEventListener('change', () => {
   renderChurchPayments(filterChurchPayments(churchPaymentsData));
 });
 churchInstallmentsSearch?.addEventListener('input', () => {
-  renderChurchInstallments(filterChurchInstallments(churchInstallmentsData));
+  renderChurchInstallments(buildChurchInstallmentsView());
 });
 churchInstallmentsStatusFilter?.addEventListener('change', () => {
-  renderChurchInstallments(filterChurchInstallments(churchInstallmentsData));
+  renderChurchInstallments(buildChurchInstallmentsView());
 });
 churchMembersSearch?.addEventListener('input', () => {
   renderChurchMembers(filterChurchMembers(churchMembersData));
