@@ -1994,42 +1994,53 @@ function renderBookings(bookings) {
   bookingsEmpty.classList.add('hidden');
   bookings.forEach((booking) => {
     const card = document.createElement('div');
-    card.className = 'bg-white/5 border border-white/10 rounded-[2rem] p-6 space-y-4 hover:bg-white/[0.07] transition-all group';
-    const colorClass = booking.status === 'PAID' ? 'text-green-400' : 'text-brand-teal';
+    card.className = 'bg-white border border-slate-100 rounded-[2rem] p-6 space-y-4 hover:shadow-md transition-all group';
+    const totalAmount = Number(booking.total_amount || 0);
+    const totalPaid = Number(booking.total_paid || 0);
+    const progress = totalAmount > 0 ? Math.min(100, Math.round((totalPaid / totalAmount) * 100)) : 0;
+    const isPaidFull = booking.status === 'PAID' || totalPaid >= totalAmount;
+    const statusMap = {
+      PAID: { label: 'Pago completo', className: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+      DEPOSIT_OK: { label: 'Abono confirmado', className: 'bg-amber-100 text-amber-700 border border-amber-200' },
+      PENDING: { label: 'Pendiente', className: 'bg-slate-100 text-slate-500 border border-slate-200' },
+    };
+    const statusKey = isPaidFull ? 'PAID' : (booking.status || 'PENDING');
+    const statusInfo = statusMap[statusKey] || statusMap.PENDING;
     card.innerHTML = `
       <div class="flex justify-between items-start">
         <div>
-          <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1">Reserva identificada</p>
-          <h3 class="font-bold text-lg text-white">#${booking.id.slice(0, 8).toUpperCase()}</h3>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reserva identificada</p>
+          <h3 class="font-bold text-lg text-[#293C74]">#${booking.id.slice(0, 8).toUpperCase()}</h3>
+          <p class="text-xs text-slate-500 mt-1">${booking.event_name || 'Cumbre Mundial 2026'}</p>
         </div>
-        <span class="px-3 py-1 rounded-full bg-white/5 text-[10px] font-black uppercase tracking-widest border border-white/10 ${colorClass}">${booking.status}</span>
+        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${statusInfo.className}">${statusInfo.label}</span>
       </div>
       <div class="space-y-3 pt-2">
         <div class="flex justify-between text-xs">
-          <span class="text-white/40">Progreso de abono</span>
-          <span class="text-white/80">${Math.round((booking.total_paid / booking.total_amount) * 100)}%</span>
+          <span class="text-slate-500">Progreso de abono</span>
+          <span class="text-[#293C74] font-bold">${progress}%</span>
         </div>
-        <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-          <div class="h-full bg-brand-teal transition-all duration-1000" style="width: ${(booking.total_paid / booking.total_amount) * 100}%"></div>
+        <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-brand-teal to-[#4CC9E0] transition-all duration-700" style="width: ${progress}%"></div>
         </div>
         <div class="flex justify-between items-center mt-2">
-            <p class="text-[10px] text-white/50 truncate max-w-[150px]">${booking.church_name || 'Sin iglesia'}</p>
-            ${booking.status !== 'PAID' ? `
-            <a href="https://wa.me/${booking.participant_phone || ''}?text=${encodeURIComponent(`Hola ${booking.participant_name || ''}, te recordamos tu compromiso con la Cumbre 2026. Tu saldo pendiente es de $${booking.total_amount - booking.total_paid}.`)}" 
+            <p class="text-[10px] text-slate-400 truncate max-w-[150px]">${booking.church_name || booking.contact_church || 'Sin iglesia'}</p>
+            ${!isPaidFull ? `
+            <a href="https://wa.me/${booking.participant_phone || ''}?text=${encodeURIComponent(`Hola ${booking.participant_name || ''}, te recordamos tu compromiso con la Cumbre 2026. Tu saldo pendiente es de $${Math.max(0, totalAmount - totalPaid)}.`)}" 
                target="_blank"
-               class="flex items-center gap-1 text-[10px] bg-green-500/10 text-green-400 px-2 py-1 rounded-lg hover:bg-green-500/20 transition-colors">
+               class="flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-100">
                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.463 1.065 2.876 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
                Recordar
             </a>` : ''}
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-             <p class="text-[10px] text-white/30 uppercase tracking-widest mb-1">Aportado</p>
-             <p class="text-sm font-bold">${formatCurrency(booking.total_paid, booking.currency)}</p>
+             <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Aportado</p>
+             <p class="text-sm font-bold text-[#293C74]">${formatCurrency(totalPaid, booking.currency)}</p>
           </div>
           <div class="text-right">
-             <p class="text-[10px] text-white/30 uppercase tracking-widest mb-1">Monto Total</p>
-             <p class="text-sm font-bold text-white/60">${formatCurrency(booking.total_amount, booking.currency)}</p>
+             <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Monto Total</p>
+             <p class="text-sm font-bold text-slate-600">${formatCurrency(totalAmount, booking.currency)}</p>
           </div>
         </div>
       </div>
@@ -2048,31 +2059,36 @@ function renderPlans(plans, bookings) {
   plans.forEach((plan) => {
     const booking = bookings.find((item) => item.id === plan.booking_id);
     const card = document.createElement('div');
-    card.className = 'bg-white/5 border border-white/10 rounded-[2rem] p-6 space-y-5';
+    card.className = 'bg-white border border-slate-100 rounded-[2rem] p-6 space-y-5 shadow-sm';
     const statusLabel = plan.status === 'PAUSED' ? 'Pausado' : plan.status === 'COMPLETED' ? 'Completado' : 'Activo';
     const actionLabel = plan.status === 'PAUSED' ? 'Reactivar abonos' : 'Pausar abonos';
-    const actionClass = plan.status === 'PAUSED' ? 'bg-brand-teal text-white' : 'bg-white/5 text-white/60 hover:bg-white/10';
+    const actionClass = plan.status === 'PAUSED' ? 'bg-brand-teal text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
+    const badgeClass = plan.status === 'COMPLETED'
+      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+      : plan.status === 'PAUSED'
+        ? 'bg-amber-100 text-amber-700 border border-amber-200'
+        : 'bg-slate-100 text-slate-600 border border-slate-200';
 
     card.innerHTML = `
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-3">
-           <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40">
+           <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
            </div>
            <div>
-             <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Recurrencia</p>
-             <p class="text-sm font-bold text-white">${plan.frequency === 'BIWEEKLY' ? 'Quincenal' : 'Mensual'}</p>
+             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recurrencia</p>
+             <p class="text-sm font-bold text-[#293C74]">${plan.frequency === 'BIWEEKLY' ? 'Quincenal' : 'Mensual'}</p>
            </div>
         </div>
-        <span class="text-[10px] font-bold px-2 py-1 rounded bg-white/5 border border-white/5 text-white/40 uppercase">${statusLabel}</span>
+        <span class="text-[10px] font-bold px-2 py-1 rounded uppercase ${badgeClass}">${statusLabel}</span>
       </div>
       
-      <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/5 text-center">
-         <p class="text-[10px] text-white/30 uppercase tracking-widest mb-1">Monto de la Cuota</p>
-         <p class="text-2xl font-display font-bold text-white">${formatCurrency(plan.installment_amount, plan.currency)}</p>
+      <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+         <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Monto de la Cuota</p>
+         <p class="text-2xl font-display font-bold text-[#293C74]">${formatCurrency(plan.installment_amount, plan.currency)}</p>
       </div>
 
-      <div class="flex items-center justify-between text-xs text-white/40 border-t border-white/5 pt-4">
+      <div class="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-4">
          <span>Próximo abono: ${formatDate(plan.next_due_date)}</span>
          <button class="plan-action px-4 py-2 rounded-lg text-xs font-bold transition-all ${actionClass}" data-plan="${plan.id}" data-action="${plan.status === 'PAUSED' ? 'resume' : 'pause'}">
           ${actionLabel}
@@ -2096,12 +2112,12 @@ function setupAdminFilters(allBookings) {
 
   // City Select
   const citySelect = document.createElement('select');
-  citySelect.className = 'bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-teal';
+  citySelect.className = 'bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 outline-none focus:border-brand-teal';
   citySelect.innerHTML = '<option value="">Todas las ciudades</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
 
   // Church Select
   const churchSelect = document.createElement('select');
-  churchSelect.className = 'bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-brand-teal';
+  churchSelect.className = 'bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 outline-none focus:border-brand-teal';
   churchSelect.innerHTML = '<option value="">Todas las iglesias</option>' + churches.map(c => `<option value="${c}">${c}</option>`).join('');
 
   // Event Listeners
@@ -2180,13 +2196,15 @@ function renderPayments(payments) {
   paymentsEmpty.classList.add('hidden');
   payments.forEach((payment) => {
     const row = document.createElement('tr');
-    row.className = 'group hover:bg-white/[0.02] transition-colors';
-    const statusClass = payment.status === 'APPROVED' ? 'bg-green-400/10 text-green-400' : 'bg-brand-gold/10 text-brand-gold';
+    row.className = 'group hover:bg-slate-50 transition-colors';
+    const statusClass = payment.status === 'APPROVED'
+      ? 'bg-emerald-100 text-emerald-700'
+      : 'bg-amber-100 text-amber-700';
     row.innerHTML = `
-      <td class="py-6 px-8 text-white/80">${formatDate(payment.created_at)}</td>
-      <td class="py-6 px-8 font-mono text-xs text-white/40">${payment.reference || '-'}</td>
-      <td class="py-6 px-8 text-white/60">${payment.provider?.toUpperCase() || '-'} · Aporte</td>
-      <td class="py-6 px-8 text-right font-bold text-white">${formatCurrency(payment.amount, payment.currency)}</td>
+      <td class="py-6 px-8 text-slate-600">${formatDate(payment.created_at)}</td>
+      <td class="py-6 px-8 font-mono text-xs text-slate-400">${payment.reference || '-'}</td>
+      <td class="py-6 px-8 text-slate-500">${payment.provider?.toUpperCase() || '-'} · Aporte</td>
+      <td class="py-6 px-8 text-right font-bold text-[#293C74]">${formatCurrency(payment.amount, payment.currency)}</td>
       <td class="py-6 px-8 text-center">
         <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusClass}">
           ${payment.status || 'PENDING'}
