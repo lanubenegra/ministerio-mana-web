@@ -1,13 +1,56 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
+import { readPasswordSession } from '@lib/portalPasswordSession';
+
+const EVENT_FIELDS = [
+    'title',
+    'description',
+    'start_date',
+    'end_date',
+    'scope',
+    'location_name',
+    'location_address',
+    'city',
+    'country',
+    'banner_url',
+    'status',
+];
+
+function sanitizeEventPayload(body: Record<string, any>) {
+    const payload: Record<string, any> = {};
+    EVENT_FIELDS.forEach((field) => {
+        const value = body?.[field];
+        if (value === undefined || value === '') return;
+        payload[field] = value;
+    });
+    if (payload.scope) payload.scope = String(payload.scope).toUpperCase();
+    if (payload.status) payload.status = String(payload.status).toUpperCase();
+    return payload;
+}
 
 export const GET: APIRoute = async ({ request }) => {
     if (!supabaseAdmin) return new Response(JSON.stringify({ ok: false, error: 'Server Config Error' }), { status: 500 });
 
     const user = await getUserFromRequest(request);
-    if (!user) {
+    const passwordSession = user ? null : readPasswordSession(request);
+    if (!user && !passwordSession) {
         return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
+    }
+
+    if (passwordSession) {
+        const { data: events, error } = await supabaseAdmin
+            .from('events')
+            .select('*')
+            .order('start_date', { ascending: true });
+
+        if (error) {
+            console.error('Events Fetch Error:', error);
+            if (error.code === '42P01') return new Response(JSON.stringify({ ok: true, events: [] }), { status: 200 });
+            return new Response(JSON.stringify({ ok: false, error: 'Error loading events' }), { status: 500 });
+        }
+
+        return new Response(JSON.stringify({ ok: true, events }), { status: 200 });
     }
 
     // Get User Profile for Scoping
@@ -67,31 +110,35 @@ export const POST: APIRoute = async ({ request }) => {
     if (!supabaseAdmin) return new Response(JSON.stringify({ ok: false, error: 'Server Config Error' }), { status: 500 });
 
     const user = await getUserFromRequest(request);
-    if (!user) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
+    const passwordSession = user ? null : readPasswordSession(request);
+    if (!user && !passwordSession) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
 
     const body = await request.json();
+    const payload = sanitizeEventPayload(body);
 
     // Validation
-    if (!body.title || !body.start_date || !body.scope) {
+    if (!payload.title || !payload.start_date || !payload.scope) {
         return new Response(JSON.stringify({ ok: false, error: 'Missing fields' }), { status: 400 });
     }
 
     // Get Profile
-    const { data: profile } = await supabaseAdmin
-        .from('user_profiles')
-        .select('church_id, role, country, city')
-        .eq('user_id', user.id)
-        .single();
+    const { data: profile } = user
+        ? await supabaseAdmin
+            .from('user_profiles')
+            .select('church_id, role, country, city')
+            .eq('user_id', user.id)
+            .single()
+        : { data: { role: 'superadmin' } };
 
     // Scope enforcement
-    if (body.scope === 'LOCAL') {
+    if (payload.scope === 'LOCAL' && user) {
         if (!profile?.church_id) {
             return new Response(JSON.stringify({ ok: false, error: 'No tienes una iglesia asociada.' }), { status: 403 });
         }
-        body.church_id = profile.church_id;
+        payload.church_id = profile.church_id;
         // Clear location fields that might conflict or use them as manual
         // body.city = profile.city; 
-    } else if (body.scope === 'NATIONAL' || body.scope === 'GLOBAL') {
+    } else if (payload.scope === 'NATIONAL' || payload.scope === 'GLOBAL') {
         // Only Admin/Superadmin/Pastor(maybe?) can create National/Global?
         // Assuming Pastors can only create LOCAL events.
         const allowedRoles = ['admin', 'superadmin'];
@@ -99,16 +146,16 @@ export const POST: APIRoute = async ({ request }) => {
             return new Response(JSON.stringify({ ok: false, error: 'No tienes permisos para crear eventos Globales/Nacionales.' }), { status: 403 });
         }
 
-        if (body.scope === 'NATIONAL' && !body.country) {
-            body.country = profile?.country || 'Colombia';
+        if (payload.scope === 'NATIONAL' && !payload.country) {
+            payload.country = profile?.country || 'Colombia';
         }
     }
 
     const { data, error } = await supabaseAdmin
         .from('events')
         .insert({
-            ...body,
-            created_by: user.id,
+            ...payload,
+            created_by: user?.id ?? null,
             status: 'PUBLISHED' // Defaulting to Published for MVP
         })
         .select()
@@ -117,6 +164,90 @@ export const POST: APIRoute = async ({ request }) => {
     if (error) {
         console.error('Event Create Error:', error);
         return new Response(JSON.stringify({ ok: false, error: 'No se pudo crear el evento' }), { status: 500 });
+    }
+
+    return new Response(JSON.stringify({ ok: true, event: data }), { status: 200 });
+};
+
+export const PATCH: APIRoute = async ({ request }) => {
+    if (!supabaseAdmin) return new Response(JSON.stringify({ ok: false, error: 'Server Config Error' }), { status: 500 });
+
+    const user = await getUserFromRequest(request);
+    const passwordSession = user ? null : readPasswordSession(request);
+    if (!user && !passwordSession) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
+
+    const body = await request.json();
+    const eventId = body?.id ? String(body.id) : '';
+    if (!eventId) {
+        return new Response(JSON.stringify({ ok: false, error: 'Missing event id' }), { status: 400 });
+    }
+
+    const payload = sanitizeEventPayload(body);
+    if (!Object.keys(payload).length) {
+        return new Response(JSON.stringify({ ok: false, error: 'No changes provided' }), { status: 400 });
+    }
+
+    const { data: eventRow, error: eventError } = await supabaseAdmin
+        .from('events')
+        .select('id, created_by, scope, church_id, country')
+        .eq('id', eventId)
+        .single();
+
+    if (eventError || !eventRow) {
+        return new Response(JSON.stringify({ ok: false, error: 'Event not found' }), { status: 404 });
+    }
+
+    const { data: profile } = user
+        ? await supabaseAdmin
+            .from('user_profiles')
+            .select('church_id, role, country')
+            .eq('user_id', user.id)
+            .single()
+        : { data: { role: 'superadmin' } };
+
+    const role = profile?.role || 'user';
+    const isAdmin = ['admin', 'superadmin'].includes(role);
+    const canManage = isAdmin || ['national_pastor', 'pastor'].includes(role);
+
+    if (!canManage && !passwordSession) {
+        return new Response(JSON.stringify({ ok: false, error: 'No tienes permisos para editar eventos.' }), { status: 403 });
+    }
+
+    if (!isAdmin && user) {
+        const isOwner = eventRow.created_by === user.id;
+        const sameChurch = eventRow.scope === 'LOCAL'
+            && profile?.church_id
+            && eventRow.church_id === profile.church_id;
+        if (!isOwner && !sameChurch) {
+            return new Response(JSON.stringify({ ok: false, error: 'No tienes permisos para editar este evento.' }), { status: 403 });
+        }
+    }
+
+    if ((payload.scope === 'NATIONAL' || payload.scope === 'GLOBAL') && !isAdmin) {
+        return new Response(JSON.stringify({ ok: false, error: 'No tienes permisos para cambiar el alcance.' }), { status: 403 });
+    }
+
+    if (payload.scope === 'LOCAL' && user) {
+        if (!profile?.church_id) {
+            return new Response(JSON.stringify({ ok: false, error: 'No tienes una iglesia asociada.' }), { status: 403 });
+        }
+        payload.church_id = profile.church_id;
+    }
+
+    if (payload.scope === 'NATIONAL' && !payload.country) {
+        payload.country = profile?.country || eventRow.country || 'Colombia';
+    }
+
+    const { data, error } = await supabaseAdmin
+        .from('events')
+        .update(payload)
+        .eq('id', eventId)
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Event Update Error:', error);
+        return new Response(JSON.stringify({ ok: false, error: 'No se pudo actualizar el evento' }), { status: 500 });
     }
 
     return new Response(JSON.stringify({ ok: true, event: data }), { status: 200 });

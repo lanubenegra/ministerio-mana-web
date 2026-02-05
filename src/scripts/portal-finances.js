@@ -1,10 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { ensureAuthenticated, redirectToLogin } from '@lib/portalAuthClient';
 
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-const statTotal = document.getElementById('stat-total');
+const statTotalCop = document.getElementById('stat-total-cop');
+const statTotalUsd = document.getElementById('stat-total-usd');
 const statTop = document.getElementById('stat-top-concept');
 const loadingEl = document.getElementById('finances-loading');
 const tableEl = document.getElementById('finances-table');
@@ -25,8 +22,12 @@ const DEFAULT_CATEGORIES = [
     'Otros'
 ];
 
-function formatCurrency(val) {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+function formatCurrency(val, currency) {
+    return new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'es-CO', {
+        style: 'currency',
+        currency: currency || 'COP',
+        maximumFractionDigits: 0
+    }).format(val || 0);
 }
 
 function escapeHtml(value) {
@@ -39,17 +40,17 @@ function escapeHtml(value) {
 }
 
 async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = '/portal/ingresar';
-        return;
-    }
-
     try {
-        // Build Headers with Token
-        const token = session.access_token;
+        const auth = await ensureAuthenticated();
+        if (!auth.isAuthenticated) {
+            redirectToLogin();
+            return;
+        }
+        const token = auth.token;
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
         const res = await fetch('/api/portal/finances', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers,
+            credentials: 'include'
         });
 
         if (res.status === 403) {
@@ -73,15 +74,18 @@ function renderDashboard(data) {
     if (loadingEl) loadingEl.classList.add('hidden');
 
     // Stats
-    const total = data.stats?.total || 0;
-    if (statTotal) statTotal.textContent = formatCurrency(total);
+    const totalByCurrency = data.stats?.totalByCurrency || {};
+    if (statTotalCop) statTotalCop.textContent = formatCurrency(totalByCurrency.COP || 0, 'COP');
+    if (statTotalUsd) statTotalUsd.textContent = formatCurrency(totalByCurrency.USD || 0, 'USD');
 
     // Top Concept
     const byConcept = data.stats?.byCategory || data.stats?.byConcept || {};
     let topConcept = '-';
     let maxVal = 0;
     for (const [key, val] of Object.entries(byConcept)) {
-        const numVal = Number(val) || 0;
+        const numVal = typeof val === 'number'
+            ? Number(val)
+            : Number(val?.total || 0);
         if (numVal > maxVal) {
             maxVal = numVal;
             topConcept = key;
@@ -104,7 +108,7 @@ function renderDashboard(data) {
                     <td class="py-3 font-medium text-[#293C74]">${escapeHtml(t.concept_label || 'Aporte')}</td>
                     <td class="py-3 text-slate-500">${escapeHtml(t.donor_name || 'Anónimo')}</td>
                     <td class="py-3"><span class="px-2 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700">${escapeHtml(t.status || 'APROBADO')}</span></td>
-                    <td class="py-3 text-right font-bold pr-2">${formatCurrency(t.amount)}</td>
+                    <td class="py-3 text-right font-bold pr-2">${formatCurrency(t.amount, t.currency)}</td>
                 </tr>
             `).join('');
         }
@@ -115,17 +119,31 @@ function renderDashboard(data) {
 
 function renderCategories(byCategory) {
     if (!categoriesEl) return;
-    const entries = Object.entries(byCategory || {});
-    const finalEntries = entries.length
-        ? entries
-        : DEFAULT_CATEGORIES.map((label) => [label, 0]);
+        const entries = Object.entries(byCategory || {});
+        const finalEntries = entries.length
+            ? entries
+            : DEFAULT_CATEGORIES.map((label) => [label, 0]);
 
-    categoriesEl.innerHTML = finalEntries.map(([label, value]) => `
+    categoriesEl.innerHTML = finalEntries.map(([label, value]) => {
+        const currencyMap = typeof value === 'number'
+            ? { COP: Number(value) || 0 }
+            : (value?.byCurrency || value || {});
+        const copValue = Number(currencyMap.COP || 0);
+        const usdValue = Number(currencyMap.USD || 0);
+        const copLine = copValue ? `<span class="text-sm font-bold text-[#293C74]">${formatCurrency(copValue, 'COP')}</span>` : '';
+        const usdLine = usdValue ? `<span class="text-sm font-bold text-[#293C74]">${formatCurrency(usdValue, 'USD')}</span>` : '';
+        const emptyLine = (!copValue && !usdValue) ? `<span class="text-sm font-bold text-[#293C74]">${formatCurrency(0, 'COP')}</span>` : '';
+        return `
         <div class="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
             <p class="text-[10px] uppercase tracking-widest text-slate-400">${escapeHtml(label)}</p>
-            <p class="text-lg font-bold text-[#293C74] mt-2">${formatCurrency(Number(value) || 0)}</p>
+            <div class="mt-2 flex flex-col gap-1">
+                ${copLine}
+                ${usdLine}
+                ${emptyLine}
+            </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function renderIssues(issues) {
@@ -145,7 +163,7 @@ function renderIssues(issues) {
             ? 'bg-red-100 text-red-700'
             : 'bg-amber-100 text-amber-700';
 
-        const amount = formatCurrency(issue.amount || 0);
+        const amount = formatCurrency(issue.amount || 0, issue.currency);
         const name = issue.donor_name || 'Sin nombre';
         const email = issue.donor_email || '';
         const phoneRaw = issue.donor_phone || '';

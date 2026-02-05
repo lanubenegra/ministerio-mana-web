@@ -45,9 +45,17 @@ const welcomeName = document.getElementById('welcome-name');
 // Stats
 const statTotalPaid = document.getElementById('stat-total-paid');
 const statNextDue = document.getElementById('stat-next-due');
+const statNextNote = document.getElementById('stat-next-note');
 const planHighlight = document.getElementById('plan-highlight');
 const highlightAmount = document.getElementById('highlight-amount');
 const highlightDate = document.getElementById('highlight-date');
+const summaryEventsList = document.getElementById('summary-events-list');
+const summaryEventsEmpty = document.getElementById('summary-events-empty');
+const givingList = document.getElementById('giving-list');
+const givingEmpty = document.getElementById('giving-empty');
+const givingCta = document.getElementById('giving-cta');
+const localEventsList = document.getElementById('local-events-list');
+const localEventsEmpty = document.getElementById('local-events-empty');
 
 const bookingsList = document.getElementById('bookings-list');
 const bookingsEmpty = document.getElementById('bookings-empty');
@@ -137,6 +145,13 @@ const portalAlertTitle = document.getElementById('portal-alert-title');
 const portalAlertMessage = document.getElementById('portal-alert-message');
 const portalAlertClose = document.getElementById('portal-alert-close');
 const portalAlertOk = document.getElementById('portal-alert-ok');
+const portalConfirmModal = document.getElementById('portal-confirm-modal');
+const portalConfirmTitle = document.getElementById('portal-confirm-title');
+const portalConfirmMessage = document.getElementById('portal-confirm-message');
+const portalConfirmClose = document.getElementById('portal-confirm-close');
+const portalConfirmCancel = document.getElementById('portal-confirm-cancel');
+const portalConfirmOk = document.getElementById('portal-confirm-ok');
+let portalConfirmResolver = null;
 
 function hidePortalAlert() {
   if (!portalAlertModal) return;
@@ -161,6 +176,44 @@ portalAlertModal?.addEventListener('click', (event) => {
   if (event.target === portalAlertModal) hidePortalAlert();
 });
 
+function hidePortalConfirm(result = false) {
+  if (!portalConfirmModal) return;
+  portalConfirmModal.classList.add('hidden');
+  portalConfirmModal.classList.remove('flex');
+  if (portalConfirmResolver) {
+    portalConfirmResolver(result);
+    portalConfirmResolver = null;
+  }
+}
+
+function showPortalConfirm(message, options = {}) {
+  if (!portalConfirmModal || !portalConfirmMessage || !portalConfirmTitle || !portalConfirmOk) {
+    return Promise.resolve(window.confirm(message));
+  }
+  portalConfirmMessage.textContent = message;
+  portalConfirmTitle.textContent = options.title || 'Confirmar';
+  portalConfirmOk.textContent = options.confirmLabel || 'Confirmar';
+  if (options.tone === 'primary') {
+    portalConfirmOk.classList.remove('bg-[#E15554]', 'hover:bg-[#D94B4A]');
+    portalConfirmOk.classList.add('bg-brand-teal', 'hover:bg-brand-teal/90');
+  } else {
+    portalConfirmOk.classList.remove('bg-brand-teal', 'hover:bg-brand-teal/90');
+    portalConfirmOk.classList.add('bg-[#E15554]', 'hover:bg-[#D94B4A]');
+  }
+  portalConfirmModal.classList.remove('hidden');
+  portalConfirmModal.classList.add('flex');
+  return new Promise((resolve) => {
+    portalConfirmResolver = resolve;
+  });
+}
+
+portalConfirmClose?.addEventListener('click', () => hidePortalConfirm(false));
+portalConfirmCancel?.addEventListener('click', () => hidePortalConfirm(false));
+portalConfirmOk?.addEventListener('click', () => hidePortalConfirm(true));
+portalConfirmModal?.addEventListener('click', (event) => {
+  if (event.target === portalConfirmModal) hidePortalConfirm(false);
+});
+
 let supabase = null;
 let supabaseInitError = null;
 try {
@@ -171,6 +224,7 @@ try {
   // Don't redirect or show errors here - let the auth flow handle it
 }
 let portalProfile = null;
+let portalAccountPayload = null;
 let portalMemberships = [];
 let authMode = 'supabase';
 let churchParticipantsCount = 0;
@@ -214,6 +268,12 @@ function formatDate(value) {
   return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+function formatLongDate(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 function formatDateTime(value) {
   if (!value) return '-';
   const date = new Date(value);
@@ -224,6 +284,89 @@ function toDate(value) {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+const CUMBRE_EVENT_START = new Date('2026-06-06T09:00:00-05:00');
+const CUMBRE_EVENT_END = new Date('2026-06-08T18:00:00-05:00');
+const CUMBRE_ABONO_DEADLINE = new Date('2026-05-15T23:59:59-05:00');
+const DONATION_LABELS = {
+  diezmos: 'Diezmo',
+  ofrendas: 'Ofrenda',
+  misiones: 'Misiones',
+  campus: 'Campus',
+  evento: 'Evento',
+  peregrinaciones: 'Peregrinaciones',
+  general: 'General',
+};
+
+function resolveDonationLabel(value) {
+  const key = (value || '').toString().trim().toLowerCase();
+  return DONATION_LABELS[key] || 'Aporte';
+}
+
+function resolveEventDates(booking) {
+  const eventStart = booking?.event_start_date ? toDate(booking.event_start_date) : null;
+  const eventEnd = booking?.event_end_date ? toDate(booking.event_end_date) : null;
+  const title = (booking?.event_name || '').toString().trim();
+  const isCumbre = !title || title.toLowerCase().includes('cumbre');
+  return {
+    title: title || 'Cumbre Mundial 2026',
+    start: eventStart || (isCumbre ? CUMBRE_EVENT_START : null),
+    end: eventEnd || (isCumbre ? CUMBRE_EVENT_END : null),
+    isCumbre,
+  };
+}
+
+function getCountdownLabel(startDate, endDate) {
+  if (!startDate) return 'Sin fecha';
+  const now = new Date();
+  const end = endDate || startDate;
+  if (now > end) return 'Evento finalizado';
+  if (now >= startDate && now <= end) return 'Evento en curso';
+  const diffMs = startDate.getTime() - now.getTime();
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (days <= 1) return 'Falta 1 día';
+  return `Faltan ${days} días`;
+}
+
+function formatCalendarDate(date) {
+  if (!date) return '';
+  const iso = date.toISOString().replace(/[-:]/g, '').split('.')[0];
+  return `${iso}Z`;
+}
+
+function buildGoogleCalendarUrl({ title, start, end, location, details }) {
+  if (!start) return '';
+  const startStr = formatCalendarDate(start);
+  const endStr = formatCalendarDate(end || start);
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title || 'Evento Maná',
+    dates: `${startStr}/${endStr}`,
+    location: location || '',
+    details: details || '',
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function buildIcsContent({ title, start, end, location, details }) {
+  const startStr = formatCalendarDate(start);
+  const endStr = formatCalendarDate(end || start);
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Ministerio Mana//Portal//ES',
+    'BEGIN:VEVENT',
+    `UID:${Date.now()}@ministeriomana.org`,
+    `DTSTAMP:${formatCalendarDate(new Date())}`,
+    `DTSTART:${startStr}`,
+    `DTEND:${endStr}`,
+    `SUMMARY:${(title || 'Evento Maná').replace(/\\n/g, ' ')}`,
+    location ? `LOCATION:${location.replace(/\\n/g, ' ')}` : '',
+    details ? `DESCRIPTION:${details.replace(/\\n/g, ' ')}` : '',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].filter(Boolean).join('\n');
 }
 
 function getAuthRedirectState() {
@@ -361,6 +504,7 @@ async function loadDashboardData(authResult) {
     } else {
       payload = resData;
     }
+    portalAccountPayload = payload;
 
     authMode = sessionPayload.mode || 'supabase';
     portalProfile = sessionPayload.profile || {};
@@ -498,12 +642,42 @@ async function loadDashboardData(authResult) {
     payload.bookings?.forEach(b => totalPaidAll += (b.total_paid || 0));
     statTotalPaid.textContent = formatCurrency(totalPaidAll, payload.bookings?.[0]?.currency);
 
-    const activePlan = payload.plans?.find(p => p.status === 'ACTIVE');
+    const activePlans = (payload.plans || []).filter((plan) => plan.status === 'ACTIVE');
+    const nextPlanDate = activePlans
+      .map((plan) => toDate(plan.next_due_date))
+      .filter(Boolean)
+      .sort((a, b) => a.getTime() - b.getTime())[0] || null;
+    const nextInstallmentDate = (payload.installments || [])
+      .filter((item) => ['PENDING', 'FAILED'].includes(item.status))
+      .map((item) => toDate(item.due_date))
+      .filter(Boolean)
+      .sort((a, b) => a.getTime() - b.getTime())[0] || null;
+
+    const hasPendingBalance = (payload.bookings || []).some((b) => Number(b.total_amount || 0) > Number(b.total_paid || 0));
+    const deadlineHintDate = activePlans
+      .map((plan) => toDate(plan.end_date))
+      .filter(Boolean)
+      .sort((a, b) => a.getTime() - b.getTime())[0] || (hasPendingBalance ? CUMBRE_ABONO_DEADLINE : null);
+
+    const nextDueDate = nextPlanDate || nextInstallmentDate;
+    if (nextDueDate) {
+      statNextDue.textContent = formatDate(nextDueDate);
+      if (statNextNote) statNextNote.textContent = 'Plan de cuotas activo';
+    } else if (hasPendingBalance) {
+      statNextDue.textContent = 'Sin fecha';
+      if (statNextNote) statNextNote.textContent = deadlineHintDate ? `Antes de ${formatLongDate(deadlineHintDate)}` : 'Plan de cuotas activo';
+    } else {
+      statNextDue.textContent = '-';
+      if (statNextNote) statNextNote.textContent = 'Sin cuotas pendientes';
+    }
+
+    const activePlan = activePlans[0];
     if (activePlan) {
-      statNextDue.textContent = formatDate(activePlan.next_due_date);
+      const nextDueLabel = activePlan.next_due_date ? formatDate(activePlan.next_due_date) : 'Sin fecha';
+      const nextDueHint = activePlan.end_date ? `Antes de ${formatLongDate(activePlan.end_date)}` : '';
       planHighlight.classList.remove('hidden');
       highlightAmount.textContent = formatCurrency(activePlan.installment_amount, activePlan.currency);
-      highlightDate.textContent = formatDate(activePlan.next_due_date);
+      highlightDate.textContent = nextDueHint || nextDueLabel;
 
       // Dynamic Context
       const highlightHeader = document.getElementById('highlight-header');
@@ -527,7 +701,11 @@ async function loadDashboardData(authResult) {
     renderBookings(payload.bookings || []);
     renderPlans(payload.plans || [], payload.bookings || []);
     renderInstallments(payload.installments || [], payload.plans || [], payload.bookings || []);
-    renderPayments(payload.payments || []);
+    const paymentsForTable = buildPaymentsTableData(payload);
+    renderPayments(paymentsForTable);
+    renderSummaryEvents(payload.bookings || [], payload.plans || [], payload.installments || []);
+    renderGivingSummary(payload.donations || [], payload.donationSubscriptions || []);
+    renderLocalEvents(payload.events || []);
     renderMemberships(portalMemberships);
     setupInviteAccess();
     initAdminInvite();
@@ -765,10 +943,10 @@ async function loadChurchSelector(headers = {}) {
     const contentEl = document.getElementById('church-dashboard-content');
     if (portalSelectedChurchId && portalSelectedChurchId !== CUSTOM_CHURCH_VALUE) {
       if (emptyEl) emptyEl.classList.add('hidden');
-      if (contentEl) contentEl.classList.remove('hidden');
+      if (contentEl) contentEl.removeAttribute('hidden');
     } else {
       if (emptyEl) emptyEl.classList.remove('hidden');
-      if (contentEl) contentEl.classList.add('hidden');
+      if (contentEl) contentEl.setAttribute('hidden', '');
     }
 
     if (isAllChurchesSelected()) {
@@ -817,7 +995,7 @@ if (churchSelectorInput) {
     const contentEl = document.getElementById('church-dashboard-content');
     if (selectedChurchId === ALL_CHURCHES_VALUE || selectedChurchId) {
       if (emptyEl) emptyEl.classList.add('hidden');
-      if (contentEl) contentEl.classList.remove('hidden');
+      if (contentEl) contentEl.removeAttribute('hidden');
 
       await Promise.all([
         loadChurchBookings(portalAuthHeaders),
@@ -829,7 +1007,7 @@ if (churchSelectorInput) {
       updateChurchStats();
     } else {
       if (emptyEl) emptyEl.classList.remove('hidden');
-      if (contentEl) contentEl.classList.add('hidden');
+      if (contentEl) contentEl.setAttribute('hidden', '');
     }
   });
 }
@@ -2036,56 +2214,104 @@ function renderBookings(bookings) {
   bookingsEmpty.classList.add('hidden');
   bookings.forEach((booking) => {
     const card = document.createElement('div');
-    card.className = 'bg-white border border-slate-100 rounded-[2rem] p-6 space-y-4 hover:shadow-md transition-all group';
+    card.className = 'bg-white border border-slate-200 rounded-[2rem] p-6 space-y-5 shadow-sm hover:shadow-lg transition-all';
     const totalAmount = Number(booking.total_amount || 0);
     const totalPaid = Number(booking.total_paid || 0);
+    const balance = Math.max(0, totalAmount - totalPaid);
     const progress = totalAmount > 0 ? Math.min(100, Math.round((totalPaid / totalAmount) * 100)) : 0;
     const isPaidFull = booking.status === 'PAID' || totalPaid >= totalAmount;
     const statusMap = {
       PAID: { label: 'Pago completo', className: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
       DEPOSIT_OK: { label: 'Abono confirmado', className: 'bg-amber-100 text-amber-700 border border-amber-200' },
-      PENDING: { label: 'Pendiente', className: 'bg-slate-100 text-slate-500 border border-slate-200' },
+      PENDING: { label: 'Pago pendiente', className: 'bg-slate-100 text-slate-600 border border-slate-200' },
     };
     const statusKey = isPaidFull ? 'PAID' : (booking.status || 'PENDING');
     const statusInfo = statusMap[statusKey] || statusMap.PENDING;
-    card.innerHTML = `
-      <div class="flex justify-between items-start">
-        <div>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reserva identificada</p>
-          <h3 class="font-bold text-lg text-[#293C74]">#${booking.id.slice(0, 8).toUpperCase()}</h3>
-          <p class="text-xs text-slate-500 mt-1">${booking.event_name || 'Cumbre Mundial 2026'}</p>
-        </div>
-        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${statusInfo.className}">${statusInfo.label}</span>
+    const { title: eventName, start: eventStart, end: eventEnd } = resolveEventDates(booking);
+    const bookingRef = (booking.reference || booking.id || '').toString().slice(0, 8).toUpperCase();
+    const createdLabel = formatDateTime(booking.created_at);
+    const churchName = booking.church_name || booking.contact_church || 'Sin iglesia';
+    const cityName = booking.contact_city || '';
+    const locationLabel = [churchName, cityName].filter(Boolean).join(' · ');
+    const pendingLabel = formatCurrency(balance, booking.currency);
+    const progressGradient = isPaidFull ? 'from-emerald-400 to-emerald-500' : 'from-brand-teal to-[#4CC9E0]';
+    const balanceBadgeClass = balance > 0 ? 'text-amber-600' : 'text-emerald-600';
+    const calendarUrl = buildGoogleCalendarUrl({
+      title: eventName,
+      start: eventStart,
+      end: eventEnd,
+      location: locationLabel,
+      details: `Reserva #${bookingRef}`,
+    });
+    const calendarLinks = eventStart ? `
+      <div class="flex flex-wrap gap-2 pt-1">
+        <a href="${calendarUrl}" target="_blank" rel="noreferrer"
+           class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-full border border-slate-200 text-slate-600 hover:border-slate-300">
+          Google Calendar
+        </a>
+        <button type="button"
+          class="calendar-download inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+          data-calendar-title="${eventName}"
+          data-calendar-start="${eventStart?.toISOString()}"
+          data-calendar-end="${eventEnd?.toISOString()}"
+          data-calendar-location="${locationLabel}"
+          data-calendar-details="Reserva #${bookingRef}">
+          Descargar .ics
+        </button>
       </div>
-      <div class="space-y-3 pt-2">
+    ` : '';
+
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Reserva</p>
+          <h3 class="text-lg font-bold text-[#293C74]">${eventName}</h3>
+          <p class="text-xs text-slate-500 mt-1">#${bookingRef} · ${createdLabel}</p>
+        </div>
+        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${statusInfo.className}">${statusInfo.label}</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+          <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Aportado</p>
+          <p class="text-lg font-bold text-[#293C74] mt-2">${formatCurrency(totalPaid, booking.currency)}</p>
+        </div>
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+          <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pendiente</p>
+          <p class="text-lg font-bold ${balanceBadgeClass} mt-2">${pendingLabel}</p>
+        </div>
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+          <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total</p>
+          <p class="text-lg font-bold text-slate-600 mt-2">${formatCurrency(totalAmount, booking.currency)}</p>
+        </div>
+      </div>
+
+      <div>
         <div class="flex justify-between text-xs">
           <span class="text-slate-500">Progreso de abono</span>
           <span class="text-[#293C74] font-bold">${progress}%</span>
         </div>
-        <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-          <div class="h-full bg-gradient-to-r from-brand-teal to-[#4CC9E0] transition-all duration-700" style="width: ${progress}%"></div>
-        </div>
-        <div class="flex justify-between items-center mt-2">
-            <p class="text-[10px] text-slate-400 truncate max-w-[150px]">${booking.church_name || booking.contact_church || 'Sin iglesia'}</p>
-            ${!isPaidFull ? `
-            <a href="https://wa.me/${booking.participant_phone || ''}?text=${encodeURIComponent(`Hola ${booking.participant_name || ''}, te recordamos tu compromiso con la Cumbre 2026. Tu saldo pendiente es de $${Math.max(0, totalAmount - totalPaid)}.`)}" 
-               target="_blank"
-               class="flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-100">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.463 1.065 2.876 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-               Recordar
-            </a>` : ''}
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-             <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Aportado</p>
-             <p class="text-sm font-bold text-[#293C74]">${formatCurrency(totalPaid, booking.currency)}</p>
-          </div>
-          <div class="text-right">
-             <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Monto Total</p>
-             <p class="text-sm font-bold text-slate-600">${formatCurrency(totalAmount, booking.currency)}</p>
-          </div>
+        <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-2">
+          <div class="h-full bg-gradient-to-r ${progressGradient} transition-all duration-700" style="width: ${progress}%"></div>
         </div>
       </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+        <span class="inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2c-4.418 0-8 3.582-8 8 0 5.25 8 12 8 12s8-6.75 8-12c0-4.418-3.582-8-8-8z" />
+          </svg>
+          ${locationLabel || 'Sin iglesia'}
+        </span>
+        <span class="inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V9m-2 0H7m10 0a2 2 0 110 4h-2a2 2 0 110-4h2z" />
+          </svg>
+          ${isPaidFull ? 'Cupo confirmado' : `Saldo por pagar: ${pendingLabel}`}
+        </span>
+      </div>
+
     `;
     bookingsList.appendChild(card);
   });
@@ -2131,11 +2357,12 @@ function renderPlans(plans, bookings) {
       </div>
 
       <div class="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-4">
-         <span>Próximo abono: ${formatDate(plan.next_due_date)}</span>
+         <span>Próximo abono: ${plan.next_due_date ? formatDate(plan.next_due_date) : 'Sin fecha'}</span>
          <button class="plan-action px-4 py-2 rounded-lg text-xs font-bold transition-all ${actionClass}" data-plan="${plan.id}" data-action="${plan.status === 'PAUSED' ? 'resume' : 'pause'}">
           ${actionLabel}
          </button>
       </div>
+      ${calendarLinks}
     `;
     plansList.appendChild(card);
   });
@@ -2207,7 +2434,7 @@ function renderInstallments(installments, plans, bookings) {
       : `Cuota ${installment.installment_index}`;
     const currency = plan.currency || installment.currency;
     const amountLabel = formatCurrency(installment.amount, currency);
-    const dueLabel = formatDate(installment.due_date);
+    const dueLabel = installment.due_date ? formatDate(installment.due_date) : 'Sin fecha';
 
     const card = document.createElement('div');
     card.className = 'rounded-2xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between';
@@ -2242,10 +2469,11 @@ function renderPayments(payments) {
     const statusClass = payment.status === 'APPROVED'
       ? 'bg-emerald-100 text-emerald-700'
       : 'bg-amber-100 text-amber-700';
+    const detailLabel = payment.detail || `${payment.provider?.toUpperCase() || '-'} · Aporte`;
     row.innerHTML = `
       <td class="py-6 px-8 text-slate-600">${formatDate(payment.created_at)}</td>
       <td class="py-6 px-8 font-mono text-xs text-slate-400">${payment.reference || '-'}</td>
-      <td class="py-6 px-8 text-slate-500">${payment.provider?.toUpperCase() || '-'} · Aporte</td>
+      <td class="py-6 px-8 text-slate-500">${detailLabel}</td>
       <td class="py-6 px-8 text-right font-bold text-[#293C74]">${formatCurrency(payment.amount, payment.currency)}</td>
       <td class="py-6 px-8 text-center">
         <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusClass}">
@@ -2255,6 +2483,288 @@ function renderPayments(payments) {
     `;
     paymentsTable.appendChild(row);
   });
+}
+
+function buildPaymentsTableData(payload) {
+  const payments = (payload?.payments || []).map((payment) => ({
+    created_at: payment.created_at,
+    reference: payment.reference,
+    amount: payment.amount,
+    currency: payment.currency,
+    status: payment.status,
+    detail: `${payment.provider?.toUpperCase() || 'PAGO'} · Cumbre Mundial 2026`,
+  }));
+
+  const donations = (payload?.donations || []).map((donation) => {
+    const label = resolveDonationLabel(donation.donation_type);
+    const context = donation.event_name || donation.project_name || donation.campus || '';
+    const detail = `${donation.provider?.toUpperCase() || 'DONACION'} · ${label}${context ? ` · ${context}` : ''}`;
+    return {
+      created_at: donation.created_at,
+      reference: donation.reference,
+      amount: donation.amount,
+      currency: donation.currency,
+      status: donation.status,
+      detail,
+    };
+  });
+
+  return [...payments, ...donations]
+    .filter((item) => item.created_at)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+function renderSummaryEvents(bookings, plans, installments) {
+  if (!summaryEventsList || !summaryEventsEmpty) return;
+  summaryEventsList.innerHTML = '';
+  if (!bookings.length) {
+    summaryEventsEmpty.classList.remove('hidden');
+    return;
+  }
+  summaryEventsEmpty.classList.add('hidden');
+
+  bookings.forEach((booking) => {
+    const totalAmount = Number(booking.total_amount || 0);
+    const totalPaid = Number(booking.total_paid || 0);
+    const balance = Math.max(0, totalAmount - totalPaid);
+    const { title, start, end, isCumbre } = resolveEventDates(booking);
+
+    const plan = (plans || []).find((item) => item.booking_id === booking.id && item.status !== 'CANCELLED') || null;
+    const pendingInstallments = (installments || []).filter((item) =>
+      item.booking_id === booking.id && ['PENDING', 'FAILED'].includes(item.status),
+    );
+    const nextInstallment = [...pendingInstallments].sort((a, b) => {
+      const aDate = toDate(a.due_date);
+      const bDate = toDate(b.due_date);
+      if (!aDate && !bDate) return 0;
+      if (!aDate) return 1;
+      if (!bDate) return -1;
+      return aDate.getTime() - bDate.getTime();
+    })[0];
+
+    const nextDueDate = plan?.next_due_date || nextInstallment?.due_date || null;
+    const nextDueLabel = nextDueDate ? formatDate(nextDueDate) : (balance > 0 ? 'Sin fecha' : '—');
+    const deadlineDate = plan?.end_date ? formatLongDate(plan.end_date) : (isCumbre ? formatLongDate(CUMBRE_ABONO_DEADLINE) : '');
+    const deadlineNote = (!nextDueDate && balance > 0 && deadlineDate) ? `Antes de ${deadlineDate}` : '';
+    const countdown = getCountdownLabel(start, end);
+    const locationParts = [booking.contact_church, booking.contact_city].filter(Boolean);
+    const location = locationParts.length ? locationParts.join(' · ') : 'Sin iglesia';
+
+    const card = document.createElement('div');
+    card.className = 'bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm space-y-4';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Evento</p>
+          <h3 class="text-lg font-bold text-[#293C74]">${title}</h3>
+          <p class="text-xs text-slate-500 mt-1">${location}</p>
+        </div>
+        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-100 text-slate-600 border border-slate-200">${countdown}</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total aportado</p>
+          <p class="text-lg font-bold text-[#293C74] mt-2">${formatCurrency(totalPaid, booking.currency)}</p>
+        </div>
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pendiente</p>
+          <p class="text-lg font-bold text-amber-600 mt-2">${formatCurrency(balance, booking.currency)}</p>
+        </div>
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Próximo abono</p>
+          <p class="text-lg font-bold text-[#293C74] mt-2">${nextDueLabel}</p>
+          ${deadlineNote ? `<p class="text-[10px] text-slate-400 mt-1">${deadlineNote}</p>` : ''}
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between text-xs text-slate-500">
+        <span>${start ? `Inicio: ${formatDate(start)}` : 'Fecha por confirmar'}</span>
+        <span>${end ? `Fin: ${formatDate(end)}` : ''}</span>
+      </div>
+    `;
+    summaryEventsList.appendChild(card);
+  });
+}
+
+function renderGivingSummary(donations, subscriptions) {
+  if (!givingList || !givingEmpty) return;
+  givingList.innerHTML = '';
+  const recurring = (subscriptions || []).filter((item) => {
+    const status = (item.status || 'ACTIVE').toString().toUpperCase();
+    return !['CANCELLED', 'ENDED', 'DISABLED'].includes(status);
+  });
+  const oneTime = (donations || []).filter((item) => !item.is_recurring);
+
+  const items = [
+    ...recurring.map((item) => ({ ...item, _type: 'recurring' })),
+    ...oneTime.slice(0, 6).map((item) => ({ ...item, _type: 'one-time' })),
+  ];
+
+  const hasTithe = recurring.some((item) => (item.donation_type || '').toString().toLowerCase() === 'diezmos');
+  if (givingCta) {
+    givingCta.toggleAttribute('hidden', hasTithe);
+  }
+
+  if (!items.length) {
+    givingEmpty.classList.remove('hidden');
+    return;
+  }
+  givingEmpty.classList.add('hidden');
+
+  items.forEach((item) => {
+    const label = resolveDonationLabel(item.donation_type);
+    const amount = formatCurrency(item.amount || 0, item.currency || 'COP');
+    const schedule = item._type === 'recurring'
+      ? (item.next_reminder_date ? `Próximo: ${formatDate(item.next_reminder_date)}` : 'Próximo: Sin fecha')
+      : (item.created_at ? `Último aporte: ${formatDate(item.created_at)}` : 'Último aporte');
+    const context = item.event_name || item.project_name || item.campus || '';
+    const rawStatus = (item.status || (item._type === 'recurring' ? 'ACTIVE' : 'APPROVED')).toString().toUpperCase();
+    const statusMap = {
+      ACTIVE: { label: 'Activo', className: 'bg-emerald-100 text-emerald-700' },
+      PAUSED: { label: 'Pausado', className: 'bg-amber-100 text-amber-700' },
+      CANCELLED: { label: 'Cancelado', className: 'bg-slate-100 text-slate-600' },
+      ENDED: { label: 'Finalizado', className: 'bg-slate-100 text-slate-600' },
+      DISABLED: { label: 'Desactivado', className: 'bg-slate-100 text-slate-600' },
+      APPROVED: { label: 'Aprobado', className: 'bg-emerald-100 text-emerald-700' },
+      PENDING: { label: 'Pendiente', className: 'bg-amber-100 text-amber-700' },
+    };
+    const statusInfo = statusMap[rawStatus] || { label: rawStatus, className: 'bg-slate-100 text-slate-600' };
+    const canManage = item._type === 'recurring' && item.id;
+    const isPaused = rawStatus === 'PAUSED';
+    const primaryAction = isPaused ? 'resume' : 'pause';
+    const primaryLabel = isPaused ? 'Reanudar' : 'Pausar';
+
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-slate-100 bg-white p-4 shadow-sm';
+    card.innerHTML = `
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${label}</p>
+          <p class="text-sm font-bold text-[#293C74] mt-1">${context || 'Aporte personalizado'}</p>
+          <p class="text-xs text-slate-500 mt-1">${schedule}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-bold text-brand-teal">${amount}</p>
+          <span class="inline-flex mt-2 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${statusInfo.className}">${statusInfo.label}</span>
+        </div>
+      </div>
+      ${canManage ? `
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button type="button"
+            class="subscription-action inline-flex items-center justify-center px-3 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-200 text-slate-600 hover:bg-slate-50"
+            data-subscription-id="${item.id}"
+            data-subscription-action="${primaryAction}">
+            ${primaryLabel}
+          </button>
+          <button type="button"
+            class="subscription-action inline-flex items-center justify-center px-3 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-50 text-red-600 hover:bg-red-100"
+            data-subscription-id="${item.id}"
+            data-subscription-action="cancel">
+            Cancelar
+          </button>
+        </div>
+      ` : ''}
+    `;
+    givingList.appendChild(card);
+  });
+}
+
+function renderLocalEvents(events) {
+  if (!localEventsList || !localEventsEmpty) return;
+  localEventsList.innerHTML = '';
+  const upcoming = (events || []).filter((event) => {
+    const start = toDate(event.start_date);
+    return !start || start >= new Date();
+  }).slice(0, 6);
+
+  if (!upcoming.length) {
+    localEventsEmpty.classList.remove('hidden');
+    return;
+  }
+  localEventsEmpty.classList.add('hidden');
+
+  upcoming.forEach((event) => {
+    const start = toDate(event.start_date);
+    const end = toDate(event.end_date);
+    const dateLabel = start ? formatDateTime(start) : 'Fecha por confirmar';
+    const locationParts = [event.location_name, event.location_address, event.city, event.country].filter(Boolean);
+    const location = locationParts.join(' · ') || 'Ubicación por confirmar';
+    const scopeLabel = event.scope === 'GLOBAL'
+      ? 'Global'
+      : event.scope === 'NATIONAL'
+        ? 'Nacional'
+        : 'Local';
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-slate-100 bg-white p-5 shadow-sm';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${scopeLabel}</p>
+          <h3 class="text-base font-bold text-[#293C74] mt-1">${event.title}</h3>
+          <p class="text-xs text-slate-500 mt-2">${dateLabel}</p>
+          ${end ? `<p class="text-[11px] text-slate-400">Finaliza: ${formatDate(end)}</p>` : ''}
+          <p class="text-xs text-slate-500 mt-2">${location}</p>
+        </div>
+      </div>
+    `;
+    localEventsList.appendChild(card);
+  });
+}
+
+async function handleDonationSubscriptionAction(button) {
+  const subscriptionId = button.getAttribute('data-subscription-id');
+  const action = button.getAttribute('data-subscription-action');
+  if (!subscriptionId || !action) return;
+
+  if (action === 'cancel') {
+    const confirmed = await showPortalConfirm('¿Deseas cancelar este aporte recurrente? Puedes volver a activarlo más adelante desde el portal.', {
+      title: 'Cancelar aporte',
+      confirmLabel: 'Cancelar aporte',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+  }
+
+  const originalText = button.textContent;
+  button.textContent = 'Procesando...';
+  button.disabled = true;
+
+  try {
+    const res = await fetch('/api/portal/donations/subscriptions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...portalAuthHeaders },
+      credentials: 'include',
+      body: JSON.stringify({ id: subscriptionId, action }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo actualizar');
+
+    if (portalAccountPayload?.donationSubscriptions) {
+      const idx = portalAccountPayload.donationSubscriptions.findIndex((item) => item.id === subscriptionId);
+      if (idx !== -1) {
+        portalAccountPayload.donationSubscriptions[idx] = {
+          ...portalAccountPayload.donationSubscriptions[idx],
+          status: data.subscription?.status || portalAccountPayload.donationSubscriptions[idx].status,
+          next_reminder_date: data.subscription?.next_reminder_date || portalAccountPayload.donationSubscriptions[idx].next_reminder_date,
+        };
+      }
+    }
+
+    renderGivingSummary(portalAccountPayload?.donations || [], portalAccountPayload?.donationSubscriptions || []);
+    const successMessages = {
+      pause: 'Tu aporte quedó pausado.',
+      resume: 'Tu aporte quedó reactivado.',
+      cancel: 'Tu aporte fue cancelado.',
+    };
+    showPortalAlert(successMessages[action] || 'Actualizado correctamente.', { title: 'Listo' });
+  } catch (err) {
+    console.error(err);
+    showPortalAlert(err.message || 'No se pudo actualizar el aporte.');
+  } finally {
+    button.textContent = originalText;
+    button.disabled = false;
+  }
 }
 
 function toggleChurchField(value) {
@@ -2956,6 +3466,36 @@ inviteToggleBtn?.addEventListener('click', () => {
 
 installmentsList?.addEventListener('click', (event) => {
   void handleInstallmentPay(event);
+});
+
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('.subscription-action');
+  if (!button) return;
+  event.preventDefault();
+  void handleDonationSubscriptionAction(button);
+});
+
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('.calendar-download');
+  if (!button) return;
+  const title = button.getAttribute('data-calendar-title') || 'Evento Maná';
+  const startRaw = button.getAttribute('data-calendar-start');
+  const endRaw = button.getAttribute('data-calendar-end');
+  const location = button.getAttribute('data-calendar-location') || '';
+  const details = button.getAttribute('data-calendar-details') || '';
+  if (!startRaw) return;
+  const start = new Date(startRaw);
+  const end = endRaw ? new Date(endRaw) : null;
+  const icsContent = buildIcsContent({ title, start, end, location, details });
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${title.replace(/\s+/g, '-').toLowerCase()}-${start.toISOString().slice(0, 10)}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 });
 
 logoutBtn?.addEventListener('click', async () => {

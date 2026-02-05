@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
+import { readPasswordSession } from '@lib/portalPasswordSession';
 
 export const prerender = false;
 
@@ -10,22 +11,26 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     const user = await getUserFromRequest(request);
-    if (!user) {
+    const passwordSession = user ? null : readPasswordSession(request);
+    if (!user && !passwordSession) {
         return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
     }
 
-    // Get user profile
-    const { data: userProfile } = await supabaseAdmin
-        .from('user_profiles')
-        .select('user_id, role')
-        .eq('user_id', user.id)
-        .single();
+    let userProfile: { user_id?: string; role?: string } | null = null;
+    if (user) {
+        const { data: profile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('user_id, role')
+            .eq('user_id', user.id)
+            .single();
+        userProfile = profile ?? null;
+    }
 
-    if (!userProfile) {
+    if (!userProfile && !passwordSession) {
         return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 403 });
     }
 
-    const { role } = userProfile;
+    const role = passwordSession ? 'superadmin' : (userProfile?.role || 'user');
 
     // Only campus missionaries and admins can access this endpoint
     const allowedRoles = ['campus_missionary', 'admin', 'superadmin'];
@@ -44,7 +49,7 @@ export const GET: APIRoute = async ({ request }) => {
         .order('created_at', { ascending: false });
 
     // Scoping: Campus missionaries only see THEIR donors
-    if (isCampusMissionary) {
+    if (isCampusMissionary && user?.id) {
         query = query.eq('missionary_id', user.id);
     }
     // Admins see all donations (no filter)

@@ -1,19 +1,23 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '@lib/supabaseAdmin';
 import { getUserFromRequest } from '@lib/supabaseAuth';
+import { readPasswordSession } from '@lib/portalPasswordSession';
 
 export const GET: APIRoute = async ({ request }) => {
     if (!supabaseAdmin) return new Response(JSON.stringify({ ok: false, error: 'Server Config Error' }), { status: 500 });
 
     const user = await getUserFromRequest(request);
-    if (!user) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
+    const passwordSession = user ? null : readPasswordSession(request);
+    if (!user && !passwordSession) return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401 });
 
     // Get Profile
-    const { data: profile } = await supabaseAdmin
-        .from('user_profiles')
-        .select('church_id, role')
-        .eq('user_id', user.id)
-        .single();
+    const { data: profile } = user
+        ? await supabaseAdmin
+            .from('user_profiles')
+            .select('church_id, role')
+            .eq('user_id', user.id)
+            .single()
+        : { data: { role: 'superadmin', church_id: null } };
 
     if (!profile || (profile.role !== 'admin' && profile.role !== 'superadmin' && profile.role !== 'pastor' && profile.role !== 'leader')) {
         return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), { status: 403 });
@@ -144,16 +148,20 @@ export const GET: APIRoute = async ({ request }) => {
         reason: extractReason(row.raw_event, row.status),
     }));
 
-    let total = 0;
-    const byCategory: Record<string, number> = {};
-    categoryOrder.forEach((label) => { byCategory[label] = 0; });
+    const totalByCurrency: Record<string, number> = {};
+    const byCategory: Record<string, { total: number; byCurrency: Record<string, number> }> = {};
+    categoryOrder.forEach((label) => { byCategory[label] = { total: 0, byCurrency: {} }; });
 
     approvedTransactions.forEach((t: any) => {
         const amount = Number(t.amount) || 0;
-        total += amount;
         const label = t.concept_label || 'Otros';
-        byCategory[label] = (byCategory[label] || 0) + amount;
+        const currency = (t.currency || 'COP').toUpperCase();
+
+        totalByCurrency[currency] = (totalByCurrency[currency] || 0) + amount;
+        if (!byCategory[label]) byCategory[label] = { total: 0, byCurrency: {} };
+        byCategory[label].total += amount;
+        byCategory[label].byCurrency[currency] = (byCategory[label].byCurrency[currency] || 0) + amount;
     });
 
-    return new Response(JSON.stringify({ ok: true, stats: { total, byCategory }, transactions: approvedTransactions, issues }), { status: 200 });
+    return new Response(JSON.stringify({ ok: true, stats: { totalByCurrency, byCategory }, transactions: approvedTransactions, issues }), { status: 200 });
 };

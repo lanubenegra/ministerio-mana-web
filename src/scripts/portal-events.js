@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Init Supabase (Client Side)
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { ensureAuthenticated, redirectToLogin } from '@lib/portalAuthClient';
 
 // DOM Elements
 const eventsList = document.getElementById('events-list');
@@ -13,32 +8,63 @@ const btnNewEvent = document.getElementById('btn-new-event');
 const eventModal = document.getElementById('event-modal');
 const closeModal = document.getElementById('close-modal');
 const eventForm = document.getElementById('event-form');
+const eventIdInput = document.getElementById('event-id');
+const eventModalTitle = eventModal?.querySelector('h2');
+const eventSubmitBtn = eventForm?.querySelector('button[type="submit"]');
 
-let userProfile = null;
+let authHeaders = {};
+let eventsCache = [];
 
 // Auth & Init
 async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = '/portal/ingresar';
+    const auth = await ensureAuthenticated();
+    if (!auth.isAuthenticated) {
+        redirectToLogin();
         return;
     }
 
-    // Fetch Profile
-    const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-    if (error || !profile) {
-        console.error('Error fetching profile:', error);
-        return;
-    }
-    userProfile = profile;
+    authHeaders = auth.token ? { Authorization: `Bearer ${auth.token}` } : {};
 
     // Load Events
     loadEvents();
+}
+
+function toInputDateTime(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function openEventModal(mode, eventData = null) {
+    if (!eventModal || !eventForm) return;
+    eventForm.reset();
+    if (eventIdInput) eventIdInput.value = eventData?.id || '';
+    if (eventModalTitle) eventModalTitle.textContent = mode === 'edit' ? 'Editar Evento' : 'Nuevo Evento';
+    if (eventSubmitBtn) eventSubmitBtn.textContent = mode === 'edit' ? 'Guardar Cambios' : 'Guardar Evento';
+
+    if (eventData) {
+        eventForm.querySelector('[name="title"]').value = eventData.title || '';
+        eventForm.querySelector('[name="description"]').value = eventData.description || '';
+        eventForm.querySelector('[name="start_date"]').value = toInputDateTime(eventData.start_date);
+        eventForm.querySelector('[name="end_date"]').value = toInputDateTime(eventData.end_date);
+        eventForm.querySelector('[name="scope"]').value = eventData.scope || 'LOCAL';
+        eventForm.querySelector('[name="location_name"]').value = eventData.location_name || '';
+        eventForm.querySelector('[name="location_address"]').value = eventData.location_address || '';
+        eventForm.querySelector('[name="city"]').value = eventData.city || '';
+        eventForm.querySelector('[name="country"]').value = eventData.country || '';
+        eventForm.querySelector('[name="banner_url"]').value = eventData.banner_url || '';
+    }
+
+    eventModal.classList.remove('hidden');
+    eventModal.classList.add('flex');
+}
+
+function closeEventModal() {
+    if (!eventModal) return;
+    eventModal.classList.add('hidden');
+    eventModal.classList.remove('flex');
 }
 
 // Load Events
@@ -48,12 +74,16 @@ async function loadEvents() {
     eventsEmpty.classList.add('hidden');
 
     try {
-        const res = await fetch('/api/portal/events');
+        const res = await fetch('/api/portal/events', {
+            headers: authHeaders,
+            credentials: 'include'
+        });
         const data = await res.json();
 
         if (!data.ok) throw new Error(data.error);
 
-        renderEvents(data.events || []);
+        eventsCache = data.events || [];
+        renderEvents(eventsCache);
     } catch (err) {
         console.error(err);
         eventsEmpty.classList.remove('hidden'); // Fail gracefully
@@ -69,13 +99,22 @@ function renderEvents(events) {
         return;
     }
 
-    eventsList.innerHTML = events.map(event => `
+    eventsList.innerHTML = events.map(event => {
+        const banner = event.banner_url
+            ? `<div class="h-32 rounded-2xl bg-slate-100 overflow-hidden mb-4">
+                <img src="${event.banner_url}" alt="${event.title}" class="w-full h-full object-cover">
+              </div>`
+            : '';
+        const locationParts = [event.location_name, event.location_address, event.city, event.country].filter(Boolean);
+        const locationLabel = locationParts.length ? locationParts.join(' · ') : 'Virtual';
+        return `
         <div class="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-4 opacity-5">
+            <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-32 w-32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             </div>
             
             <div class="relative z-10">
+                ${banner}
                 <div class="flex justify-between items-start mb-4">
                     <span class="px-3 py-1 rounded-full bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-slate-500 border border-slate-100">
                         ${event.scope}
@@ -91,24 +130,43 @@ function renderEvents(events) {
                 
                 <div class="flex items-center gap-2 text-xs text-slate-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    <span>${event.location_address || 'Virtual'}</span>
+                    <span>${locationLabel}</span>
+                </div>
+
+                <div class="mt-4 flex items-center justify-between">
+                    <button type="button" class="event-edit text-xs font-bold text-[#293C74] hover:underline" data-event-id="${event.id}">
+                        Editar evento
+                    </button>
+                    <span class="text-[10px] uppercase tracking-widest text-slate-400">${event.status || 'PUBLICADO'}</span>
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 
     eventsList.classList.remove('hidden');
 }
 
 // Modal Logic
 btnNewEvent?.addEventListener('click', () => {
-    eventModal.classList.remove('hidden');
-    eventModal.classList.add('flex');
+    openEventModal('create');
 });
 
 closeModal?.addEventListener('click', () => {
-    eventModal.classList.add('hidden');
-    eventModal.classList.remove('flex');
+    closeEventModal();
+});
+
+eventModal?.addEventListener('click', (event) => {
+    if (event.target === eventModal) {
+        closeEventModal();
+    }
+});
+
+eventsList?.addEventListener('click', (event) => {
+    const btn = event.target.closest('.event-edit');
+    if (!btn) return;
+    const eventId = btn.getAttribute('data-event-id');
+    const eventData = eventsCache.find((item) => item.id === eventId);
+    if (eventData) openEventModal('edit', eventData);
 });
 
 eventForm?.addEventListener('submit', async (e) => {
@@ -121,11 +179,17 @@ eventForm?.addEventListener('submit', async (e) => {
     try {
         const formData = new FormData(eventForm);
         const payload = Object.fromEntries(formData.entries());
+        const eventId = payload.id ? payload.id.toString() : '';
+        delete payload.id;
+        Object.keys(payload).forEach((key) => {
+            if (payload[key] === '') delete payload[key];
+        });
 
         const res = await fetch('/api/portal/events', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            method: eventId ? 'PATCH' : 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders },
+            credentials: 'include',
+            body: JSON.stringify(eventId ? { id: eventId, ...payload } : payload)
         });
 
         const data = await res.json();
@@ -133,8 +197,7 @@ eventForm?.addEventListener('submit', async (e) => {
 
         // Reset and Reload
         eventForm.reset();
-        eventModal.classList.add('hidden');
-        eventModal.classList.remove('flex');
+        closeEventModal();
         loadEvents();
 
     } catch (err) {

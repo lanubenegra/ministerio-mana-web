@@ -1,4 +1,5 @@
 // portal-campus.js - Campus Donor Management
+import { ensureAuthenticated, redirectToLogin } from '@lib/portalAuthClient';
 
 const loadingEl = document.getElementById('donors-loading');
 const contentEl = document.getElementById('donors-content');
@@ -13,7 +14,16 @@ const statActiveMissionaries = document.getElementById('stat-active-missionaries
 
 async function loadDonors() {
     try {
-        const response = await fetch('/api/portal/campus/donors');
+        const auth = await ensureAuthenticated();
+        if (!auth.isAuthenticated) {
+            redirectToLogin();
+            return;
+        }
+        const headers = auth.token ? { Authorization: `Bearer ${auth.token}` } : {};
+        const response = await fetch('/api/portal/campus/donors', {
+            headers,
+            credentials: 'include'
+        });
         const data = await response.json();
 
         if (!data.ok) {

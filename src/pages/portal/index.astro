@@ -73,7 +73,7 @@ import Sidebar from '@components/portal/Sidebar.astro';
                   </div>
                   <p class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4">Total Aportado</p>
                   <h3 id="stat-total-paid" class="text-4xl font-display font-bold text-[#293C74] leading-none">$0</h3>
-                  <p class="text-xs text-brand-teal mt-2 font-bold">En todas tus reservas</p>
+                  <p class="text-xs text-brand-teal mt-2 font-bold">En todos tus eventos</p>
                 </div>
 
                 <!-- Status Card 2 -->
@@ -83,7 +83,7 @@ import Sidebar from '@components/portal/Sidebar.astro';
                   </div>
                   <p class="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4">Próximo Abono</p>
                   <h3 id="stat-next-due" class="text-4xl font-display font-bold text-[#293C74] leading-none">-</h3>
-                  <p class="text-xs text-[#F2C94C] mt-2 font-bold">Plan de cuotas activo</p>
+                  <p id="stat-next-note" class="text-xs text-[#F2C94C] mt-2 font-bold">Plan de cuotas activo</p>
                 </div>
 
                 <!-- Support Card -->
@@ -110,6 +110,48 @@ import Sidebar from '@components/portal/Sidebar.astro';
                    <div class="md:ml-auto">
                       <button data-tab-trigger="reservas" class="text-sm font-bold text-brand-teal hover:underline px-4 py-2">Ver mis inscripciones →</button>
                    </div>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+                  <div>
+                    <h2 class="text-lg font-bold text-[#293C74]">Eventos inscritos</h2>
+                    <p class="text-xs text-slate-500">Resumen por evento con cuenta regresiva y próximos abonos.</p>
+                  </div>
+                </div>
+                <div id="summary-events-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+                <div id="summary-events-empty" class="hidden p-10 text-center bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                  <p class="text-slate-500">Aún no tienes eventos inscritos.</p>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <h2 class="text-lg font-bold text-[#293C74]">Ofrendas y Diezmos</h2>
+                    <p class="text-xs text-slate-500">Tus aportes y recordatorios activos.</p>
+                  </div>
+                  <a id="giving-cta" href="/primicias?type=diezmos&recurring=1" hidden class="inline-flex items-center gap-2 rounded-full bg-brand-teal text-white px-5 py-2 text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-brand-teal/90 transition">
+                    Programar diezmo
+                  </a>
+                </div>
+                <div id="giving-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div id="giving-empty" class="hidden p-10 text-center bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                  <p class="text-slate-500">Aún no tienes ofrendas ni diezmos registrados.</p>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+                  <div>
+                    <h2 class="text-lg font-bold text-[#293C74]">Eventos cerca de ti</h2>
+                    <p class="text-xs text-slate-500">Próximos encuentros en tu ciudad o país.</p>
+                  </div>
+                </div>
+                <div id="local-events-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div id="local-events-empty" class="hidden p-10 text-center bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                  <p class="text-slate-500">No hay eventos cercanos por ahora.</p>
                 </div>
               </div>
             </div>
@@ -359,7 +401,7 @@ import Sidebar from '@components/portal/Sidebar.astro';
                 </div>
 
               <!-- Dashboard Details Content (Hidden until church selected) -->
-              <div id="church-dashboard-content" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              <div id="church-dashboard-content" hidden class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
                 <!-- Main Data Column (8 Cols) -->
                 <div class="lg:col-span-8 space-y-8">
@@ -643,6 +685,25 @@ import Sidebar from '@components/portal/Sidebar.astro';
         <p id="portal-alert-message" class="text-sm text-slate-600 mt-3"></p>
         <div class="mt-6 flex justify-end">
           <button id="portal-alert-ok" class="px-4 py-2 rounded-xl bg-[#293C74] text-white text-xs font-bold hover:bg-[#293C74]/90">Entendido</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="portal-confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div class="w-full max-w-md bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-6 md:p-7">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-[10px] font-bold text-[#293C74] uppercase tracking-[0.3em]">Portal Maná</p>
+            <h3 id="portal-confirm-title" class="text-lg font-display font-bold text-[#293C74]">Confirmar</h3>
+          </div>
+          <button id="portal-confirm-close" class="w-8 h-8 rounded-full bg-slate-50 text-[#293C74] hover:bg-[#293C74] hover:text-white flex items-center justify-center transition-colors font-bold">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <p id="portal-confirm-message" class="text-sm text-slate-600 mt-3"></p>
+        <div class="mt-6 flex flex-wrap justify-end gap-2">
+          <button id="portal-confirm-cancel" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
+          <button id="portal-confirm-ok" class="px-4 py-2 rounded-xl bg-[#E15554] text-white text-xs font-bold hover:bg-[#D94B4A]">Confirmar</button>
         </div>
       </div>
     </div>
