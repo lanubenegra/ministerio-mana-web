@@ -145,6 +145,12 @@ export class RegistrationModal {
         this.countryInput?.addEventListener('change', () => this.updateCurrencyFromCountry(this.countryInput?.value));
         this.countryInput?.addEventListener('blur', () => this.updateCurrencyFromCountry(this.countryInput?.value));
 
+        if (this.depositDueDate) {
+            const clampDepositDate = () => this.syncDepositSchedule();
+            this.depositDueDate.addEventListener('change', clampDepositDate);
+            this.depositDueDate.addEventListener('blur', clampDepositDate);
+        }
+
         // Companion form
         if (this.btnAddCompanion) {
             this.btnAddCompanion.addEventListener('click', (e) => {
@@ -539,7 +545,7 @@ export class RegistrationModal {
     formatLongDateWithYear(value) {
         try {
             const [year, month, day] = value.split('-').map(Number);
-            const date = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
+            const date = new Date(year, (month || 1) - 1, day || 1);
             return date.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
         } catch {
             return value;

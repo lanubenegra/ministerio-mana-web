@@ -21,7 +21,14 @@
         <input 
           type="text" 
           id="church-search-input" 
+          name="church-search"
           placeholder="Buscar por nombre, ciudad o país..." 
+          autocomplete="off"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          inputmode="search"
+          aria-autocomplete="none"
           class="w-full bg-white/10 border border-white/20 rounded-xl pl-12 pr-4 py-3 text-white placeholder-white/40 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/50 outline-none transition-all"
         >
       </div>
@@ -62,6 +69,10 @@
             type="text" 
             id="manual-church-input" 
             placeholder="Escribe el nombre de tu iglesia (Ej. París, Madrid...)" 
+            autocomplete="off"
+            autocapitalize="words"
+            autocorrect="off"
+            spellcheck="false"
             class="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/40 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/50 outline-none transition-all text-sm capitalize"
           >
           <button id="manual-church-confirm" class="px-4 py-2 bg-brand-teal text-white font-bold rounded-xl text-xs hover:bg-brand-teal/80 transition-colors">
@@ -74,7 +85,7 @@
 
     <!-- Results List (Virtual Scroll) -->
     <div class="h-96 overflow-y-auto" id="church-results-container">
-      <div id="church-results-list" class="space-y-2 px-2 pb-2 pt-1">
+      <div id="church-results-list" class="space-y-3 px-4 pb-4 pt-2">
         <!-- Populated dynamically -->
       </div>
       <div id="church-no-results" class="hidden text-center py-12 text-white/40">
@@ -102,14 +113,16 @@
 <style>
   .church-item {
     cursor: pointer;
-    padding: 14px 18px;
-    border-radius: 16px;
+    padding: 16px 20px;
+    border-radius: 18px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.03);
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 8px 18px rgba(10, 15, 35, 0.18);
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   }
   .church-item:hover {
     background: linear-gradient(90deg, rgba(45, 212, 191, 0.15), rgba(255, 255, 255, 0));
+    box-shadow: 0 12px 26px rgba(10, 15, 35, 0.24);
   }
   .church-item.selected {
     background: rgba(45, 212, 191, 0.18);
